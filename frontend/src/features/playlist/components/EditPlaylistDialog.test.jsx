@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditPlaylistDialog } from './EditPlaylistDialog';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
@@ -95,6 +95,39 @@ describe('EditPlaylistDialog', () => {
 			expect.objectContaining({ method: 'POST' })
 		);
 		expect(sentBody()).toEqual({ title: 'Coastal Futures' });
+	});
+
+	it('saves when Enter is pressed in the title', async () => {
+		const user = userEvent.setup();
+		succeedWith({ title: 'Coastal Futures', description: 'Why these films' });
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Why these films' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), 'Coastal Futures{Enter}');
+
+		expect(sentBody()).toEqual({ title: 'Coastal Futures' });
+	});
+
+	it('closes on Cancel without saving', async () => {
+		const user = userEvent.setup();
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Why these films' });
+		await user.type(screen.getByLabelText('Title'), ' edited');
+		await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(usePlaylistUiStore.getState().editDialogOpen).toBe(false);
+	});
+
+	it('starts from the current playlist each time it reopens', async () => {
+		const user = userEvent.setup();
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Why these films' });
+		await user.type(screen.getByLabelText('Title'), ' edited');
+		await user.click(screen.getByRole('button', { name: 'Cancel' }));
+		act(() => usePlaylistUiStore.getState().setEditDialogOpen(true));
+
+		expect(screen.getByLabelText('Title')).toHaveValue('Trusted Playlist');
 	});
 
 	it('sends only the description when only the description changed', async () => {

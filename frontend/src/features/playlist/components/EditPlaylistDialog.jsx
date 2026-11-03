@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Button, Dialog, DialogClose, DialogContent, EditorField, TextField } from '../../shared/components';
+import {
+	Button,
+	ConfirmationDialogContent,
+	Dialog,
+	DialogClose,
+	EditorField,
+	TextField,
+} from '../../shared/components';
 import { required } from '../../shared/utils/validators';
 import { usePlaylistUpdateMutation } from '../hooks/usePlaylistUpdateMutation';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
@@ -7,6 +14,9 @@ import { PLAYLIST_TITLE_MAX_LENGTH } from '../utils/playlist';
 
 const TITLE_REQUIRED = 'Title is required.';
 const validateTitle = required(TITLE_REQUIRED);
+const FORM_ID = 'playlist-edit-form';
+const HINT_ID = 'playlist-curator-note-hint';
+const ERROR_ID = 'playlist-edit-error';
 
 function changedFields(playlist, title, description) {
 	const changes = {};
@@ -28,29 +38,23 @@ export function EditPlaylistDialog({ config, playlist, token }) {
 	const open = usePlaylistUiStore((state) => state.editDialogOpen);
 	const setOpen = usePlaylistUiStore((state) => state.setEditDialogOpen);
 
+	// Mounted only while open, so each open starts from the current playlist
+	// with a fresh mutation and no stale error message.
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogContent
-				aria-label="Edit playlist"
-				className="w-full max-w-[680px] rounded-2xl border-[0.5px] border-border-subtle bg-linear-to-br from-bg-surface-raised to-bg-surface p-5 shadow-2xl sm:p-[26px]"
-				containerClassName="items-end sm:items-center"
-			>
-				<EditPlaylistForm config={config} playlist={playlist} token={token} onDone={() => setOpen(false)} />
-			</DialogContent>
+			{open ? (
+				<EditPlaylistContent config={config} playlist={playlist} token={token} onDone={() => setOpen(false)} />
+			) : null}
 		</Dialog>
 	);
 }
 
-// DialogContent unmounts its children while closed, so each open starts from
-// the current playlist with a fresh mutation and no stale error banner.
-function EditPlaylistForm({ config, playlist, token, onDone }) {
+function EditPlaylistContent({ config, playlist, token, onDone }) {
 	const [title, setTitle] = useState(playlist?.title || '');
 	const [description, setDescription] = useState(playlist?.description || '');
 	const [titleError, setTitleError] = useState('');
 	const mutation = usePlaylistUpdateMutation(token, config);
-	const hintId = 'playlist-curator-note-hint';
-	const errorId = 'playlist-edit-error';
-	const curatorNoteDescribedBy = mutation.isError ? `${hintId} ${errorId}` : hintId;
+	const curatorNoteDescribedBy = mutation.isError ? `${HINT_ID} ${ERROR_ID}` : HINT_ID;
 
 	function handleSubmit(event) {
 		event.preventDefault();
@@ -72,72 +76,68 @@ function EditPlaylistForm({ config, playlist, token, onDone }) {
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="flex flex-col gap-5">
-			<div className="flex flex-col gap-2">
-				<h2 className="m-0 text-text-strong heading-h6-20-medium">Edit Playlist</h2>
-				<p className="m-0 text-text-muted body-body-14-regular">
-					Update your playlist title and Curator's Note.
-				</p>
-			</div>
-
-			<TextField
-				label="Title"
-				value={title}
-				maxLength={PLAYLIST_TITLE_MAX_LENGTH}
-				showCharacterCount
-				validate={validateTitle}
-				invalid={Boolean(titleError)}
-				helperText={titleError}
-				onChange={(event) => {
-					setTitle(event.target.value);
-					setTitleError('');
-				}}
-				className="w-full"
-			/>
-
-			{/* No word limit: Playlist.description and the Create New Playlist
-					    form are unbounded, and EditorField's limiter truncates an
-					    over-limit value on render — silently dropping existing text. */}
-			{/* The hint sits outside EditorField's helperText, which renders in
-				    the accent colour and reads as a warning. */}
-			<div className="flex flex-col gap-2">
-				<EditorField
-					label="Curator's Note"
-					value={description}
-					rows={8}
-					aria-describedby={curatorNoteDescribedBy}
-					onChange={(event) => setDescription(event.target.value)}
+		<ConfirmationDialogContent
+			aria-label="Edit playlist"
+			title="Edit Playlist"
+			subtitle="Update your playlist title and Curator's Note."
+			// The corner ripple sits under the fields and draws lines through the hint.
+			decorationSrc={null}
+			actions={
+				<>
+					<DialogClose>
+						<Button variant="secondary-outline" disabled={mutation.isPending}>
+							Cancel
+						</Button>
+					</DialogClose>
+					{/* ConfirmationDialogContent renders actions outside its children,
+					    so Save joins the form through the form attribute. */}
+					<Button type="submit" form={FORM_ID} variant="primary" disabled={mutation.isPending}>
+						{mutation.isPending ? 'Saving' : 'Save'}
+					</Button>
+				</>
+			}
+		>
+			<form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-5">
+				<TextField
+					label="Title"
+					value={title}
+					maxLength={PLAYLIST_TITLE_MAX_LENGTH}
+					showCharacterCount
+					validate={validateTitle}
+					invalid={Boolean(titleError)}
+					helperText={titleError}
+					onChange={(event) => {
+						setTitle(event.target.value);
+						setTitleError('');
+					}}
 					className="w-full"
 				/>
-				<p id={hintId} className="m-0 text-text-muted body-body-12-regular">
-					Explain why these films belong together. Links you paste here become clickable automatically.
-				</p>
-			</div>
 
-			{mutation.isError ? (
-				<p id={errorId} className="m-0 text-text-danger body-body-14-regular">
-					Your changes could not be saved. Try again.
-				</p>
-			) : null}
+				{/* No word limit: Playlist.description and the Create New Playlist
+				    form are unbounded, and EditorField's limiter truncates an
+				    over-limit value on render — silently dropping existing text.
+				    The hint sits outside EditorField's helperText, which renders in
+				    the accent colour and reads as a warning. */}
+				<div className="flex flex-col gap-2">
+					<EditorField
+						label="Curator's Note"
+						value={description}
+						rows={8}
+						aria-describedby={curatorNoteDescribedBy}
+						onChange={(event) => setDescription(event.target.value)}
+						className="w-full"
+					/>
+					<p id={HINT_ID} className="m-0 text-text-muted body-body-12-regular">
+						Explain why these films belong together. Links you paste here become clickable automatically.
+					</p>
+				</div>
 
-			<div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-				<DialogClose>
-					<Button
-						variant="tertiary"
-						disabled={mutation.isPending}
-						className="focus-visible:ring-2 focus-visible:ring-ring-focus"
-					>
-						Cancel
-					</Button>
-				</DialogClose>
-				<Button
-					type="submit"
-					disabled={mutation.isPending}
-					className="focus-visible:ring-2 focus-visible:ring-ring-focus"
-				>
-					{mutation.isPending ? 'Saving' : 'Save'}
-				</Button>
-			</div>
-		</form>
+				{mutation.isError ? (
+					<p id={ERROR_ID} className="m-0 text-text-danger body-body-14-regular">
+						Your changes could not be saved. Try again.
+					</p>
+				) : null}
+			</form>
+		</ConfirmationDialogContent>
 	);
 }
