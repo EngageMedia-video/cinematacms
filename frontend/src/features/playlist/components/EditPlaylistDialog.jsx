@@ -37,23 +37,41 @@ function changedFields(playlist, title, description) {
 export function EditPlaylistDialog({ config, playlist, token }) {
 	const open = usePlaylistUiStore((state) => state.editDialogOpen);
 	const setOpen = usePlaylistUiStore((state) => state.setEditDialogOpen);
+	// Owned here, not in the form, so a pending save also blocks Escape and
+	// overlay dismissal: closing mid-save would unmount the form and lose both
+	// the edits and the failure message.
+	const mutation = usePlaylistUpdateMutation(token, config);
 
-	// Mounted only while open, so each open starts from the current playlist
-	// with a fresh mutation and no stale error message.
+	function close() {
+		mutation.reset();
+		setOpen(false);
+	}
+
+	function handleOpenChange(nextOpen) {
+		if (mutation.isPending) {
+			return;
+		}
+
+		if (nextOpen) {
+			setOpen(true);
+		} else {
+			close();
+		}
+	}
+
+	// The form mounts only while open, so each open starts from the current
+	// playlist; close() resets the mutation so no stale error carries over.
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			{open ? (
-				<EditPlaylistContent config={config} playlist={playlist} token={token} onDone={() => setOpen(false)} />
-			) : null}
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			{open ? <EditPlaylistContent playlist={playlist} mutation={mutation} onDone={close} /> : null}
 		</Dialog>
 	);
 }
 
-function EditPlaylistContent({ config, playlist, token, onDone }) {
+function EditPlaylistContent({ playlist, mutation, onDone }) {
 	const [title, setTitle] = useState(playlist?.title || '');
 	const [description, setDescription] = useState(playlist?.description || '');
 	const [titleError, setTitleError] = useState('');
-	const mutation = usePlaylistUpdateMutation(token, config);
 	const curatorNoteDescribedBy = mutation.isError ? `${HINT_ID} ${ERROR_ID}` : HINT_ID;
 
 	function handleSubmit(event) {

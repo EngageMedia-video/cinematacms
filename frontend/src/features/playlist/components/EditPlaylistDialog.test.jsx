@@ -119,6 +119,29 @@ describe('EditPlaylistDialog', () => {
 		expect(usePlaylistUiStore.getState().editDialogOpen).toBe(false);
 	});
 
+	it('stays open on Escape while a save is pending, then shows a failure', async () => {
+		const user = userEvent.setup();
+		let failSave;
+		apiFetch.mockReturnValue(
+			new Promise((resolve) => {
+				failSave = () => resolve({ ok: false, status: 500, json: async () => ({}) });
+			})
+		);
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), 'Coastal Futures');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+		await user.keyboard('{Escape}');
+
+		expect(screen.getByRole('dialog', { name: 'Edit playlist' })).toBeInTheDocument();
+
+		await act(async () => failSave());
+
+		expect(await screen.findByText(SAVE_ERROR)).toBeInTheDocument();
+		expect(screen.getByLabelText('Title')).toHaveValue('Coastal Futures');
+	});
+
 	it('starts from the current playlist each time it reopens', async () => {
 		const user = userEvent.setup();
 
