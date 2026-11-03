@@ -263,6 +263,8 @@
 		}
 
 		.item-category-badge {
+			top: 0;
+			bottom: auto;
 			padding: 4px;
 			font-size: 10px;
 			font-weight: 400;
@@ -272,6 +274,21 @@
 				line-height: 10px;
 				text-transform: none;
 				letter-spacing: 0;
+			}
+		}
+
+		.item-state-badge {
+			top: 4px;
+			right: 4px;
+			padding: 2px;
+			border-radius: 2px;
+
+			.material-icons {
+				font-size: 14px;
+			}
+
+			.badge-label {
+				display: none;
 			}
 		}
 
