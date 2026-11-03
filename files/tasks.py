@@ -1133,7 +1133,9 @@ def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
         for profile in EncodeProfile.objects.filter(id__in=profile_ids):
             lock_key = chunk_finalize_lock_key(media.id, profile.id)
             lock_token = uuid.uuid4().hex
-            if not chunk_finalisation_cache.add(lock_key, lock_token, timeout=STALE_ENCODING_LOCK_SECONDS):
+            if not chunk_finalisation_cache.add(
+                lock_key, lock_token, timeout=STALE_ENCODING_LOCK_SECONDS, raise_on_error=True
+            ):
                 continue
             held_locks.append((lock_key, lock_token))
 

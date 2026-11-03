@@ -134,6 +134,16 @@ class CheckRunningStatesTests(TestCase):
 
         self.assertFalse(Encoding.objects.filter(pk=dead.pk).exists())
 
+    def test_reports_a_cache_outage_instead_of_treating_it_as_a_held_lock(self):
+        dead = self._encoding(STALE)
+
+        cache_backend = chunk_finalisation_cache.adapter.backend
+        with patch.object(cache_backend, "add", side_effect=ConnectionError("cache unavailable")):
+            result = tasks.check_running_states()
+
+        self.assertTrue(Encoding.objects.filter(pk=dead.pk).exists())
+        self.assertEqual((result["outcome"], result["failed"]), ("failed", 1))
+
     def test_releases_the_merge_lock_after_rebuilding(self):
         self._make_chunked()
         self._chunk(STALE, 0)
