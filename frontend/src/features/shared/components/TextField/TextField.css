@@ -14,4 +14,8 @@
 	-webkit-text-fill-color: var(--text-strong) !important;
 	caret-color: var(--text-strong);
 	transition: background-color 9999s ease-in-out 0s;
+	/* The box-shadow loses to `focus:ring-0` on focus and the transition only
+	 * delays the UA background, so clip that background to the glyphs. */
+	-webkit-background-clip: text;
+	background-clip: text;
 }
