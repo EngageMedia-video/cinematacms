@@ -142,6 +142,15 @@
       "gridPos": {"h": 10, "w": 24, "x": 0, "y": 82},
       "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND (actor_ref:\"$actor_ref\" OR task_id:\"$task_id\" OR delivery_uuid:\"$delivery_uuid\" OR trace_id:\"$trace_id\" OR recipient_ref:\"$recipient_ref\" OR upload_ref:\"$upload_ref\")", "maxLines": 500, "queryType": "instant"}],
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Application events",
+      "description": "Events the application logs under their own name: slow, failed and denied requests, slow and failed database and cache operations, failed authentication, uploads, media pipeline steps, and telemetry emission failures.",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 92},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(_msg:\"cinematacms.http.request.slow\" OR _msg:\"cinematacms.http.request.failed\" OR _msg:\"cinematacms.http.request.denied\" OR _msg:\"cinematacms.upload.started\" OR _msg:\"cinematacms.upload.finished\" OR _msg:\"cinematacms.db.query.slow\" OR _msg:\"cinematacms.db.query.failed\" OR _msg:\"cinematacms.cache.operation.slow\" OR _msg:\"cinematacms.cache.operation.failed\" OR _msg:\"cinematacms.authentication.failed\" OR _msg:\"cinematacms.media.pipeline\" OR _msg:\"cinematacms.telemetry.emission_failed\") AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
     }
   ],
   "refresh": "5s",

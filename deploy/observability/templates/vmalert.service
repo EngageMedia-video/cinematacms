@@ -1,7 +1,7 @@
 [Unit]
 Description=Cinemata vmalert
 After=network-online.target victoriametrics.service alertmanager.service
-Requires=victoriametrics.service alertmanager.service
+Wants=victoriametrics.service alertmanager.service
 
 [Service]
 User=cinematacms-observability

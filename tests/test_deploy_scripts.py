@@ -1550,7 +1550,7 @@ class RestartScriptTests(unittest.TestCase):
             fake_bin = root / "bin"
             fake_bin.mkdir()
             command_log = root / "commands.log"
-            for name in ("chown", "chgrp"):
+            for name in ("chown", "chgrp", "find"):
                 fake = fake_bin / name
                 fake.write_text(f'#!/bin/sh\necho "{name} $*" >> "{command_log}"\n')
                 fake.chmod(0o755)
@@ -1567,21 +1567,44 @@ class RestartScriptTests(unittest.TestCase):
             )
             return command_log.read_text().splitlines()
 
-    def test_ownership_reset_keeps_collector_read_access_to_logs(self):
-        self.assertEqual(
-            self._reset_app_ownership(group_exists=True),
-            ["chown -R www-data. /home/cinemata/", "chgrp -R cinematacms-observability logs"],
+    def test_ownership_reset_never_takes_the_collector_group_off_the_logs(self):
+        # The Collector rereads a log from its first line after losing read access to it,
+        # so handing the logs to www-data's group, even for the length of a recursive chown, duplicates them.
+        commands = self._reset_app_ownership(group_exists=True)
+
+        self.assertEqual(len(commands), 2)
+        self.assertRegex(
+            commands[0], r"^find /home/cinemata/ -path \S+/logs -prune -o -exec chown -h www-data: \{\} \+$"
         )
+        self.assertEqual(commands[1], "chown -R www-data:cinematacms-observability logs")
 
     def test_ownership_reset_without_the_observability_stack(self):
         self.assertEqual(self._reset_app_ownership(group_exists=False), ["chown -R www-data. /home/cinemata/"])
 
-    def test_rollback_keeps_collector_read_access_to_logs(self):
+    def test_rollback_never_takes_the_collector_group_off_the_logs(self):
         script = (PROJECT_ROOT / "rollback.sh").read_text()
-        self.assertLess(
-            script.index('chown -R www-data. "$CINEMATA_HOME/"'),
-            script.index('chgrp -R cinematacms-observability "$REPO_DIR/logs"'),
+
+        self.assertIn(
+            'find "$CINEMATA_HOME/" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +',
+            script,
         )
+        self.assertIn('chown -R www-data:cinematacms-observability "$REPO_DIR/logs"', script)
+        self.assertNotIn("chgrp -R", script)
+
+    def test_rollback_restarts_every_unit_a_deploy_restarts(self):
+        def restarted_application_units(script_path):
+            script = script_path.read_text()
+            return {
+                unit
+                for line in re.findall(r"^systemctl restart (.+)$", script, re.MULTILINE)
+                for unit in line.split()
+                if unit != "nginx"
+            }
+
+        deployed_units = restarted_application_units(RESTART_SCRIPT)
+
+        self.assertIn("celery_email", deployed_units)
+        self.assertEqual(restarted_application_units(PROJECT_ROOT / "rollback.sh"), deployed_units)
 
     def test_restart_can_deploy_an_exact_revision(self):
         revision = "a" * 40

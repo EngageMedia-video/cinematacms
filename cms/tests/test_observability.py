@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -234,15 +235,10 @@ class ObservabilityConfigTests(SimpleTestCase):
             error_spans.append(active_span[-1] if active_span else None)
 
         common_patches = (
-            patch("files.tasks.time.sleep"),
             patch("files.tasks.os.path.exists", return_value=True),
             patch("files.tasks.Media.objects.get", return_value=media),
             patch("files.tasks.Language.objects.filter", return_value=Mock(first=Mock(return_value=Mock()))),
-            patch(
-                "files.tasks.TranscriptionRequest.objects.filter",
-                return_value=Mock(exists=Mock(return_value=False)),
-            ),
-            patch("files.tasks.TranscriptionRequest.objects.create", return_value=request),
+            patch("files.tasks._claim_transcription_request", return_value=request),
             patch("files.tasks.tempfile.TemporaryDirectory", return_value=tempfile.TemporaryDirectory()),
             patch("files.tasks.start_span", side_effect=lambda name, _attributes: TrackedSpan(name)),
             patch("files.tasks.logger.error", side_effect=capture_error),
@@ -256,8 +252,6 @@ class ObservabilityConfigTests(SimpleTestCase):
             common_patches[4],
             common_patches[5],
             common_patches[6],
-            common_patches[7],
-            common_patches[8],
             patch(
                 "files.tasks.subprocess.run",
                 return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b"failed"),
@@ -693,7 +687,7 @@ class QueueDepthTests(SimpleTestCase):
     @override_settings(CELERY_BROKER_URL="redis://broker.test:6379/3")
     def test_queue_depth_reads_the_broker_over_one_connection_and_not_the_cache(self):
         broker = Mock()
-        broker.llen.side_effect = [7, 2]
+        broker.llen.side_effect = lambda name: {"short_tasks": 7, "long_tasks": 2}.get(name, 0)
         adapter = ObservabilityRedisAdapter()
 
         with (
@@ -703,13 +697,56 @@ class QueueDepthTests(SimpleTestCase):
             depths = [adapter.queue_depth("short_tasks"), adapter.queue_depth("long_tasks")]
 
         self.assertEqual(depths, [7, 2])
-        self.assertEqual(broker.llen.call_args_list, [call("short_tasks"), call("long_tasks")])
         connect.assert_called_once_with(
             "redis://broker.test:6379/3",
             socket_connect_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
             socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
         )
         cache_connection.assert_not_called()
+
+    def test_queue_depth_counts_messages_sent_with_a_priority(self):
+        # Celery's Redis transport keeps each priority step of a queue in its own list
+        lists = {"long_tasks": 2, "long_tasks\x06\x166": 5, "long_tasks\x06\x169": 1}
+        broker = Mock()
+        broker.llen.side_effect = lambda name: lists.get(name, 0)
+
+        with patch("cms.redis_telemetry.Redis.from_url", return_value=broker):
+            depth = ObservabilityRedisAdapter().queue_depth("long_tasks")
+
+        self.assertEqual(depth, 8)
+
+
+class QueueDepthRefreshTests(SimpleTestCase):
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks", "long_tasks"])
+    def test_an_unreadable_broker_blanks_every_queue_and_records_the_failure(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", side_effect=[7, ConnectionError()]),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+            patch("files.metrics.record_telemetry_failure") as failure,
+        ):
+            metrics._refresh_queue_depths()
+
+        self.assertEqual(
+            depth.labels.call_args_list,
+            [call(queue="short_tasks"), call(queue="long_tasks")],
+        )
+        written = [args.args[0] for args in depth.labels.return_value.set.call_args_list]
+        self.assertTrue(all(math.isnan(value) for value in written), written)
+        failure.assert_called_once_with("metrics", "celery", "record")
+
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks"])
+    def test_a_readable_broker_writes_the_depth(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", return_value=7),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+        ):
+            metrics._refresh_queue_depths()
+
+        depth.labels.return_value.set.assert_called_once_with(7)
 
 
 class CeleryAndMediaMetricTests(SimpleTestCase):
@@ -887,6 +924,49 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
 
+    def test_lost_worker_is_recorded_as_a_failed_outcome_of_the_tool_operation(self):
+        from celery.exceptions import WorkerLostError
+
+        from files import metrics
+
+        lost = WorkerLostError("Worker exited prematurely: signal 9 (SIGKILL) Job: 3.")
+        for task_name, operation in (
+            ("encode_media", "encoding"),
+            ("create_hls", "hls"),
+            ("whisper_transcribe", "transcription"),
+            ("chunkize_media", "chunking"),
+        ):
+            with self.subTest(task_name=task_name):
+                with (
+                    patch("files.metrics.CELERY_TASKS_TOTAL"),
+                    patch("files.metrics.record_domain_outcome") as domain,
+                ):
+                    metrics._on_task_failure(sender=SimpleNamespace(name=task_name), task_id="lost-1", exception=lost)
+                domain.assert_called_once_with(operation, "failed", "worker_lost")
+
+    def test_task_that_already_recorded_its_failed_outcome_is_not_counted_again(self):
+        from files import metrics
+
+        for task_name in ("encode_media", "create_hls"):
+            with self.subTest(task_name=task_name):
+                with (
+                    patch("files.metrics.CELERY_TASKS_TOTAL"),
+                    patch("files.metrics.record_domain_outcome") as domain,
+                ):
+                    metrics._on_task_failure(
+                        sender=SimpleNamespace(name=task_name), task_id="raised-1", exception=OSError("disk")
+                    )
+                domain.assert_not_called()
+
+    def test_raised_error_of_a_signal_recorded_task_keeps_its_task_exception_reason(self):
+        from files import metrics
+
+        with patch("files.metrics.CELERY_TASKS_TOTAL"), patch("files.metrics.record_domain_outcome") as domain:
+            metrics._on_task_failure(
+                sender=SimpleNamespace(name="whisper_transcribe"), task_id="raised-2", exception=OSError("disk")
+            )
+        domain.assert_called_once_with("transcription", "failed", "task_exception")
+
     def test_hls_command_that_cannot_run_is_recorded_as_a_failed_outcome(self):
         import tempfile
 
@@ -926,6 +1006,12 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
             metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
             metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            metrics._on_task_postrun(
+                sender=sender,
+                task_id="whisper-gone",
+                state="SUCCESS",
+                retval={"outcome": "skipped", "reason_code": "media_not_found"},
+            )
             # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
             metrics._on_task_failure(sender=sender, task_id="whisper-lost")
 
@@ -934,9 +1020,19 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             [
                 call("transcription", "failed", "returned_false"),
                 call("transcription", "succeeded", "none"),
+                call("transcription", "skipped", "media_not_found"),
                 call("transcription", "failed", "task_exception"),
             ],
         )
+
+    def test_whisper_skips_keep_their_reason_codes(self):
+        from files import metrics, tasks
+
+        for skipped in (tasks.WHISPER_SKIPPED_MEDIA_GONE, tasks.WHISPER_SKIPPED_ALREADY_REQUESTED):
+            with self.subTest(**skipped), patch("files.metrics.DOMAIN_OUTCOMES_TOTAL") as outcomes:
+                metrics.record_domain_outcome("transcription", skipped["outcome"], skipped["reason_code"])
+
+                outcomes.labels.assert_called_once_with(operation="transcription", **skipped)
 
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline

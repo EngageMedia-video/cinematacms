@@ -731,6 +731,8 @@ describe('Umami session, device and page-speed reports', () => {
 		'/view?m=public-token&pl=playlist-token',
 		'/view?m=public-token&utm_source=me%40example.org',
 		'/view?m=public-token#comments',
+		'/user/maker',
+		'/user/maker/about',
 	])('does not load the recorder where the browser URL would leak: %s', (url) => {
 		loadPublicPageAt(url);
 		expect(recorderScript()).toBeNull();
@@ -811,5 +813,38 @@ describe('Umami session, device and page-speed reports', () => {
 		expect(track).not.toHaveBeenCalled();
 		listeners.pause();
 		expect(track.mock.calls.map(([build]) => build({}).name)).toEqual(['pause']);
+	});
+});
+
+describe('Umami heatmap preview', () => {
+	// Umami draws a heatmap over the live page loaded in an iframe on its own origin.
+	function loadTrackerFramedBy(ancestorOrigin) {
+		loadTracker({ url: 'https://analytics.example.org/umami', path: '/', media_id: null, nonpublic: false });
+		document.head.querySelectorAll('script[data-website-id]').forEach((script) => script.remove());
+		delete window.CinemataAnalytics;
+		const framedLocation = new Proxy(window.location, {
+			get: (location, key) => (key === 'ancestorOrigins' ? [ancestorOrigin] : Reflect.get(location, key)),
+		});
+		const framedWindow = new Proxy(window, {
+			get(target, key) {
+				if (key === 'top') return {};
+				if (key === 'location') return framedLocation;
+				const value = Reflect.get(target, key);
+				return typeof value === 'function' && /^[a-z]/.test(String(key)) ? value.bind(target) : value;
+			},
+		});
+		new Function('window', 'document', 'Element', source)(framedWindow, document, Element);
+	}
+
+	it('stays silent when Umami frames the page to draw a heatmap', () => {
+		loadTrackerFramedBy('https://analytics.example.org');
+		expect(document.querySelector('script[data-website-id]')).toBeNull();
+		expect(window.CinemataAnalytics).toBeUndefined();
+	});
+
+	it('still tracks a page framed by another site, such as a partner embed', () => {
+		loadTrackerFramedBy('https://partner.example.net');
+		expect(document.querySelector('script[data-website-id="site-id"]')).not.toBeNull();
+		expect(window.CinemataAnalytics).toBeDefined();
 	});
 });

@@ -253,7 +253,7 @@ describe('SingleUploadPage', () => {
 		renderUploadedPage({ canPublishDirectly: true });
 
 		await user.type(screen.getByLabelText('Title'), 'A short title.');
-		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
+		await user.type(screen.getByLabelText('Short Description'), 'A short synopsis.');
 		await user.click(screen.getByRole('button', { name: 'Choose' }));
 		await user.click(screen.getByRole('button', { name: '2024' }));
 
@@ -407,7 +407,7 @@ describe('SingleUploadPage', () => {
 		renderUploadedPage();
 
 		await user.type(screen.getByLabelText('Title'), 'A short title.');
-		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
+		await user.type(screen.getByLabelText('Short Description'), 'A short synopsis.');
 		await user.click(screen.getByRole('button', { name: 'Choose' }));
 		await user.click(screen.getByRole('button', { name: '2024' }));
 

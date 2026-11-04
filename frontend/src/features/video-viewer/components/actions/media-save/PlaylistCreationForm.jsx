@@ -8,6 +8,7 @@ import * as MediaPageActions from '../../../../../static/js/pages/MediaPage/acti
 import { Button } from '../../../../shared/components/Button/Button';
 import { Text } from '../../../../shared/components/Text/Text';
 import { cn } from '../../../../shared/utils/classNames';
+import { PLAYLIST_TITLE_MAX_LENGTH } from '../../../../playlist/utils/playlist';
 
 function extractPlaylistId(url) {
 	if (!url) return null;
@@ -81,6 +82,7 @@ export function PlaylistCreationForm({ onCancel, onPlaylistSave }) {
 					ref={nameInputRef}
 					type="text"
 					placeholder="Enter playlist title..."
+					maxLength={PLAYLIST_TITLE_MAX_LENGTH}
 					value={title}
 					onChange={onTitleChange}
 					className={cn(

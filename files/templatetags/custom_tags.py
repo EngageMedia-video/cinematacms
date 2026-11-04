@@ -1,10 +1,32 @@
+import hashlib
 import os
 import re
+from functools import cache
 from urllib.parse import urlparse
 
 from django import template
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
 
 register = template.Library()
+
+STATIC_VERSION_LENGTH = 12
+
+
+@cache
+def _static_file_version(path):
+    # Cached per process: a deploy restarts the workers, which recomputes it.
+    found = finders.find(path)
+    if not found:
+        raise template.TemplateSyntaxError(f"versioned_static: static file {path!r} not found")
+    with open(found, "rb") as static_file:
+        return hashlib.sha256(static_file.read()).hexdigest()[:STATIC_VERSION_LENGTH]
+
+
+@register.simple_tag
+def versioned_static(path):
+    """Return the static URL with a content version, for a file that is not content-hashed at build time."""
+    return f"{static(path)}?v={_static_file_version(path)}"
 
 
 @register.simple_tag

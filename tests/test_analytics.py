@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -113,8 +114,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         self.assertNotIn("audience_group", config)
         self.assertNotIn("private-token", json.dumps(config))
 
-    def test_signed_in_visitor_is_identified_on_every_tracked_page(self):
-        member = SimpleNamespace(is_anonymous=False, is_authenticated=True, username="maker", advancedUser=True)
+    def _signed_in_configs_on_every_tracked_page(self, user):
         media = {
             "id": str(uuid.uuid4()),
             "type": "image",
@@ -122,6 +122,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
             "revision": str(uuid.uuid4()),
             "instance": None,
         }
+        configs = []
         for setup in (
             lambda request: setattr(request, "analytics_workflow", "media_edit"),
             lambda request: setattr(request, "analytics_media", {**media, "state": "private"}),
@@ -130,16 +131,29 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         ):
             request = RequestFactory().get("/")
             request.resolver_match = SimpleNamespace(url_name="home")
-            request.user = member
+            request.user = user
             setup(request)
-            identity = analytics_context(request)["ANALYTICS"]["identity"]
-            self.assertEqual(identity, {"id": "maker", "audience_group": "trusted"})
+            configs.append(analytics_context(request)["ANALYTICS"])
+        return configs
+
+    def test_signed_in_visitor_is_anonymous_by_default_on_every_tracked_page(self):
+        member = SimpleNamespace(is_anonymous=False, is_authenticated=True, username="maker-handle", advancedUser=True)
+        for config in self._signed_in_configs_on_every_tracked_page(member):
+            self.assertNotIn("identity", config)
+            self.assertNotIn("maker-handle", json.dumps(config))
+
+    @override_settings(ANALYTICS_IDENTIFY_SIGNED_IN_VISITORS=True)
+    def test_opted_in_site_identifies_a_signed_in_visitor_on_every_tracked_page(self):
+        member = SimpleNamespace(is_anonymous=False, is_authenticated=True, username="maker", advancedUser=True)
+        for config in self._signed_in_configs_on_every_tracked_page(member):
+            self.assertEqual(config["identity"], {"id": "maker", "audience_group": "trusted"})
 
         request = RequestFactory().get("/")
         request.resolver_match = SimpleNamespace(url_name="home")
         request.user = AnonymousUser()
         self.assertNotIn("identity", analytics_context(request)["ANALYTICS"])
 
+    @override_settings(ANALYTICS_IDENTIFY_SIGNED_IN_VISITORS=True)
     def test_usernames_sharing_umamis_50_character_prefix_keep_distinct_ids(self):
         ids = []
         for username in ("a" * 60 + "first", "a" * 60 + "second", "b" * 50):
@@ -177,6 +191,14 @@ class AnalyticsTemplateTests(TestCase):
         self.assertNotIn("segment_grant", config)
         # no-referrer makes browsers send Origin: null on form POSTs, which the CSRF origin check rejects.
         self.assertContains(response, '<meta name="referrer" content="same-origin">')
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_tracker_url_changes_with_its_content_so_browsers_drop_a_cached_copy(self):
+        from django.contrib.staticfiles import finders
+
+        with open(finders.find("js/cinemata-analytics.js"), "rb") as tracker:
+            version = hashlib.sha256(tracker.read()).hexdigest()[:12]
+        self.assertContains(self.client.get("/"), f'src="/static/js/cinemata-analytics.js?v={version}"')
 
     @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
     def test_signout_event_reaches_the_page_after_logout(self):
