@@ -7,6 +7,7 @@ import { Button } from '../../../shared/components/Button/Button.jsx';
 import { Icon } from '../../../shared/components/Icon/Icon.jsx';
 import { PopupContent, PopupMain, PopupTrigger, usePopup } from '../../../shared/components/Popup';
 import { Text } from '../../../shared/components/Text/Text.jsx';
+import { originalDownloadFilename } from './originalDownloadFilename';
 
 function downloadOptionsList(siteUrl) {
 	const media_data = MediaPageStore.get('media-data');
@@ -52,7 +53,7 @@ function downloadOptionsList(siteUrl) {
 		link: formatInnerLink(media_data.original_media_url, siteUrl),
 		linkAttr: {
 			target: '_blank',
-			download: media_data.title,
+			download: originalDownloadFilename(media_data.title, media_data.original_media_url),
 		},
 	};
 
