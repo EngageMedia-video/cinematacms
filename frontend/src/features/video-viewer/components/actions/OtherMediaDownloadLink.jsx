@@ -3,11 +3,12 @@ import PropTypes from 'prop-types';
 
 import { CircleIconButton } from '../../../../static/js/components/-NEW-/CircleIconButton';
 import { MaterialIcon } from '../../../../static/js/components/-NEW-/MaterialIcon';
+import { originalDownloadFilename } from './originalDownloadFilename';
 
 export function OtherMediaDownloadLink({ link, title }) {
 	return (
 		<div className="download hidden-only-in-small">
-			<a href={link} target="_blank" download={title} title="Download">
+			<a href={link} target="_blank" download={originalDownloadFilename(title, link)} title="Download">
 				<CircleIconButton type="span">
 					<MaterialIcon type="arrow_downward" />
 				</CircleIconButton>
