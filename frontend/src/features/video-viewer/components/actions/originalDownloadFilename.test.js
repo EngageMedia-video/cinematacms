@@ -26,6 +26,12 @@ describe('originalDownloadFilename', () => {
 		expect(originalDownloadFilename('Untitled', '/media/original/.hidden')).toBe('Untitled');
 	});
 
+	it('does not mistake the uid storage prefix for an extension', () => {
+		expect(
+			originalDownloadFilename('Cover', '/media/original/user/admin/cc7e3816eb2642f78238b5d8bf8ec31f.cover?v=1')
+		).toBe('Cover');
+	});
+
 	it('keeps the title when there is no original URL', () => {
 		expect(originalDownloadFilename('Untitled', undefined)).toBe('Untitled');
 	});
