@@ -72,7 +72,11 @@ Work is complete when all of these conditions hold:
 
 - The task diff contains only the intended changes. Existing user-owned changes
   remain untouched.
-- `make agent-check` passes.
+- `make agent-check` passes. Run it after every edit, before you report the work
+  done.
+- After a frontend edit,
+  `npm --prefix frontend run lint:modern && npm --prefix frontend run lint:legacy`
+  exits 0. See [Frontend checks](CONTRIBUTING.md#frontend-checks).
 - Relevant backend, frontend, migration, build, and workflow checks pass.
 - When the task includes a pull request, the pull request records the commands,
   manual checks, limits, and AI declaration that apply.
