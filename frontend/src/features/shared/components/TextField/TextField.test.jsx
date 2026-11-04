@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { declarationsFor } from '../../../../test/cssDeclarations';
+import textFieldStyles from './TextField.css?raw';
 import { TextField } from './TextField';
 
 describe('TextField', () => {
@@ -169,5 +171,13 @@ describe('TextField', () => {
 		expect(describedBy).toContain('external-description');
 		expect(describedBy).toContain('helper-text');
 		expect(input).toHaveAccessibleDescription('External description Local helper text');
+	});
+
+	// The inset box-shadow mask loses to `focus:ring-0` while focused, and the
+	// 9999s transition only delays Chrome's #E8F0FE autofill background.
+	it('hides the browser autofill background while the field is focused, however long it stays filled', () => {
+		const declarations = declarationsFor(textFieldStyles, ['.field-input', ':-webkit-autofill']);
+
+		expect(declarations['background-clip']).toBe('text');
 	});
 });
