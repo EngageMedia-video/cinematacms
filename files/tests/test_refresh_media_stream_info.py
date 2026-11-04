@@ -102,7 +102,7 @@ class RefreshMediaStreamInfoTests(TestCase):
         )
         self.assertEqual(len(self.probes), 1)
         self.assertIn(f"id={legacy.pk} token={legacy.friendly_token} action=repair result=succeeded", out)
-        self.assertIn("scanned=2 affected=1 repaired=1 failed=0 mode=repair", out)
+        self.assertIn("scanned=2 affected=1 repaired=1 skipped=0 failed=0 mode=repair", out)
         self.assertEqual(err, "")
 
     def test_a_repaired_row_keeps_its_edit_date(self):
@@ -120,7 +120,7 @@ class RefreshMediaStreamInfoTests(TestCase):
 
         out, _ = self._run()
 
-        self.assertIn("scanned=1 affected=0 repaired=0 failed=0 mode=repair", out)
+        self.assertIn("scanned=1 affected=0 repaired=0 skipped=0 failed=0 mode=repair", out)
         self.assertEqual(len(self.probes), 1)
 
     def test_dry_run_lists_the_affected_rows_and_changes_nothing(self):
@@ -132,7 +132,7 @@ class RefreshMediaStreamInfoTests(TestCase):
         self.assertEqual(self._video_info(legacy), COVER_ART)
         self.assertEqual(self.probes, [])
         self.assertIn(f"id={legacy.pk} token={legacy.friendly_token} action=would_repair result=dry_run", out)
-        self.assertIn("scanned=2 affected=1 repaired=0 failed=0 mode=dry_run", out)
+        self.assertIn("scanned=2 affected=1 repaired=0 skipped=0 failed=0 mode=dry_run", out)
 
     def test_reports_a_missing_file_and_repairs_the_next_row(self):
         gone = self._video(COVER_ART, media_file="gone.mp4", store_file=False)
@@ -143,21 +143,67 @@ class RefreshMediaStreamInfoTests(TestCase):
         self.assertEqual(self._video_info(gone), COVER_ART)
         self.assertEqual(self._video_info(legacy)["index"], VIDEO["index"])
         self.assertIn(f"id={gone.pk} token={gone.friendly_token} action=repair result=failed error=", err)
-        self.assertIn("scanned=2 affected=2 repaired=1 failed=1 mode=repair", out)
+        self.assertIn("scanned=2 affected=2 repaired=1 skipped=0 failed=1 mode=repair", out)
 
-    def test_leaves_a_row_alone_when_inspection_finds_no_video_stream(self):
+    def _stored_fields(self, media):
+        media.refresh_from_db()
+        return (media.media_info, media.media_type, media.encoding_status, media.duration, media.video_height)
+
+    def test_reports_audio_only_when_inspection_finds_only_the_cover_art_and_audio(self):
         legacy = self._video(COVER_ART)
-        before = (legacy.media_info, legacy.media_type, legacy.encoding_status, legacy.duration, legacy.video_height)
+        before = self._stored_fields(legacy)
 
         out, err = self._run(streams=(COVER_ART, AUDIO))
 
+        self.assertEqual(self._stored_fields(legacy), before)
+        self.assertIn(
+            f"id={legacy.pk} token={legacy.friendly_token} action=repair result=failed error=inspection found audio only",
+            err,
+        )
+        self.assertIn("scanned=1 affected=1 repaired=0 skipped=0 failed=1 mode=repair", out)
+
+    def test_leaves_a_row_alone_when_inspection_finds_no_stream_at_all(self):
+        legacy = self._video(COVER_ART)
+        before = self._stored_fields(legacy)
+
+        out, err = self._run(streams=())
+
+        self.assertEqual(self._stored_fields(legacy), before)
+        self.assertIn(
+            f"id={legacy.pk} token={legacy.friendly_token} action=repair result=failed "
+            "error=inspection did not find a video stream",
+            err,
+        )
+        self.assertIn("scanned=1 affected=1 repaired=0 skipped=0 failed=1 mode=repair", out)
+
+    def test_skips_a_row_whose_file_was_replaced_during_inspection(self):
+        legacy = self._video(COVER_ART)
+        replacement = {
+            "media_file": "replacement.mp4",
+            "media_info": stored_info(VIDEO),
+            "duration": 7,
+            "video_height": 720,
+        }
+        inspect = Media.set_media_type
+
+        def replace_source_during_inspection(media, save=True):
+            inspect(media, save=save)
+            Media.objects.filter(pk=media.pk).update(**replacement)
+
+        with patch.object(Media, "set_media_type", replace_source_during_inspection):
+            out, err = self._run()
+
         legacy.refresh_from_db()
         self.assertEqual(
-            (legacy.media_info, legacy.media_type, legacy.encoding_status, legacy.duration, legacy.video_height),
-            before,
+            (legacy.media_file.name, legacy.media_info, legacy.duration, legacy.video_height),
+            tuple(replacement.values()),
         )
-        self.assertIn(f"id={legacy.pk} token={legacy.friendly_token} action=repair result=failed error=", err)
-        self.assertIn("scanned=1 affected=1 repaired=0 failed=1 mode=repair", out)
+        self.assertIn(
+            f"id={legacy.pk} token={legacy.friendly_token} action=repair result=skipped "
+            "error=media file changed during inspection",
+            err,
+        )
+        self.assertIn("scanned=1 affected=1 repaired=0 skipped=1 failed=0 mode=repair", out)
 
     def test_skips_rows_without_usable_stored_info(self):
         for media_info in ("", "not json", json.dumps({"video_info": {}}), json.dumps([])):
@@ -165,5 +211,5 @@ class RefreshMediaStreamInfoTests(TestCase):
 
         out, _ = self._run()
 
-        self.assertIn("scanned=4 affected=0 repaired=0 failed=0 mode=repair", out)
+        self.assertIn("scanned=4 affected=0 repaired=0 skipped=0 failed=0 mode=repair", out)
         self.assertEqual(self.probes, [])
