@@ -24,14 +24,27 @@ Then repair them:
 uv run python manage.py refresh_media_stream_info
 ```
 
-Each row prints one line with its id and token. A row whose file is missing, or
-whose inspection finds no video stream, prints `result=failed` with the reason
-on stderr and is left unchanged. The run ends with
-`scanned=N affected=N repaired=N failed=N mode=repair`.
+Each row prints one line with its id and token. A row the command could not
+repair prints `result=failed` or `result=skipped` with the reason on stderr and
+is left unchanged. The run ends with
+`scanned=N affected=N repaired=N skipped=N failed=N mode=repair`.
+
+The failure reasons are:
+
+- `media file is missing`. The row stays selected until its file is restored.
+- `inspection found audio only`. The file is an audio file whose embedded cover
+  art was stored as its video stream. The command does not reclassify media, so
+  the row stays listed until someone reviews it and reclassifies it by hand.
+- `inspection did not find a video stream`. The file is unreadable or has no
+  usable stream. The row stays selected until its file is replaced.
+
+A row reports `result=skipped` with `media file changed during inspection` when
+its original was replaced while the command inspected it. The command keeps the
+replacement's stored info. The next run selects the row again only if that
+stored info still points at an attached picture.
 
 Rerunning the command is safe. A repaired row no longer matches, so a second
-run reports `affected=0`. A failed row stays selected until its file is
-restored.
+run reports `affected=0`.
 
 Repairing the stored info does not retry the encodes that already failed.
 Start a new encode for each repaired video afterwards, for example through the

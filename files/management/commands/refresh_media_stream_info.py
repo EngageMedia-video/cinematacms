@@ -11,6 +11,7 @@ import logging
 import os
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from cms.error_tracking import capture_unexpected_exception
 from files.models import Media
@@ -18,6 +19,10 @@ from files.models import Media
 logger = logging.getLogger(__name__)
 
 INSPECTED_FIELDS = ["media_info", "duration", "video_height"]
+
+SUCCEEDED = "succeeded"
+SKIPPED = "skipped"
+FAILED = "failed"
 
 
 def stored_video_stream_is_attached_picture(media_info):
@@ -28,14 +33,21 @@ def stored_video_stream_is_attached_picture(media_info):
 
 
 def refresh_stream_info(media):
-    """Re-inspect the original file. Return None when saved, else why the row was left as is."""
-    if not media.media_file or not os.path.isfile(media.media_file.path):
-        return "media file is missing"
+    """Re-inspect the original file. Return (SUCCEEDED, None), or (SKIPPED or FAILED, reason) when left as is."""
+    inspected_file = media.media_file.name
+    if not inspected_file or not os.path.isfile(media.media_file.path):
+        return FAILED, "media file is missing"
     media.set_media_type(save=False)
+    if media.media_type == "audio":
+        return FAILED, "inspection found audio only"
     if media.media_type != "video":
-        return "inspection did not find a video stream"
-    media.save(update_fields=INSPECTED_FIELDS)
-    return None
+        return FAILED, "inspection did not find a video stream"
+    with transaction.atomic():
+        row = Media.objects.select_for_update().filter(pk=media.pk, media_file=inspected_file)
+        if not row.exists():
+            return SKIPPED, "media file changed during inspection"
+        media.save(update_fields=INSPECTED_FIELDS)
+    return SUCCEEDED, None
 
 
 class Command(BaseCommand):
@@ -58,23 +70,26 @@ class Command(BaseCommand):
             if stored_video_stream_is_attached_picture(media_info):
                 affected.append((pk, friendly_token))
 
-        repaired = failed = 0
+        totals = {SUCCEEDED: 0, SKIPPED: 0, FAILED: 0}
         for pk, friendly_token in affected:
             if dry_run:
                 self.stdout.write(f"id={pk} token={friendly_token} action=would_repair result=dry_run")
                 continue
             try:
-                reason = refresh_stream_info(Media.objects.get(pk=pk))
+                result, reason = refresh_stream_info(Media.objects.get(pk=pk))
             except Exception as error:
                 logger.exception("Could not refresh stream info for media %s", friendly_token)
                 capture_unexpected_exception(error)
-                reason = str(error) or type(error).__name__
-            if reason:
-                failed += 1
-                self.stderr.write(f"id={pk} token={friendly_token} action=repair result=failed error={reason}")
-                continue
-            repaired += 1
-            self.stdout.write(f"id={pk} token={friendly_token} action=repair result=succeeded")
+                result, reason = FAILED, str(error) or type(error).__name__
+            totals[result] += 1
+            line = f"id={pk} token={friendly_token} action=repair result={result}"
+            if result == SUCCEEDED:
+                self.stdout.write(line)
+            else:
+                self.stderr.write(f"{line} error={reason}")
 
         mode = "dry_run" if dry_run else "repair"
-        self.stdout.write(f"scanned={scanned} affected={len(affected)} repaired={repaired} failed={failed} mode={mode}")
+        self.stdout.write(
+            f"scanned={scanned} affected={len(affected)} repaired={totals[SUCCEEDED]} "
+            f"skipped={totals[SKIPPED]} failed={totals[FAILED]} mode={mode}"
+        )
