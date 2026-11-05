@@ -68,6 +68,7 @@
         });
     }
     rememberMediaPage();
+    const heroTitles = new Map();
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -101,7 +102,8 @@
         if (mediaId && /^[0-9a-f-]{36}$/.test(payload.data?.revision || '')) data.revision = payload.data.revision;
         const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
         const viewedPage = !interactionPath && ['page', 'embed'].includes(data.context) ? mediaPage : null;
-        if (viewedPage?.title) data.media_title = viewedPage.title;
+        const heroTitle = interactionPath === '/media/hero' && data.context === 'hero' ? heroTitles.get(mediaId) : null;
+        if (viewedPage?.title || heroTitle) data.media_title = viewedPage?.title || heroTitle;
         if (payload.name === 'playback_start' && ['deliberate', 'autoplay', 'unknown'].includes(payload.data?.initiation)) {
             data.initiation = payload.data.initiation;
         }
@@ -151,6 +153,8 @@
         // Fixed now: events wait for Umami to load, and a playlist can move to
         // its next item in place before then.
         const mediaId = media?.id || config.media_id;
+        const heroTitle = media?.context === 'hero' && media.state === 'public' ? mediaTitle(media.title) : null;
+        if (heroTitle) heroTitles.set(media.id, heroTitle);
         const event = {
             name,
             tag: mediaId ? `media:${mediaId}` : tag,

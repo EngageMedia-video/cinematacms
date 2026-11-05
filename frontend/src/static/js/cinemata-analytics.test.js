@@ -692,6 +692,38 @@ describe('Public media named in Umami page and event reports', () => {
 	});
 
 	it.each([
+		['public', { state: 'public', title: 'Hero film' }, 'Hero film'],
+		['unlisted', { state: 'unlisted', title: 'Hero cut' }, undefined],
+		['stateless', { title: 'Hero cut' }, undefined],
+	])('names %s home hero plays only when the hero media is public', (_label, item, mediaTitle) => {
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+		window.CinemataAnalytics.track(
+			'playback_start',
+			{ initiation: 'deliberate' },
+			{ id: nextId, type: 'video', context: 'hero', revision: mediaId, ...item }
+		);
+
+		const [event] = sent(track);
+		expect(event).toMatchObject({ name: 'playback_start', url: '/media/hero', title: 'Media' });
+		expect(event.data.media_id).toBe(nextId);
+		expect(event.data.media_title).toBe(mediaTitle);
+	});
+
+	it('keeps a hero title on hero events, not on playlist or workflow events of the same media', () => {
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+		const hero = { id: nextId, type: 'video', revision: mediaId, state: 'public', title: 'Hero film' };
+		window.CinemataAnalytics.track('play', {}, { ...hero, context: 'hero' });
+		window.CinemataAnalytics.track('playlist_remove', {}, { ...hero, context: 'playlist' });
+		window.CinemataAnalytics.track('play', {}, { ...hero, context: 'workflow' });
+
+		expect(sent(track).map((event) => [event.url, event.data.media_title])).toEqual([
+			['/media/hero', 'Hero film'],
+			['/media/playlist', undefined],
+			['/media/workflow', undefined],
+		]);
+	});
+
+	it.each([
 		['a non-string title', { title: 42 }, 'Media', undefined],
 		['an empty title', { title: '' }, 'Media', undefined],
 		['a long title', { title: 'x'.repeat(600) }, 'x'.repeat(500), 'x'.repeat(500)],

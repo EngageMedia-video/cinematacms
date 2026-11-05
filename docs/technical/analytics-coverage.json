@@ -72,7 +72,7 @@
         "previous"
       ],
       "trigger": "A player state changes; coverage milestones occur once per play. Seeking is not watched coverage.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page, embed or home hero the event carries the media title as media_title and a page or embed view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",

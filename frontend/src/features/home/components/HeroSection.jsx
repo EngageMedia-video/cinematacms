@@ -266,6 +266,8 @@ function Player() {
 												context: 'hero',
 												revision: media.hero_playback.analytics_revision,
 												measurement_token: media.hero_playback.measurement_token,
+												state: media.state,
+												title: media.title,
 											}
 										: null
 								}
