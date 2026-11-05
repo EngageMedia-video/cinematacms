@@ -613,6 +613,158 @@ describe('Cinemata Umami privacy boundary', () => {
 	});
 });
 
+describe('Public media named in Umami page and event reports', () => {
+	const nextId = '87654321-4321-4321-8321-cba987654321';
+	const publicFilm = { nonpublic: false, path: '/media/view', title: 'Rivers of Java' };
+	const tracker = () => document.querySelector('script[data-before-send="cinemataAnalyticsBeforeSend"]');
+	const sent = (track) =>
+		track.mock.calls.map(([value]) =>
+			window.cinemataAnalyticsBeforeSend('event', 'function' === typeof value ? value({}) : value)
+		);
+	const report = (event) => [event.name || 'pageview', event.url, event.title, event.data.media_title];
+
+	afterEach(() => window.history.replaceState(null, '', '/'));
+
+	it.each([
+		[publicFilm, '/media/view', 'Rivers of Java'],
+		[{ ...publicFilm, path: '/media/embed', context: 'embed' }, '/media/embed', 'Rivers of Java'],
+		[{ nonpublic: true }, '/media/view', 'Media'],
+	])('names the page view and media view of %j', (config, url, title) => {
+		const track = loadTracker(config, false);
+		tracker().onload();
+
+		const events = sent(track).filter((event) => !event.name || event.name === 'media_view');
+		expect(events.map((event) => [event.name || 'pageview', event.url, event.title])).toEqual([
+			['media_view', url, title],
+			['pageview', url, title],
+		]);
+	});
+
+	it('keeps a title out of nonpublic media even when the page supplies one', () => {
+		const track = loadTracker({ nonpublic: true, path: '/media/view', title: 'Unlisted cut' });
+		window.CinemataAnalytics.track('playback_start', { initiation: 'deliberate' });
+
+		const [event] = sent(track);
+		expect(event).toMatchObject({ url: '/media/view', title: 'Media' });
+		expect(event.data).not.toHaveProperty('media_title');
+		expect(JSON.stringify(event)).not.toContain('Unlisted cut');
+	});
+
+	it('ranks public plays by title in Event data', () => {
+		const track = loadTracker(publicFilm);
+		window.CinemataAnalytics.track('playback_start', { initiation: 'deliberate' });
+		expect(sent(track)[0]).toMatchObject({
+			name: 'playback_start',
+			url: '/media/view',
+			title: 'Rivers of Java',
+			data: { media_id: mediaId, media_title: 'Rivers of Java', initiation: 'deliberate' },
+		});
+	});
+
+	it('leaves nonpublic plays unnamed in Event data', () => {
+		const track = loadTracker({ nonpublic: true });
+		window.CinemataAnalytics.track('playback_start', { initiation: 'deliberate' });
+		expect(sent(track)[0]).toMatchObject({ url: '/media/view', title: 'Media', data: { media_id: mediaId } });
+		expect(sent(track)[0].data).not.toHaveProperty('media_title');
+	});
+
+	it('does not name hero, playlist, workflow or private activity', () => {
+		const track = loadTracker(publicFilm);
+		for (const context of ['hero', 'playlist', 'workflow'])
+			window.CinemataAnalytics.track('play', {}, { id: mediaId, type: 'video', context });
+		window.CinemataAnalytics.track('journal_create');
+		const forged = window.cinemataAnalyticsBeforeSend('event', {
+			name: 'play',
+			url: '/media/hero',
+			tag: `media:${mediaId}`,
+			data: { context: 'hero', media_title: 'Forged' },
+		});
+
+		const events = [...sent(track), forged];
+		expect(events.map((event) => [event.url, event.title])).toEqual([
+			['/media/hero', 'Media'],
+			['/media/playlist', 'Media'],
+			['/media/workflow', 'Media'],
+			['/page/journal', 'Page'],
+			['/media/hero', 'Media'],
+		]);
+		for (const event of events) expect(event.data).not.toHaveProperty('media_title');
+	});
+
+	it.each([
+		['a non-string title', { title: 42 }, 'Media', undefined],
+		['an empty title', { title: '' }, 'Media', undefined],
+		['a long title', { title: 'x'.repeat(600) }, 'x'.repeat(500), 'x'.repeat(500)],
+	])('bounds %s to what Umami stores', (_label, overrides, title, mediaTitle) => {
+		const track = loadTracker({ ...publicFilm, ...overrides });
+		window.CinemataAnalytics.track('playback_start');
+
+		const [event] = sent(track);
+		expect(event.title).toBe(title);
+		expect(event.data.media_title).toBe(mediaTitle);
+	});
+
+	it.each([
+		[
+			'a public item from a nonpublic one',
+			{ nonpublic: true },
+			{ state: 'public', title: 'Second film' },
+			['/media/view', 'Second film', 'Second film'],
+		],
+		[
+			'a nonpublic item from a public one',
+			publicFilm,
+			{ state: 'unlisted', title: 'Unlisted cut' },
+			['/media/view', 'Media', undefined],
+		],
+		[
+			'a public embed item',
+			{ ...publicFilm, path: '/media/embed', context: 'embed' },
+			{ state: 'public', title: 'Second film' },
+			['/media/embed', 'Second film', 'Second film'],
+		],
+	])('names %s played in place', (_label, config, item, [url, title, mediaTitle]) => {
+		const track = loadTracker(config);
+
+		window.CinemataAnalytics.switchMedia({ id: nextId, type: 'video', revision: mediaId, ...item });
+		window.CinemataAnalytics.track('playback_start');
+
+		const events = sent(track);
+		expect(events.map((event) => event.name || 'pageview')).toEqual(['pageview', 'media_view', 'playback_start']);
+		for (const event of events)
+			expect([event.url, event.title, event.data.media_title]).toEqual([url, title, mediaTitle]);
+		expect(JSON.stringify(events)).not.toContain('Unlisted cut');
+	});
+
+	it('keeps a play recorded before Umami loaded on the item it happened on', () => {
+		window.history.replaceState(null, '', '/view?m=Ab3dE6gH9&utm_source=newsletter');
+		const track = loadTracker({ ...publicFilm, audience_group: 'regular' });
+		delete window.umami;
+
+		window.CinemataAnalytics.track('playback_start', { initiation: 'deliberate' });
+		window.CinemataAnalytics.switchMedia({
+			id: nextId,
+			type: 'video',
+			state: 'public',
+			revision: mediaId,
+			audience_group: 'regular',
+			title: 'Second film',
+		});
+		window.CinemataAnalytics.track('playback_start', { initiation: 'deliberate' });
+		window.umami = { track };
+		[...document.head.querySelectorAll('script[data-before-send="cinemataAnalyticsBeforeSend"]')].pop().onload();
+
+		expect(sent(track).map(report)).toEqual([
+			['pageview', '/media/view?utm_source=newsletter', 'Rivers of Java', 'Rivers of Java'],
+			['playback_start', '/media/view', 'Rivers of Java', 'Rivers of Java'],
+			['pageview', '/media/view', 'Second film', 'Second film'],
+			['page_view', '/media/view', 'Second film', 'Second film'],
+			['media_view', '/media/view', 'Second film', 'Second film'],
+			['playback_start', '/media/view', 'Second film', 'Second film'],
+		]);
+	});
+});
+
 describe('Umami session, device and page-speed reports', () => {
 	const identity = { id: 'maker', audience_group: 'trusted' };
 	const browserFields = { screen: '1440x900', language: 'en-US', id: 'maker' };
