@@ -8,9 +8,10 @@ from django.utils import timezone
 
 from files.community_impact_validators import GENERIC_TRUSTED_URL_ERROR
 from files.methods import can_manage_film_impact
-from files.models import CommunityImpact, Playlist, PlaylistMedia
+from files.models import CommunityImpact, Media, Playlist, PlaylistMedia
 from files.serializers import CommunityImpactSerializer, ManageCommunityImpactSerializer, SingleMediaSerializer
 from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
+from notifications.models import Notification
 
 
 class CommunityImpactModelTests(TestCase):
@@ -399,6 +400,123 @@ class CommunityImpactEndpointTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+
+class CommunityImpactOwnerNotificationTests(TestCase):
+    """Issue #866: the filmmaker learns about each record added to their film."""
+
+    def setUp(self):
+        self.client = Client()
+        self.filmmaker = create_test_user(
+            username="riverfilmmaker", password="testpass123", email="riverfilmmaker@example.com"
+        )
+        self.media = create_test_media(self.filmmaker)
+        Media.objects.filter(pk=self.media.pk).update(title="River Voices")
+        self.media.refresh_from_db()
+        self.submitter = create_test_user(username="screeningorg", password="testpass123")
+        self.url = f"/api/v1/media/{self.media.friendly_token}/community-impacts"
+
+    def _submit(self, username, **fields):
+        self.client.login(username=username, password="testpass123")
+        data = {
+            "category": CommunityImpact.SCREENING,
+            "title": "Village hall screening",
+            "event_date": "2026-05-29",
+            "url": "",
+        }
+        data.update(fields)
+        return self.client.post(self.url, data=data, content_type="application/json")
+
+    def test_submission_notifies_filmmaker_with_record_context_and_film_link(self):
+        response = self._submit("screeningorg")
+
+        self.assertEqual(response.status_code, 201)
+        impact = CommunityImpact.objects.get(media=self.media)
+        notification = Notification.objects.get(recipient=self.filmmaker)
+        self.assertEqual(notification.notification_type, "community_impact")
+        self.assertEqual(notification.actor, self.submitter)
+        self.assertEqual(
+            notification.message,
+            "screeningorg added a Community Impact record to 'River Voices': "
+            'Screened In "Village hall screening" (29 May 2026), pending review',
+        )
+        self.assertEqual(notification.action_url, f"/view?m={self.media.friendly_token}")
+        self.assertEqual(notification.metadata["impact_uid"], str(impact.uid))
+
+    def test_auto_approved_submission_tells_filmmaker_the_record_is_public(self):
+        create_test_user(username="festivalcurator", password="testpass123", is_curator=True)
+
+        response = self._submit("festivalcurator", category=CommunityImpact.FEATURED, title="Asia Docs Festival")
+
+        self.assertEqual(response.status_code, 201)
+        notification = Notification.objects.get(recipient=self.filmmaker)
+        self.assertEqual(
+            notification.message,
+            "festivalcurator added a Community Impact record to 'River Voices': "
+            'Featured In "Asia Docs Festival" (29 May 2026), now public',
+        )
+
+    def test_each_record_from_the_same_submitter_gets_its_own_notification(self):
+        self._submit("screeningorg", title="Village hall screening")
+        self._submit("screeningorg", title="Riverside school screening")
+
+        messages = set(Notification.objects.filter(recipient=self.filmmaker).values_list("message", flat=True))
+        self.assertEqual(
+            messages,
+            {
+                "screeningorg added a Community Impact record to 'River Voices': "
+                'Screened In "Village hall screening" (29 May 2026), pending review',
+                "screeningorg added a Community Impact record to 'River Voices': "
+                'Screened In "Riverside school screening" (29 May 2026), pending review',
+            },
+        )
+
+    def test_filmmaker_adding_a_record_to_their_own_film_is_not_notified(self):
+        response = self._submit("riverfilmmaker")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(Notification.objects.filter(recipient=self.filmmaker).exists())
+
+    @patch("notifications.tasks.enqueue")
+    def test_filmmaker_is_emailed_by_default(self, mock_enqueue):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._submit("screeningorg")
+
+        self.assertEqual(response.status_code, 201)
+        mock_enqueue.assert_called_once()
+        envelope = mock_enqueue.call_args.args[0]
+        self.assertEqual(envelope.recipient, "riverfilmmaker@example.com")
+        self.assertIn('Screened In "Village hall screening" (29 May 2026), pending review', envelope.subject)
+
+    def test_filmmaker_who_turned_the_notification_off_is_not_notified(self):
+        self.client.login(username="riverfilmmaker", password="testpass123")
+        preferences = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            data={"on_community_impact": "none"},
+            content_type="application/json",
+        )
+        self.assertEqual(preferences.status_code, 200)
+
+        response = self._submit("screeningorg")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(Notification.objects.filter(recipient=self.filmmaker).exists())
+
+    def test_filmmaker_is_notified_when_every_field_is_at_its_maximum_length(self):
+        film_title = ("River Voices " * 8)[:100]
+        Media.objects.filter(pk=self.media.pk).update(title=film_title)
+        long_username = "s" * 150
+        create_test_user(username=long_username, password="testpass123")
+        record_title = ("Village hall screening " * 9)[:200]
+
+        response = self._submit(long_username, title=record_title)
+
+        self.assertEqual(response.status_code, 201)
+        message = Notification.objects.get(recipient=self.filmmaker).message
+        self.assertLessEqual(len(message), 500)
+        self.assertTrue(message.startswith(f"{long_username} added a Community Impact record to '{film_title}': "))
+        self.assertIn('Screened In "Village hall screening Village hall screening', message)
+        self.assertTrue(message.endswith("(29 May 2026), pending review"))
 
 
 class ManageCommunityImpactTests(TestCase):

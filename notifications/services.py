@@ -2,7 +2,8 @@ import logging
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from django.utils import dateformat, timezone
+from django.utils.text import Truncator
 
 from .models import (
     Notification,
@@ -98,9 +99,11 @@ class NotificationService:
         # Mentions are exempt: action_url is the same for every comment on a
         # film, so the window would swallow a second mention of the same person
         # in a different comment. on_mention() keys on the comment instead.
+        # Community Impact is exempt for the same reason: each call is a
+        # distinct record, and the filmmaker must hear about every one.
         if (
             actor
-            and notification_type != NotificationType.MENTION
+            and notification_type not in (NotificationType.MENTION, NotificationType.COMMUNITY_IMPACT)
             and cls._is_duplicate(recipient, actor, notification_type, action_url)
         ):
             return None
@@ -360,6 +363,32 @@ class NotificationService:
                 "friendly_token": media.friendly_token,
                 "playlist_id": playlist.id,
                 "playlist_title": playlist.title,
+            },
+        )
+
+    @classmethod
+    def on_community_impact(cls, actor, impact):
+        from files.models import CommunityImpact
+
+        media = impact.media
+        event_date = dateformat.format(impact.event_date, "j M Y")
+        visibility = "now public" if impact.status == CommunityImpact.APPROVED else "pending review"
+        # A 200-character record title with a maximum-length username and film
+        # title would overflow Notification.message (500); the rest is bounded.
+        record_title = Truncator(impact.title).chars(150)
+        return cls._create_notification(
+            recipient=media.user,
+            actor=actor,
+            notification_type=NotificationType.COMMUNITY_IMPACT,
+            message=(
+                f"{actor.username} added a Community Impact record to '{media.title}': "
+                f'{impact.get_category_display()} "{record_title}" ({event_date}), {visibility}'
+            ),
+            action_url=f"/view?m={media.friendly_token}",
+            metadata={
+                "media_id": media.id,
+                "friendly_token": media.friendly_token,
+                "impact_uid": str(impact.uid),
             },
         )
 

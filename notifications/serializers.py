@@ -60,4 +60,5 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
             "on_mention",
             "on_new_media_from_following",
             "on_added_to_playlist",
+            "on_community_impact",
         ]
