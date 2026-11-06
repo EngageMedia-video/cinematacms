@@ -54,13 +54,21 @@
         };
     }
     let audienceGroup = audienceFor(config.audience_group);
-    // Each media item keeps the privacy context it was viewed with, for events
+    // Umami stores at most 500 characters of a page title or an event data string.
+    const mediaTitle = (title) => typeof title === 'string' && title ? Array.from(title).slice(0, 500).join('') : null;
+    // Each media item keeps the page context it was viewed with, for events
     // that wait for Umami to load while a playlist moves on in place.
-    const mediaPrivacy = new Map();
-    function rememberMediaPrivacy() {
-        if (config.media_id) mediaPrivacy.set(config.media_id, { audienceGroup, referrer, nonpublic: !!config.nonpublic });
+    const mediaPages = new Map();
+    function rememberMediaPage() {
+        if (config.media_id) mediaPages.set(config.media_id, {
+            title: config.nonpublic ? null : mediaTitle(config.title),
+            audienceGroup,
+            referrer,
+            nonpublic: !!config.nonpublic,
+        });
     }
-    rememberMediaPrivacy();
+    rememberMediaPage();
+    const heroTitles = new Map();
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -74,7 +82,7 @@
             website: config.website_id,
             hostname: window.location.hostname,
             url: config.path,
-            title: config.media_id ? 'Media' : 'Page',
+            title: mediaPages.get(config.media_id)?.title || (config.media_id ? 'Media' : 'Page'),
             ...browserFields(payload),
         };
         if (type === 'identify') return identity ? { ...page, data: { audience_group: identity.audience_group } } : false;
@@ -84,13 +92,18 @@
         if (payload.name && !eventName.test(payload.name)) return false;
         const privatePath = Object.hasOwn(privateActions, payload.name) ? privateActions[payload.name] : null;
         const mediaId = privatePath ? null : /^media:([0-9a-f-]{36})$/.exec(payload.tag || '')?.[1];
-        const privacy = (mediaId && mediaPrivacy.get(mediaId)) || { audienceGroup, referrer, nonpublic: config.nonpublic };
+        const mediaPage = mediaId ? mediaPages.get(mediaId) : null;
+        const privacy = mediaPage || { audienceGroup, referrer, nonpublic: config.nonpublic };
         const data = mediaId ? {
             media_id: mediaId,
             media_type: ['video', 'audio', 'image', 'pdf', 'document'].includes(payload.data?.media_type) ? payload.data.media_type : 'other',
             context: ['page', 'embed', 'hero', 'playlist', 'workflow'].includes(payload.data?.context) ? payload.data.context : 'page',
         } : {};
         if (mediaId && /^[0-9a-f-]{36}$/.test(payload.data?.revision || '')) data.revision = payload.data.revision;
+        const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
+        const viewedPage = !interactionPath && ['page', 'embed'].includes(data.context) ? mediaPage : null;
+        const heroTitle = interactionPath === '/media/hero' && data.context === 'hero' ? heroTitles.get(mediaId) : null;
+        if (viewedPage?.title || heroTitle) data.media_title = viewedPage?.title || heroTitle;
         if (payload.name === 'playback_start' && ['deliberate', 'autoplay', 'unknown'].includes(payload.data?.initiation)) {
             data.initiation = payload.data.initiation;
         }
@@ -118,11 +131,10 @@
         if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
         const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
-        const interactionPath = mediaId &&['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
-            title: mediaId ? 'Media' : 'Page',
+            title: viewedPage?.title || (mediaId ? 'Media' : 'Page'),
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
@@ -141,6 +153,8 @@
         // Fixed now: events wait for Umami to load, and a playlist can move to
         // its next item in place before then.
         const mediaId = media?.id || config.media_id;
+        const heroTitle = media?.context === 'hero' && media.state === 'public' ? mediaTitle(media.title) : null;
+        if (heroTitle) heroTitles.set(media.id, heroTitle);
         const event = {
             name,
             tag: mediaId ? `media:${mediaId}` : tag,
@@ -185,11 +199,12 @@
         config.media_id = media.id;
         config.media_type = media.type;
         config.nonpublic = media.state !== 'public';
+        config.title = media.title;
         config.revision = media.revision;
         config.measurement_token = media.measurement_token || null;
         audienceGroup = audienceFor(media.audience_group);
         referrer = config.nonpublic ? '' : `${window.location.protocol}//${window.location.hostname}/`;
-        rememberMediaPrivacy();
+        rememberMediaPage();
         window.CinemataAnalytics.mediaId = media.id;
         if (config.url && config.website_id && !hasDoNotTrack()) {
             const view = currentPageview();

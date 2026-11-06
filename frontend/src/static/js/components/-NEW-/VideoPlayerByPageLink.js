@@ -218,6 +218,8 @@ export function VideoPlayerByPageLink(props) {
 									context: 'hero',
 									revision: data.analytics_revision,
 									measurement_token: data.hero_measurement_token,
+									state: data.state,
+									title: data.title,
 								}
 							: null
 					);
