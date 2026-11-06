@@ -356,6 +356,11 @@ export function Dropdown({
 							openMenuWithFocus(normalizedOptions.length - 1);
 						}
 
+						if (event.key === 'Escape' && open) {
+							event.preventDefault();
+							setOpen(false);
+						}
+
 						handleTypeaheadKey(event);
 					}}
 					onFocus={() => {

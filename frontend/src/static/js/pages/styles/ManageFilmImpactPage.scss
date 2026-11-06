@@ -203,6 +203,13 @@
 		font-weight: 400;
 	}
 
+	&__hint {
+		margin: -10px 0 0;
+		font-size: 13px;
+		font-weight: 400;
+		opacity: 0.7;
+	}
+
 	&__success {
 		color: var(--success-color);
 		font-size: 13px;

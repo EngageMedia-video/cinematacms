@@ -113,6 +113,7 @@ class CommunityImpactAdmin(admin.ModelAdmin):
         "status",
         "media",
         "user",
+        "year",
         "event_date",
         "add_date",
     ]
@@ -133,7 +134,23 @@ class CommunityImpactAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {"fields": ("media", "user", "category", "title", "details")}),
-        ("Event", {"fields": ("event_date", "url", "url_display")}),
+        ("Event", {"fields": ("event_date", "year", "url", "url_display")}),
+        (
+            "Category details",
+            {
+                "fields": (
+                    "is_online",
+                    "city",
+                    "country",
+                    "organiser",
+                    "organiser_private",
+                    "creator",
+                    "publication",
+                    "medium",
+                    "award_result",
+                ),
+            },
+        ),
         (
             "Audit",
             {
