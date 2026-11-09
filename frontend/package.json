@@ -25,20 +25,20 @@
 		"lint:legacy": "eslint src/static/js/pages/ src/static/js/components/"
 	},
 	"devDependencies": {
-		"@storybook/addon-docs": "^10.6.5",
-		"@storybook/react-vite": "^10.6.5",
+		"@storybook/addon-docs": "^10.6.6",
+		"@storybook/react-vite": "^10.6.6",
 		"@svgr/plugin-svgo": "^8.1.0",
-		"@tailwindcss/vite": "^4.3.3",
+		"@tailwindcss/vite": "^4.3.4",
 		"@testing-library/jest-dom": "^7.0.1",
 		"@testing-library/react": "^16.3.3",
 		"@testing-library/user-event": "^14.6.8",
-		"@vitejs/plugin-react": "^6.1.2",
-		"@vitest/coverage-v8": "5.0.5",
+		"@vitejs/plugin-react": "^6.2.1",
+		"@vitest/coverage-v8": "5.1.0",
 		"autoprefixer": "^10.6.2",
 		"eslint": "^10.14.0",
 		"eslint-plugin-react-hooks": "^7.1.1",
 		"globals": "^17.14.0",
-		"jsdom": "^30.1.3",
+		"jsdom": "^31.0.0",
 		"prop-types": "^15.8.1",
 		"sass": "^1.107.1",
 		"storybook": "^10.6.5",
@@ -47,7 +47,7 @@
 		"vite": "^8.3.5",
 		"vite-plugin-static-copy": "^4.1.1",
 		"vite-plugin-svgr": "^5.2.0",
-		"vitest": "5.0.5"
+		"vitest": "5.1.0"
 	},
 	"overrides": {
 		"@xmldom/xmldom": "0.8.15",
@@ -88,8 +88,8 @@
 	},
 	"dependencies": {
 		"@mediacms/media-player": "file:packages/media-player",
-		"@tanstack/charts": "1.2.0",
-		"@tanstack/react-query": "^5.105.1",
+		"@tanstack/charts": "1.4.0",
+		"@tanstack/react-query": "^5.106.1",
 		"axios": "^1.21.0",
 		"clsx": "^2.1.1",
 		"dompurify": "^3.4.17",
@@ -100,7 +100,7 @@
 		"react-dom": "^19.3.1",
 		"sortablejs": "^1.15.7",
 		"tailwind-merge": "^3.7.0",
-		"timeago.js": "^4.0.2",
+		"timeago.js": "^4.3.0",
 		"tributejs": "^5.1.3",
 		"url-parse": "^1.5.10",
 		"zustand": "^5.0.16"
