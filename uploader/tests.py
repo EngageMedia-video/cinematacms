@@ -456,10 +456,11 @@ class _LogCollector(logging.Handler):
         self.records.append(record)
 
 
-class UploadLifecycleLogTests(SimpleTestCase):
+class UploadLifecycleLogTests(TestCase):
     """Start and finish events carry the same upload_ref as the nginx line and the denial events."""
 
     def setUp(self):
+        self.user = User.objects.create_user(username="person", email="person@example.org", password="pw")
         self.media_root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
         media_root = override_settings(MEDIA_ROOT=self.media_root)
@@ -478,10 +479,12 @@ class UploadLifecycleLogTests(SimpleTestCase):
         data = {"qquuid": FILE_UUID, "qqfilename": "clip.mp4", "qqtotalparts": total}
         if not chunks_done:
             data.update(qqfile=SimpleUploadedFile("blob", b"x" * 16), qqpartindex=part)
+            if total > 1:
+                data.update(qqtotalfilesize=16 * total, qqchunksize=16, qqpartbyteoffset=16 * part)
         headers = {} if upload_id is None else {"HTTP_X_UPLOAD_ID": upload_id}
         path = "/fu/upload/?done" if chunks_done else "/fu/upload/"
         request = RequestFactory().post(path, data, **headers)
-        request.user = SimpleNamespace(is_authenticated=True, email="person@example.org")
+        request.user = self.user
         with (
             patch("uploader.views.user_allowed_to_upload", return_value=True),
             patch("uploader.views.is_trusted_uploader", return_value=False),
@@ -521,7 +524,7 @@ class UploadLifecycleLogTests(SimpleTestCase):
     def test_chunks_done_request_that_cannot_combine_logs_no_finish(self):
         response = self._post(part=0, total=3, upload_id=FILE_UUID, chunks_done=True)
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(self._events("cinematacms.upload.finished"), [])
 
     def test_malformed_upload_id_is_logged_as_empty(self):

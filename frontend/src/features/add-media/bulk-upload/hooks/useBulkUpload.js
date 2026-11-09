@@ -2,14 +2,16 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../../shared/utils/api';
+import { createResumableUploader } from '../../../shared/utils/resumableUpload';
 import { sendUploadIdHeader } from '../../../shared/utils/uploadId';
 
 /**
  * Drives N concurrent chunked uploads through the bundled FineUploader engine
  * (the same engine the Django backend was built for) and mirrors each file's
- * progress/status into the Zustand store. Pause/resume is client-side only
- * (decision D5): a page reload loses the chunk cursor, which the REUPLOAD action
- * recovers from.
+ * progress/status into the Zustand store. Retries and resume follow the shared
+ * upload contract (shared/utils/resumableUpload): transient chunk failures retry
+ * automatically, and after a page reload, selecting the same file again resumes
+ * from the parts the server already holds.
  */
 export function useBulkUpload() {
 	const config = useBulkUploadConfig();
@@ -32,7 +34,7 @@ export function useBulkUpload() {
 		let uploader;
 		let disposing = false;
 		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() ?? '' };
-		uploader = new qq.FineUploaderBasic({
+		uploader = createResumableUploader(qq.FineUploaderBasic, {
 			autoUpload: true,
 			request: {
 				endpoint: config.uploadEndpoint,
@@ -46,7 +48,6 @@ export function useBulkUpload() {
 				concurrent: { enabled: true },
 				success: { endpoint: `${config.uploadEndpoint}?${config.chunksDoneParam}` },
 			},
-			retry: { enableAuto: false },
 			validation: {
 				itemLimit: config.maxFiles,
 				sizeLimit: config.maxSizeBytes || undefined,

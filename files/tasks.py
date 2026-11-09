@@ -1702,8 +1702,9 @@ def cleanup_orphaned_uploads():
     Cleans up:
     1. Incomplete chunks from cancelled uploads in CHUNKS_DIR
     2. Complete temp files from uploads that were never saved in UPLOAD_DIR
+    3. Upload sessions (uploader.UploadSession) and the chunks they still hold
 
-    Files/directories older than ORPHANED_UPLOAD_CLEANUP_HOURS are removed.
+    Files, directories and sessions older than ORPHANED_UPLOAD_CLEANUP_HOURS are removed.
     """
     logger = get_task_logger(__name__)
 
@@ -1770,10 +1771,22 @@ def cleanup_orphaned_uploads():
             logger.error(error_msg)
             errors.append(error_msg)
 
-    cleaned = chunks_cleaned + uploads_cleaned
+    # Upload sessions past the same retention can no longer resume or answer a repeated completion
+    from uploader.sessions import delete_stale_sessions
+
+    sessions_deleted = 0
+    try:
+        sessions_deleted = delete_stale_sessions()
+    except Exception as e:
+        error_msg = f"Error deleting stale upload sessions: {e}"
+        logger.error(error_msg)
+        errors.append(error_msg)
+
+    cleaned = chunks_cleaned + uploads_cleaned + sessions_deleted
     result = {
         "chunks_cleaned": chunks_cleaned,
         "uploads_cleaned": uploads_cleaned,
+        "sessions_deleted": sessions_deleted,
         "errors": errors,
         "outcome": "failed" if errors else "succeeded",
         "reason_code": "item_errors" if errors else "none",
