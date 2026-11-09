@@ -110,6 +110,9 @@ support `frame-ancestors` then ignore `X-Frame-Options`, which stays on the
 response for older browsers. Both embed views remove `frame-ancestors` from
 both headers and retain their existing X-Frame-Options exemptions and
 authorization checks, so they send no enforced CSP header in report-only mode.
+Files served from `/media/` keep `X-Frame-Options: DENY` and set
+`frame-ancestors 'none'` in both modes, so an enforced `frame-ancestors` cannot
+relax it.
 
 ## Enable enforcement
 

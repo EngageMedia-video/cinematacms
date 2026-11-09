@@ -131,6 +131,28 @@ class ContentSecurityPolicyTests(SimpleTestCase):
         self.assertNotIn("frame-ancestors", response["Content-Security-Policy-Report-Only"])
         self.assertIn("object-src 'none'", response["Content-Security-Policy-Report-Only"])
 
+    def test_secure_media_files_refuse_framing_in_both_policy_modes(self):
+        """Browsers ignore X-Frame-Options: DENY once an enforced frame-ancestors is present."""
+        policy = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY
+        for mode, policies in (
+            ("report-only", {"CONTENT_SECURITY_POLICY_REPORT_ONLY": policy}),
+            ("enforced", {"CONTENT_SECURITY_POLICY": policy, "CONTENT_SECURITY_POLICY_REPORT_ONLY": None}),
+        ):
+            with (
+                self.subTest(mode=mode),
+                override_settings(
+                    ROOT_URLCONF="cms.urls",
+                    MIDDLEWARE=["csp.middleware.CSPMiddleware"],
+                    USE_X_ACCEL_REDIRECT=True,
+                    **policies,
+                ),
+            ):
+                response = self.client.get("/media/tinymce_media/guide.pdf")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["X-Frame-Options"], "DENY")
+                self.assertIn("frame-ancestors 'none'", response["Content-Security-Policy"])
+                self.assertEqual(response["Content-Security-Policy"].count("frame-ancestors"), 1)
+
     def test_configured_asset_origins_and_vite_are_scoped(self):
         from cms.csp import build_policy
 
