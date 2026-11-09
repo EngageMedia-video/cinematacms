@@ -1,5 +1,5 @@
 import { expect, within } from 'storybook/test';
-import { HorizontalMovieItem, MovieItem, VerticalMovieItem } from './MovieItem';
+import { HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 
 function createPosterDataUrl({ background, accent, glow }) {
 	return `data:image/svg+xml;utf8,${encodeURIComponent(`
@@ -105,7 +105,7 @@ const verticalPreviewItems = [
 
 const meta = {
 	title: 'Components/Display/Movie Item',
-	component: MovieItem,
+	component: VerticalMovieItem,
 	tags: ['autodocs'],
 	parameters: {
 		docs: {
@@ -116,17 +116,11 @@ const meta = {
 		},
 	},
 	args: {
-		orientation: 'vertical',
 		...sampleArgs,
 		iconName: 'eyeSlash',
 		iconLabel: 'Hidden',
 	},
 	argTypes: {
-		orientation: {
-			control: 'inline-radio',
-			options: ['horizontal', 'vertical'],
-			description: 'Chooses between the horizontal and vertical shared layout.',
-		},
 		title: {
 			control: 'text',
 			description: 'Primary movie title text.',
@@ -179,7 +173,7 @@ const meta = {
 	},
 	render: (args) => (
 		<div className="w-full max-w-[320px]">
-			<MovieItem {...args} />
+			<VerticalMovieItem {...args} />
 		</div>
 	),
 };
@@ -187,9 +181,6 @@ const meta = {
 export default meta;
 
 export const Vertical = {
-	args: {
-		orientation: 'vertical',
-	},
 	render: (args) => (
 		<div className="grid w-full min-w-[1200px] grid-cols-4 gap-6">
 			{verticalPreviewItems.map((item) => (
@@ -227,7 +218,4 @@ export const VerticalWithIcon = {
 			))}
 		</div>
 	),
-	args: {
-		orientation: 'vertical',
-	},
 };

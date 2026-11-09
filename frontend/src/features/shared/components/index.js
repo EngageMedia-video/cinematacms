@@ -13,7 +13,6 @@ export { ConfirmationDialogContent } from './ConfirmationDialog';
 export { UnsavedChangesDialog } from './UnsavedChangesDialog';
 export { Dropdown } from './Dropdown';
 export { MediaDropzone } from './MediaDropzone';
-export { MovieItem, HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 export { SegmentButton } from './SegmentButton';
 export { SquareImage } from './SquareImage';
 export { TextAlert } from './TextAlert';

@@ -1,1 +1,1 @@
-export { MovieItem, HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
+export { VerticalMovieItem } from './MovieItem';
