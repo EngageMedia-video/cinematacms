@@ -48,9 +48,9 @@ run reports `affected=0`.
 
 Repairing the stored info does not retry the encodes that already failed.
 Start a new encode for each repaired video afterwards, for example through the
-media actions API with `{"type": "encode"}`:
+media API with an editor or manager token:
 
 ```bash
 curl -X POST -H "Authorization: Token <token>" -H "Content-Type: application/json" \
-  -d '{"type": "encode"}' https://<host>/api/v1/media/<friendly_token>/actions
+  -d '{"type": "encode"}' https://<host>/api/v1/media/<friendly_token>
 ```
