@@ -58,7 +58,6 @@ CACHE_OPERATIONS = frozenset(
     {"read", "bulk_read", "write", "invalidate", "lock", "probe", "token_validate", "rate_limit", "other"}
 )
 CACHE_RESULTS = frozenset({"hit", "partial_hit", "miss", "success", "error", "other"})
-CACHE_BUCKETS = (0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5)
 
 logger = logging.getLogger("cinematacms.cache")
 

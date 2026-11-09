@@ -82,24 +82,6 @@ def extract_first_image(html_content):
 
 
 @register.simple_tag
-def get_social_image_url(media_object, frontend_host):
-    """
-    Get complete social media image URL for any media type
-    """
-    default_image = f"{frontend_host}/media/userlogos/cinemata_share_banner-01.png"
-
-    if media_object.media_type == "text":
-        first_image = extract_first_image(media_object.description)
-        return f"{frontend_host}{first_image}" if first_image else default_image
-    elif media_object.media_type in ["video", "audio"]:
-        return f"{frontend_host}{media_object.poster_url}" if media_object.poster_url else default_image
-    elif media_object.media_type == "image":
-        return f"{frontend_host}{media_object.original_media_url}" if media_object.original_media_url else default_image
-    else:
-        return default_image
-
-
-@register.simple_tag
 def get_social_image_url_for_page(page_object, frontend_host):
     """
     Get complete social media image URL for static pages

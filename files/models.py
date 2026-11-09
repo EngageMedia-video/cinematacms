@@ -146,7 +146,6 @@ CODECS = (
     ("h264", "h264"),
     ("vp9", "vp9"),
 )
-ENCODE_EXTENSIONS_KEYS = [extension for extension, name in ENCODE_EXTENSIONS]
 ENCODE_RESOLUTIONS_KEYS = [resolution for resolution, name in ENCODE_RESOLUTIONS]
 
 
@@ -2101,14 +2100,6 @@ class Encoding(models.Model):
                 md5sum = stdout.strip().split()[0]
                 self.md5sum = md5sum
         super(Encoding, self).save(*args, **kwargs)
-
-    def set_progress(self, progress, commit=True):
-        if isinstance(progress, int):
-            if 0 <= progress <= 100:
-                self.progress = progress
-                self.save(update_fields=["progress"])
-                return True
-        return False
 
     def __str__(self):
         return f"{self.profile.name}-{self.media.title}"
