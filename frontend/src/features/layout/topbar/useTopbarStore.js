@@ -10,4 +10,3 @@ const useTopbarStore = create((set) => ({
 }));
 
 export default useTopbarStore;
-export { useTopbarStore };

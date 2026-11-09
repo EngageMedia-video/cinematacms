@@ -1,4 +1,4 @@
-export const NOTIFICATION_BADGES = {
+const NOTIFICATION_BADGES = {
 	comment: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
 	reply: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
 	mention: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },

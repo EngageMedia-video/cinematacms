@@ -29,21 +29,6 @@ Popup.propTypes = {
 	style: PropTypes.object,
 };
 
-export function PopupTop({ children, className = '', style = null }) {
-	if (children === undefined) {
-		return null;
-	}
-
-	return (
-		<div
-			className={cn('bg-bg-primary px-size-4 py-size-4 text-text-on-primary', className)}
-			style={style || undefined}
-		>
-			{children}
-		</div>
-	);
-}
-
 PopupTop.propTypes = {
 	children: PropTypes.node,
 	className: PropTypes.string,

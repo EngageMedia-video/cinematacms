@@ -4,7 +4,7 @@ import { TextField } from '../../TextField';
 // Controlled admin-only fields shared by single upload and bulk per-file
 // metadata forms.
 
-export function FeaturedCheckbox({ checked = false, onChange, name = 'featured' }) {
+function FeaturedCheckbox({ checked = false, onChange, name = 'featured' }) {
 	return (
 		<CheckboxButton name={name} checked={checked} onChange={(event) => onChange?.(event.target.checked)}>
 			Featured
@@ -12,7 +12,7 @@ export function FeaturedCheckbox({ checked = false, onChange, name = 'featured' 
 	);
 }
 
-export function ReportedTimesField({ value = '0', onChange, id, idPrefix = 'admin', name = 'reported_times' }) {
+function ReportedTimesField({ value = '0', onChange, id, idPrefix = 'admin', name = 'reported_times' }) {
 	const fieldId = id ?? (idPrefix ? `${idPrefix}-reported_times` : 'reported_times');
 
 	return (

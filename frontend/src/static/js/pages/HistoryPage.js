@@ -13,7 +13,7 @@ import { ProfileHistoryPage } from './ProfilePage/History';
 
 import { addClassname } from '../functions/dom.js';
 
-export class AnonymousHistoryPage extends Page {
+class AnonymousHistoryPage extends Page {
 	constructor(props) {
 		super(props, 'history-media');
 

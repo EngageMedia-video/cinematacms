@@ -21,20 +21,6 @@ import { formatInnerLink } from '../../../functions/formatInnerLink';
 
 import PageStore from '../../../pages/_PageStore.js';
 
-export function itemClassname(defaultClassname, inheritedClassname, isActiveInPlaylistPlayback) {
-	let classname = defaultClassname;
-
-	if ('' !== inheritedClassname) {
-		classname += ' ' + inheritedClassname;
-	}
-
-	if (isActiveInPlaylistPlayback) {
-		classname += ' pl-active-item';
-	}
-
-	return classname;
-}
-
 export function useMediaItem(props) {
 	const [titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper] = useItem({ ...props });
 

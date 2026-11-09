@@ -79,7 +79,7 @@ function getVideoOrientationTarget(videoElement) {
 	return h > w && h > 0 ? 'portrait' : 'landscape';
 }
 
-export function setupFullscreenOrientation(playerInstance, videoElement) {
+function setupFullscreenOrientation(playerInstance, videoElement) {
 	const player = playerInstance?.player;
 
 	if (!player || 'function' !== typeof player.on || !videoElement) {

@@ -17,7 +17,7 @@ const DEFAULT_STATUS_OPTIONS = [
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
 
-export const EMPTY_EDIT_MEDIA_CONFIG = {
+const EMPTY_EDIT_MEDIA_CONFIG = {
 	allowedExtensions: [],
 	csrfToken: '',
 	editUrl: window.location.href,
@@ -32,7 +32,7 @@ export const EMPTY_EDIT_MEDIA_CONFIG = {
 	uploadMaxSize: null,
 };
 
-export const EDIT_MEDIA_CONFIG_QUERY_KEY = ['edit-media', 'config'];
+const EDIT_MEDIA_CONFIG_QUERY_KEY = ['edit-media', 'config'];
 
 function normalizeEditMediaConfig(config = {}) {
 	const options = { ...EMPTY_OPTIONS, ...(config.options || {}) };

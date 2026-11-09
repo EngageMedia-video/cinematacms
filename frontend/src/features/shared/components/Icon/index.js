@@ -1,2 +1,2 @@
 export { Icon } from './Icon';
-export { getIconComponent, iconNames, iconRegistry } from './iconRegistry';
+export { iconNames } from './iconRegistry';

@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const REPLACEMENT_UPLOAD_QUERY_KEY = ['edit-media', 'replacement-upload'];
 
-export const EMPTY_REPLACEMENT_UPLOAD_STATE = {
+const EMPTY_REPLACEMENT_UPLOAD_STATE = {
 	phase: 'idle',
 	name: '',
 	progress: 0,

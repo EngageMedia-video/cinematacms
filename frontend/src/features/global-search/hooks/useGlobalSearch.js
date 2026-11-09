@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
-export const GLOBAL_SEARCH_LIMIT = 4;
+const GLOBAL_SEARCH_LIMIT = 4;
 const MIN_QUERY_LENGTH = 2;
 
 async function fetchJson(url, signal) {

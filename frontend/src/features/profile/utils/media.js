@@ -11,13 +11,13 @@ const VISIBILITY_INDICATORS = {
 	restricted: { iconName: 'lockKey', iconLabel: 'Restricted' },
 };
 
-export function getVisibilityIndicator(state) {
+function getVisibilityIndicator(state) {
 	return VISIBILITY_INDICATORS[state] || {};
 }
 
 // The API sets details_needed only for the owner of an upload whose details were never
 // saved. The card leads to the edit page, where saving the details clears it.
-export function getDetailsNeededProps(item) {
+function getDetailsNeededProps(item) {
 	if (!item.details_needed) return {};
 	return {
 		badge: 'Details needed',

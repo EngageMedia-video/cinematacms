@@ -1,1 +1,1 @@
-export { Popup, PopupContent, PopupMain, PopupTop, PopupTrigger, usePopup } from './Popup';
+export { PopupContent, PopupMain, PopupTrigger, usePopup } from './Popup';

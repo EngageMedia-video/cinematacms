@@ -1,4 +1,4 @@
-export function descriptionExcerptMeta(description) {
+function descriptionExcerptMeta(description) {
 	const lowBoundLength = 158;
 	const highBoundLength = 170;
 
@@ -69,36 +69,6 @@ export function descriptionExcerptMeta(description) {
 	}
 
 	return ret;
-}
-
-export function descriptionMeta(description) {
-	const lowBoundLength = 158;
-	// const highBoundLength = 170;
-
-	if (description.length <= lowBoundLength) {
-		return description;
-	}
-
-	let lastPosition = 0;
-
-	let i = 0;
-	while (i < description.length) {
-		if ('.' === description[i]) {
-			lastPosition = i;
-
-			if (lastPosition > lowBoundLength) {
-				break;
-			}
-		}
-
-		i += 1;
-	}
-
-	while (' ' === description[lastPosition]) {
-		lastPosition -= 1;
-	}
-
-	return description.substr(0, lastPosition);
 }
 
 export default function addPageMetadata(metadata, replaceExisted) {

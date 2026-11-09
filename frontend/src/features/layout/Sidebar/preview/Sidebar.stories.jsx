@@ -4,7 +4,7 @@ import {
 	LazySidebarComponent,
 	SidebarStorySurface,
 } from '../storybook/sidebarStoryHelpers';
-import * as LayoutActions from '../actions/LayoutActions';
+import * as LayoutActions from '../../../../static/js/actions/LayoutActions';
 
 function SidebarStoryPreview(props) {
 	return <LazySidebarComponent loadComponent={() => import('../shell/Sidebar')} exportName="Sidebar" {...props} />;

@@ -93,8 +93,3 @@ export function buildEditFormData({
 export function getMediaEditUrl(friendlyToken) {
 	return `/edit?m=${encodeURIComponent(friendlyToken)}`;
 }
-
-/** Completed files eligible for submission (those that have a server token). */
-export function selectSubmittableFiles(files) {
-	return files.filter((file) => file.friendlyToken);
-}

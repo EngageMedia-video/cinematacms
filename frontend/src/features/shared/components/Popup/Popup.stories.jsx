@@ -2,7 +2,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
 import { Text } from '../Text';
-import { Popup, PopupContent, PopupMain, PopupTop, PopupTrigger, usePopup } from './Popup';
+import { Popup, PopupContent, PopupMain, PopupTrigger, usePopup } from './Popup';
 
 const DOWNLOAD_OPTIONS = ['1080p - H264 (84 MB)', '720p - H264 (42 MB)', 'Original file (128 MB)'];
 
@@ -143,11 +143,6 @@ export const WithHeader = {
 						transform: 'translateX(50%)',
 					}}
 				>
-					<PopupTop>
-						<Text as="p" variant="body-14-bold" className="text-text-on-primary">
-							Media actions
-						</Text>
-					</PopupTop>
 					<PopupMenu />
 				</PopupContent>
 			</div>
@@ -157,7 +152,7 @@ export const WithHeader = {
 		const canvas = within(canvasElement);
 
 		await userEvent.click(canvas.getByRole('button', { name: 'Open popup' }));
-		await expect(canvas.getByText('Media actions')).toBeVisible();
+		await expect(canvas.getByRole('menu')).toBeVisible();
 	},
 };
 
@@ -165,11 +160,6 @@ export const StaticSurface = {
 	render: (args) => (
 		<div className="flex min-h-[260px] items-center justify-center bg-bg-page p-10">
 			<Popup {...args}>
-				<PopupTop>
-					<Text as="p" variant="body-14-bold" className="text-text-on-primary">
-						Popup Header
-					</Text>
-				</PopupTop>
 				<PopupMenu />
 			</Popup>
 		</div>

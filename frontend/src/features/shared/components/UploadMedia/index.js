@@ -7,7 +7,5 @@ export * from './fields/OtherFields';
 export * from './fields/FinalFields';
 export * from './fields/AdminFields';
 export * from './fields/ThumbnailUpload';
-export { FieldLabel } from './FieldLabel';
-export { EditorialPolicyNotice } from './EditorialPolicyNotice';
 export { useTaxonomies } from './hooks/useTaxonomies';
 export * from './schema/mediaMetadataSchema';

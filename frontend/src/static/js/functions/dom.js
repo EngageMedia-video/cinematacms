@@ -13,11 +13,3 @@ export function addClassname(el, cls) {
 		el.className += ' ' + cls;
 	}
 }
-
-export function hasClassname(el, cls) {
-	return el.className && new RegExp('(\\s|^)' + cls + '(\\s|$)').test(el.className);
-}
-
-export function toggleClassname(el, cls) {
-	(hasClassname(el, cls) ? removeClassname : addClassname)(el, cls);
-}

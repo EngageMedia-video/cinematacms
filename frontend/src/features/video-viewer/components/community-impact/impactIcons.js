@@ -21,7 +21,7 @@ export const COMMUNITY_IMPACT_CATEGORIES = [
 	},
 ];
 
-export const IMPACT_ICON_CONFIG = {
+const IMPACT_ICON_CONFIG = {
 	screening: {
 		iconName: 'filmReel',
 		label: 'Screened In',
