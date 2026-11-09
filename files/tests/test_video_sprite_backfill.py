@@ -40,7 +40,6 @@ class VideoSpriteBackfillTests(TestCase):
         media.media_file.save(name, ContentFile(b"video"), save=False)
         Media.objects.filter(pk=media.pk).update(media_file=media.media_file.name)
         media.refresh_from_db()
-        media._Media__original_media_file = media.media_file
         return media
 
     def _attach_sprite_file(self, media, name="sprites.jpg"):

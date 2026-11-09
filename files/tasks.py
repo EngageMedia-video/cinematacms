@@ -1434,12 +1434,6 @@ def update_listings_thumbnails():
     return {"outcome": "succeeded", "processed": total_changed, "changed": total_changed}
 
 
-# simple celery testers!
-@task(name="sum_two_numbers", queue="short_tasks")
-def add(x, y):
-    return x + y
-
-
 @task(name="sum_two_numbers_two", queue="long_tasks")
 def add_two(x, y):
     return x + y
@@ -1961,8 +1955,7 @@ def _apply_visibility_schedules_inner():
                 went_public = expected == "public"
                 media.state = expected
                 # Keep Media.save() from interpreting this state-only transition as a
-                # media-file or thumbnail-time edit and dispatching encoding work.
-                media._Media__original_media_file = media.media_file
+                # thumbnail-time edit and dispatching encoding work.
                 media._Media__original_thumbnail_time = media.thumbnail_time
 
                 update_fields = ["state"]

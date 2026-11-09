@@ -329,7 +329,6 @@ TASK_FAMILY_BY_NAME = {
     "save_user_action": "user_activity",
     "get_list_of_popular_media": "discovery",
     "update_listings_thumbnails": "media_derivative",
-    "sum_two_numbers": "diagnostic",
     "sum_two_numbers_two": "diagnostic",
     "cleanup_orphaned_uploads": "storage_maintenance",
     "cleanup_orphaned_draft_media": "media_lifecycle",

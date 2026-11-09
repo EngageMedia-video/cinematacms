@@ -773,7 +773,6 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "save_user_action",
             "get_list_of_popular_media",
             "update_listings_thumbnails",
-            "sum_two_numbers",
             "sum_two_numbers_two",
             "cleanup_orphaned_uploads",
             "cleanup_orphaned_draft_media",

@@ -45,11 +45,8 @@ class StorageUsageTests(TestCase):
         stored_name = field_file.storage.save(generated_name, ContentFile(content))
         instance.__class__.objects.filter(pk=instance.pk).update(**{field_name: stored_name})
         setattr(instance, field_name, stored_name)
-        if isinstance(instance, Media):
-            if field_name == "media_file":
-                instance._Media__original_media_file = instance.media_file
-            elif field_name == "uploaded_poster":
-                instance._Media__original_uploaded_poster = instance.uploaded_poster
+        if isinstance(instance, Media) and field_name == "uploaded_poster":
+            instance._Media__original_uploaded_poster = instance.uploaded_poster
         return stored_name
 
     def _profile(self):
