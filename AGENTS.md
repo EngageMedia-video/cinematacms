@@ -74,9 +74,9 @@ Work is complete when all of these conditions hold:
   remain untouched.
 - `make agent-check` passes. Run it after every edit, before you report the work
   done.
-- After a frontend edit,
-  `npm --prefix frontend run lint:modern && npm --prefix frontend run lint:legacy`
-  exits 0. See [Frontend checks](CONTRIBUTING.md#frontend-checks).
+- After a frontend edit, `npm --prefix frontend run lint:modern` exits 0. After a
+  legacy frontend edit, `npm --prefix frontend run lint:legacy` also exits 0. See
+  [Frontend checks](CONTRIBUTING.md#frontend-checks).
 - Relevant backend, frontend, migration, build, and workflow checks pass.
 - When the task includes a pull request, the pull request records the commands,
   manual checks, limits, and AI declaration that apply.
