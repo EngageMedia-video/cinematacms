@@ -95,6 +95,7 @@ describe('MediaPageStore switchMedia', () => {
 		});
 		expect(window.CinemataAnalytics.switchMedia).toHaveBeenCalledWith({
 			id: next.uid,
+			title: 'B title',
 			type: 'video',
 			state: 'public',
 			revision: next.analytics_revision,

@@ -43,6 +43,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
             self.assertEqual(analytics_context(request)["ANALYTICS"]["audience_group"], group)
             request.analytics_media = {
                 "id": str(uuid.uuid4()),
+                "title": "Rivers of Java",
                 "type": "image",
                 "state": "public",
                 "context": "page",
@@ -117,6 +118,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
     def _signed_in_configs_on_every_tracked_page(self, user):
         media = {
             "id": str(uuid.uuid4()),
+            "title": "Rivers of Java",
             "type": "image",
             "context": "page",
             "revision": str(uuid.uuid4()),
@@ -539,6 +541,43 @@ class MediaAnalyticsTests(TestCase):
         self.assertContains(response, "cinemata-analytics-config")
         self.assertContains(response, str(media.uid))
         self.assertIn("segment_grant", response.context["ANALYTICS"])
+
+    def test_public_media_page_and_embed_report_the_media_title(self):
+        media = create_test_media(create_test_user(), state="public")
+        media.title = "Rivers of Java"
+        media.save(update_fields=["title"])
+
+        for url, path in (("/view", "/media/view"), ("/embed", "/media/embed")):
+            config = self.client.get(f"{url}?m={media.friendly_token}").context["ANALYTICS"]
+            self.assertEqual(config["path"], path)
+            self.assertEqual(config["title"], "Rivers of Java")
+            self.assertEqual(config["media_id"], str(media.uid))
+
+    def test_nonpublic_media_page_and_embed_keep_the_generic_title(self):
+        media = create_test_media(create_test_user(), state="unlisted")
+        media.title = "Unlisted cut"
+        media.save(update_fields=["title"])
+
+        for url, path in (("/view", "/media/view"), ("/embed", "/media/embed")):
+            config = self.client.get(f"{url}?m={media.friendly_token}").context["ANALYTICS"]
+            self.assertEqual(config["path"], path)
+            self.assertNotIn("title", config)
+            self.assertNotIn(media.friendly_token, json.dumps(config))
+            self.assertNotIn("Unlisted cut", json.dumps(config))
+
+    def test_owner_sees_private_media_without_its_title_in_analytics(self):
+        owner = create_test_user()
+        media = create_test_media(owner, state="private")
+        media.title = "Private cut"
+        media.save(update_fields=["title"])
+        self.client.force_login(owner)
+
+        config = self.client.get(f"/view?m={media.friendly_token}").context["ANALYTICS"]
+
+        self.assertEqual(config["path"], "/media/view")
+        self.assertNotIn("title", config)
+        self.assertNotIn(media.friendly_token, json.dumps(config))
+        self.assertNotIn("Private cut", json.dumps(config))
 
     def test_editor_session_does_not_track_public_media(self):
         owner = create_test_user()
