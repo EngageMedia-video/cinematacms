@@ -48,6 +48,7 @@ from .methods import list_tasks, notify_users, pre_save_action
 from .metrics import observe_media_pipeline, record_domain_outcome, record_stale_encoding
 from .models import (
     Category,
+    ChunkMergeError,
     EncodeProfile,
     Encoding,
     Language,
@@ -1918,13 +1919,24 @@ def dispatch_deferred_encodings():
         scheduled_task_lock_cache.delete(lock_key)
 
 
+def _fail_unmergeable_chunk_group(chunk):
+    try:
+        chunk.status = "fail"
+        chunk.save(update_fields=["status"])
+        chunk.media.post_encode_actions()
+    except Exception as error:
+        logger.exception("Could not fail chunk group of encoding %s after its merge was rejected", chunk.id)
+        capture_unexpected_exception(error)
+
+
 @task(name="recover_stalled_chunk_groups", queue="long_tasks", soft_time_limit=settings.CELERY_SOFT_TIME_LIMIT)
 def recover_stalled_chunk_groups():
     """Merge chunk groups whose finaliser died mid-merge.
 
     A killed worker's task is not redelivered, so nothing else would call the merge again.
     The dead worker's claim blocks this until it expires, and a live merge keeps its group.
-    It also removes the work directories that killed merges left behind.
+    It also removes the work directories that killed merges left behind, and fails a group whose
+    merge is rejected instead of retrying it.
     """
     removed_work_dirs = remove_stale_chunk_merge_dirs()
     if removed_work_dirs:
@@ -1936,6 +1948,11 @@ def recover_stalled_chunk_groups():
             merged += finalize_chunk_group(chunk, list(json.loads(chunk.chunks_info)))
         except SoftTimeLimitExceeded:
             raise
+        except ChunkMergeError:
+            # The merge was rejected for what is in the chunk files, which another run would read
+            # again. Fail the group as EncodingTask.on_failure does in the encode task.
+            failed += 1
+            _fail_unmergeable_chunk_group(chunk)
         except Exception:
             # finalize_chunk_group logged the cause, and the next run retries inside the recovery window.
             failed += 1
