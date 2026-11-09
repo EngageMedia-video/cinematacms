@@ -18,6 +18,7 @@ class UploadSession(models.Model):
         COMPLETE = "complete"
         CANCELLED = "cancelled"
         EXPIRED = "expired"
+        FAILED = "failed"
 
     uuid = models.UUIDField(primary_key=True, help_text="Fine Uploader's qquuid for this file")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="upload_sessions")

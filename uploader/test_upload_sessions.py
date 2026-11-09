@@ -31,7 +31,7 @@ class UploadSessionTestCase(TestCase):
     def setUp(self):
         self.media_root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
-        media_root = override_settings(MEDIA_ROOT=self.media_root)
+        media_root = override_settings(MEDIA_ROOT=self.media_root, UPLOAD_PART_SIZE=PART_SIZE)
         media_root.enable()
         self.addCleanup(media_root.disable)
         media_init = patch.object(Media, "media_init", return_value=None)
@@ -174,6 +174,9 @@ class ChunkAndCompletionTests(UploadSessionTestCase):
             ("wrong offset", {"qqpartbyteoffset": 3}),
             ("index past the end", {"qqpartindex": 3}),
             ("missing total size", {"qqtotalfilesize": ""}),
+            # Tiny parts would let one session claim billions of parts to check on disk.
+            ("part size other than the fixed one", {"part_size": 1, "content": CONTENT[:3]}),
+            ("file over the upload limit", {"qqtotalfilesize": 10**13, "qqtotalparts": 25 * 10**11}),
         ]
         for label, change in cases:
             with self.subTest(label):
@@ -222,19 +225,36 @@ class ChunkAndCompletionTests(UploadSessionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
-    def test_a_failed_finish_leaves_the_upload_open_for_another_attempt(self):
+    def test_a_failed_assembly_leaves_the_upload_open_for_another_attempt(self):
         self.post_all_chunks()
 
-        def failing_finish(assembly):
-            raise RuntimeError("media could not be created")
-
-        with self.assertRaises(RuntimeError):
-            sessions.complete(self.owner, None, self.upload_uuid, failing_finish)
+        with patch.object(sessions, "_combine", side_effect=OSError("disk full")), self.assertRaises(OSError):
+            sessions.complete(self.owner, None, self.upload_uuid, lambda assembly: "/view?m=never")
 
         self.assertEqual(self.session().status, UploadSession.Status.OPEN)
         self.assertEqual(self.chunk_files(), ["0", "1", "2"])
-        self.assertFalse(os.path.exists(os.path.join(self.media_root, "uploads", self.upload_uuid)))
         self.assertEqual(self.complete().status_code, 200)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
+
+    def test_a_failure_after_the_media_is_saved_does_not_create_a_second_media_on_retry(self):
+        self.post_all_chunks()
+        save = Media.save
+
+        def save_then_fail(media, *args, **kwargs):
+            save(media, *args, **kwargs)
+            raise ConnectionError("broker unavailable")
+
+        self.client.raise_request_exception = False
+        with patch.object(Media, "save", save_then_fail):
+            failed = self.complete()
+        retried = self.complete()
+
+        self.assertEqual(failed.status_code, 500)
+        self.assertEqual(retried.status_code, 409)
+        self.assertEqual(retried.json()["error"], sessions.FAILED_MESSAGE)
+        self.assertTrue(retried.json()["preventRetry"])
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
+        self.assertEqual(self.session().status, UploadSession.Status.FAILED)
 
 
 class CancellationAndExpiryTests(UploadSessionTestCase):
@@ -250,6 +270,25 @@ class CancellationAndExpiryTests(UploadSessionTestCase):
         self.assertEqual(late_chunk.status_code, 410)
         self.assertTrue(late_chunk.json()["preventRetry"])
         self.assertEqual(self.complete().status_code, 410)
+
+    def test_an_upload_being_assembled_cannot_be_cancelled(self):
+        self.post_all_chunks()
+        UploadSession.objects.filter(uuid=self.upload_uuid).update(status=UploadSession.Status.ASSEMBLING)
+
+        response = self.client.delete(reverse("uploader:session", args=[self.upload_uuid]))
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(self.session().status, UploadSession.Status.ASSEMBLING)
+        self.assertEqual(self.chunk_files(), ["0", "1", "2"])
+
+    def test_completing_a_cancelled_upload_is_refused(self):
+        self.post_all_chunks()
+        self.client.delete(reverse("uploader:session", args=[self.upload_uuid]))
+
+        response = self.complete()
+
+        self.assertEqual(response.status_code, 410)
+        self.assertEqual(Media.objects.count(), 0)
 
     def test_cancelling_a_completed_upload_keeps_its_media(self):
         self.post_all_chunks()

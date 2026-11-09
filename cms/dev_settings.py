@@ -311,6 +311,9 @@ UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
+# bytes per chunk of a chunked upload; must match UPLOAD_PART_SIZE in
+# frontend/src/features/shared/utils/resumableUpload.js
+UPLOAD_PART_SIZE = 2_000_000
 
 # number of files to upload using fineuploader at once
 UPLOAD_MAX_FILES_NUMBER = 100

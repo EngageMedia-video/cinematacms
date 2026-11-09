@@ -463,7 +463,7 @@ class UploadLifecycleLogTests(TestCase):
         self.user = User.objects.create_user(username="person", email="person@example.org", password="pw")
         self.media_root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
-        media_root = override_settings(MEDIA_ROOT=self.media_root)
+        media_root = override_settings(MEDIA_ROOT=self.media_root, UPLOAD_PART_SIZE=16)
         media_root.enable()
         self.addCleanup(media_root.disable)
         self.collector = _LogCollector()

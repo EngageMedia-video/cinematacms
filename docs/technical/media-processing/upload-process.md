@@ -42,8 +42,13 @@ This outlines the flow of how media uploads are handled from the frontend to the
     result (`media_url`) instead of creating another media file. While another request is assembling,
     the response is a retryable 409. If a part is missing, the response asks the client to send the
     file again (`reset`).
-  - When assembly or media creation fails, the session reopens and its chunks stay on disk, so another
-    completion can succeed.
+  - When assembly fails, the session reopens and its chunks stay on disk, so another completion can
+    succeed. When media creation fails, the session ends as failed, because a media row may already
+    exist: a repeated completion gets a 409 that stops retries, and the user selects the file again.
+  - Chunks use a fixed part size (`UPLOAD_PART_SIZE`, 2,000,000 bytes, matching the frontend), and a
+    file over `UPLOAD_MAX_SIZE` is refused, so a session can never claim an unbounded number of parts.
+  - Cancelling an upload that is being assembled gets a 409, so cancel and completion never act on
+    the same upload at once.
 
 #### Retries and resume
 - All three upload flows (single upload, bulk upload, and file replacement on the edit page) build Fine

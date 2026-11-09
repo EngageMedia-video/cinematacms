@@ -26,9 +26,12 @@ from .models import UploadSession
 FINGERPRINT_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 FINGERPRINT_PARAM = "qqfingerprint"
 # An assembly that has not finished in this time is treated as abandoned by a dead worker.
-ASSEMBLY_TIMEOUT = timedelta(minutes=15)
+# It must exceed the proxy read timeout (nginx uwsgi_read_timeout 900s), so a slow
+# request that is still running is never reclaimed by its own retry.
+ASSEMBLY_TIMEOUT = timedelta(minutes=30)
 
 EXPIRED_MESSAGE = "This upload expired. Select the file again to start a new upload."
+FAILED_MESSAGE = "This upload could not be finished. Select the file again to start a new upload."
 
 
 class UploadRejected(Exception):
@@ -50,7 +53,7 @@ class UploadRejected(Exception):
 
 
 def retention():
-    return timedelta(hours=settings.ORPHANED_UPLOAD_CLEANUP_HOURS)
+    return timedelta(hours=getattr(settings, "ORPHANED_UPLOAD_CLEANUP_HOURS", 24))
 
 
 def clean_fingerprint(value):
@@ -109,14 +112,15 @@ class ChunkRequest:
         upload = data.get("qqfile")
         if None in (total_size, total_parts, part_index, chunk_size, byte_offset) or upload is None:
             raise UploadRejected(400, "Chunk is missing its position in the file.")
+        if total_size > settings.UPLOAD_MAX_SIZE:
+            raise UploadRejected(400, "This file is larger than the upload limit.")
         if total_size <= 0 or total_parts < 2 or not 0 <= part_index < total_parts:
             raise UploadRejected(400, "Chunk position is outside the file.")
 
-        # Every part but the last is full-sized, so the last part's offset reveals the part size.
-        part_size = chunk_size if part_index < total_parts - 1 else byte_offset // part_index
+        # The part size is fixed, which also bounds how many parts a session can have.
+        part_size = settings.UPLOAD_PART_SIZE
         if (
-            part_size <= 0
-            or math.ceil(total_size / part_size) != total_parts
+            math.ceil(total_size / part_size) != total_parts
             or byte_offset != part_index * part_size
             or chunk_size != _expected_part_size(total_size, part_size, part_index)
             or upload.size != chunk_size
@@ -236,12 +240,15 @@ def cancel(user, target_media, upload_uuid):
     session = _get_owned(user, target_media, upload_uuid)
     if session is None:
         return None
+    # Conditional, so a completion that claims the upload first is never cancelled under it.
+    cancelled = UploadSession.objects.filter(
+        pk=session.pk, status__in=(UploadSession.Status.OPEN, UploadSession.Status.EXPIRED)
+    ).update(status=UploadSession.Status.CANCELLED)
+    if cancelled:
+        shutil.rmtree(chunks_dir(session.uuid), ignore_errors=True)
+    session.refresh_from_db()
     if session.status == UploadSession.Status.ASSEMBLING:
         raise UploadRejected(409, "This upload is already being assembled.")
-    if session.status in (UploadSession.Status.OPEN, UploadSession.Status.EXPIRED):
-        UploadSession.objects.filter(pk=session.pk).update(status=UploadSession.Status.CANCELLED)
-        shutil.rmtree(chunks_dir(session.uuid), ignore_errors=True)
-        session.status = UploadSession.Status.CANCELLED
     return session
 
 
@@ -289,8 +296,7 @@ def complete(user, target_media, upload_uuid, finish):
     now = timezone.now()
     if session.status == UploadSession.Status.COMPLETE:
         return {"success": True, "media_url": session.result_url}
-    if session.status in (UploadSession.Status.CANCELLED, UploadSession.Status.EXPIRED):
-        raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
+    _reject_finished(session)
     if session.status == UploadSession.Status.OPEN and _is_stale(session, now):
         _expire(session)
         raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
@@ -307,22 +313,35 @@ def complete(user, target_media, upload_uuid, finish):
         session.refresh_from_db()
         if session.status == UploadSession.Status.COMPLETE:
             return {"success": True, "media_url": session.result_url}
+        _reject_finished(session)
         # Another request is assembling it; a retry after backoff picks up its result.
         raise UploadRejected(409, "This upload is still being assembled.", prevent_retry=False)
 
+    assembling = UploadSession.objects.filter(pk=session.pk, status=UploadSession.Status.ASSEMBLING)
     try:
         assembly = _combine(session)
+    except BaseException:
+        # Nothing was created and the chunks are still on disk, so another completion can succeed.
+        shutil.rmtree(os.path.join(settings.MEDIA_ROOT, settings.UPLOAD_DIR, str(session.uuid)), ignore_errors=True)
+        assembling.update(status=UploadSession.Status.OPEN, updated_at=timezone.now())
+        raise
+    try:
         result_url = finish(assembly)
     except BaseException:
-        # The chunks are still on disk, so the upload stays open for another completion attempt.
-        shutil.rmtree(os.path.join(settings.MEDIA_ROOT, settings.UPLOAD_DIR, str(session.uuid)), ignore_errors=True)
-        UploadSession.objects.filter(pk=session.pk).update(status=UploadSession.Status.OPEN, updated_at=timezone.now())
+        # finish may already have saved a media row, so a retry could create a second one.
+        # The upload ends here; cleanup removes its files after the retention period.
+        assembling.update(status=UploadSession.Status.FAILED, updated_at=timezone.now())
         raise
-    UploadSession.objects.filter(pk=session.pk).update(
-        status=UploadSession.Status.COMPLETE, result_url=result_url or "", updated_at=timezone.now()
-    )
+    assembling.update(status=UploadSession.Status.COMPLETE, result_url=result_url or "", updated_at=timezone.now())
     shutil.rmtree(chunks_dir(session.uuid), ignore_errors=True)
     return {"success": True, "media_url": result_url}
+
+
+def _reject_finished(session):
+    if session.status in (UploadSession.Status.CANCELLED, UploadSession.Status.EXPIRED):
+        raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
+    if session.status == UploadSession.Status.FAILED:
+        raise UploadRejected(409, FAILED_MESSAGE, reset=True)
 
 
 def delete_stale_sessions(now=None):

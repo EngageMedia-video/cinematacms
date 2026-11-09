@@ -45,6 +45,7 @@ class Migration(migrations.Migration):
                             ("complete", "Complete"),
                             ("cancelled", "Cancelled"),
                             ("expired", "Expired"),
+                            ("failed", "Failed"),
                         ],
                         default="open",
                         max_length=16,
