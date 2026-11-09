@@ -8,7 +8,7 @@
         "media_view"
       ],
       "trigger": "An eligible page or embed loads after access succeeds; CMS playback measurement does not depend on Umami. Umami page views and media_view events retain separate meanings.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -31,7 +31,7 @@
         "media_view"
       ],
       "trigger": "The next playlist item starts in place while the media page is fullscreen, after the media detail API access check. It counts like a page load of that item.",
-      "privacy": "Fixed event names and sanitized context only. Private items keep the page navigation; a non-public item sends no audience group or referrer.",
+      "privacy": "Fixed event names and sanitized context only. Private items keep the page navigation; a non-public item sends no audience group or referrer. A public item carries its title as media_title and page title; a non-public item sends neither.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -72,7 +72,7 @@
         "previous"
       ],
       "trigger": "A player state changes; coverage milestones occur once per play. Seeking is not watched coverage.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page, embed or home hero the event carries the media title as media_title and a page or embed view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -105,7 +105,7 @@
         "media_report_success"
       ],
       "trigger": "A confirmed store action succeeds.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "frontend/src/static/js/pages/MediaPage/store.js",
@@ -128,7 +128,7 @@
         "journal_delete"
       ],
       "trigger": "A successful mutation response, once per action. Private journal events carry no film ID.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "frontend/src/features/video-viewer/comments/hooks/useSubmitComment.js",
@@ -204,7 +204,7 @@
         "outbound_click"
       ],
       "trigger": "Click intent; outbound properties contain destination domain only, native share handoff is not delivery.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -242,7 +242,7 @@
         "search_results_all"
       ],
       "trigger": "A real destination link is activated; labels, query strings and destination paths are not transmitted.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -273,7 +273,7 @@
         "search_no_results"
       ],
       "trigger": "Submission, committed filter/sort/page changes and a settled empty result. No typing or raw query events.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "frontend/src/features/global-search/GlobalSearchDropdown.jsx",
@@ -496,7 +496,7 @@
         "theme_change"
       ],
       "trigger": "Persisted theme toggle, without the selected preference value.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
       "sources": [
         {
           "path": "frontend/src/features/layout/Sidebar/theme/hooks/useThemeSwitcher.js",
