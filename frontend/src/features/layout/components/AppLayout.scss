@@ -1,11 +1,11 @@
 .app-layout,
-body[data-ui-variant='revamp'],
-body[data-ui-variant='revamp'] .page-main-wrap {
+body[data-ui-variant='v2'],
+body[data-ui-variant='v2'] .page-main-wrap {
 	background-color: var(--cinemata-pacific-deep-50);
 }
 
-body.dark_theme[data-ui-variant='revamp'],
-body.dark_theme[data-ui-variant='revamp'] .page-main-wrap,
+body.dark_theme[data-ui-variant='v2'],
+body.dark_theme[data-ui-variant='v2'] .page-main-wrap,
 body.dark_theme .app-layout {
 	background-color: var(--cinemata-pacific-deep-950);
 }

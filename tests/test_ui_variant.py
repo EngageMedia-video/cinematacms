@@ -59,42 +59,42 @@ class UIVariantViewTests(TestCase):
             is_staff=False,
         )
 
-    def test_revamp_default(self):
+    def test_v2_default(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
         self.assertIn(b"index-revamp", response.content)
 
-    def test_revamp_page_has_data_ui_variant_attribute(self):
+    def test_v2_page_has_data_ui_variant_attribute(self):
         response = self.client.get("/")
-        self.assertIn(b'data-ui-variant="revamp"', response.content)
+        self.assertIn(b'data-ui-variant="v2"', response.content)
 
-    def test_staff_preview_param_returns_revamp(self):
+    def test_staff_preview_param_returns_v2(self):
         self.client.login(username="staffuser", password="testpass")
         response = self.client.get("/?ui=revamp")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
 
-    def test_non_staff_preview_param_returns_revamp(self):
+    def test_non_staff_preview_param_returns_v2(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/?ui=revamp")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
 
-    def test_revamp_default_logged_in(self):
+    def test_v2_default_logged_in(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/")
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
 
-    def test_upload_uses_revamp(self):
+    def test_upload_uses_v2(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/upload")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
         self.assertIn(b'id="app-root"', response.content)
         self.assertIn(b"src/entries/add-media.js", response.content)
 
-    def test_media_and_edit_use_revamp_despite_retired_configuration(self):
+    def test_media_and_edit_use_v2_despite_retired_configuration(self):
         media = create_test_media(self.regular_user)
         response = self.client.get(f"/view?m={media.friendly_token}&ui=legacy")
         self.assertEqual(response.status_code, 200)
@@ -114,17 +114,17 @@ class UIVariantViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], f"{reverse('account_login')}?next=%2Fupload")
 
-    def test_unmigrated_page_declares_the_legacy_shell(self):
+    def test_unmigrated_page_declares_the_v1_shell(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/history")
         self.assertTemplateUsed(response, "base.html")
-        self.assertContains(response, 'data-ui-variant="legacy"')
+        self.assertContains(response, 'data-ui-variant="v1"')
         self.assertNotContains(response, 'id="app-root"')
 
-    def test_modern_page_without_a_variant_lookup_declares_the_revamp_shell(self):
+    def test_modern_page_without_a_variant_lookup_declares_the_v2_shell(self):
         self.client.login(username="regularuser", password="testpass")
         with patch("cms.creator_analytics.umami_get"):
             response = self.client.get("/analytics?days=7")
         self.assertTemplateUsed(response, "cms/creator_analytics.html")
-        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'data-ui-variant="v2"')
         self.assertContains(response, 'id="app-root"')
