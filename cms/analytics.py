@@ -111,6 +111,7 @@ def _tracked_page_context(request, audience_group):
     if media:
         from cms.playback_analytics import measurement_token
 
+        is_public = media["state"] == "public"
         config = {
             "url": url,
             "website_id": website_id,
@@ -118,13 +119,14 @@ def _tracked_page_context(request, audience_group):
             "media_id": media["id"],
             "media_type": media["type"],
             "context": media["context"],
-            "nonpublic": media["state"] != "public",
+            "nonpublic": not is_public,
             "revision": media["revision"],
             "measurement_token": measurement_token(media["instance"], media["context"])
             if media["type"] in ("video", "audio")
             else None,
         }
-        if media["state"] == "public":
+        if is_public:
+            config["title"] = media["title"]
             config["audience_group"] = audience_group
             config["segment_grant"] = signing.dumps({"scope": "media"}, salt=SEGMENT_SALT)
         config["events"] = request.session.pop("analytics_events", []) if hasattr(request, "session") else []
@@ -215,6 +217,7 @@ def allow_media_analytics(request, media, context):
     """Called only after the media access check succeeds."""
     request.analytics_media = {
         "id": str(media.uid),
+        "title": media.title,
         "type": media.media_type,
         "state": media.state,
         "context": context,

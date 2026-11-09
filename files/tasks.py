@@ -104,6 +104,10 @@ ERRORS_LIST = [
     "Unable to find a suitable output format for",
 ]
 
+# ffmpeg writes no frame, and no file, when -ss lands at or past the last
+# frame, so media no longer than this start their preview from the beginning.
+PREVIEW_SEEK_SECONDS = 3
+
 
 def _check_media_exists_or_cleanup(media_id, encoding_id, context=""):
     """Check if a media object still exists; if not, delete the orphaned encoding.
@@ -399,14 +403,14 @@ def encode_media(
 
     if profile.extension == "gif":
         tf = create_temp_file(suffix=".gif")
-        # -ss 5 start from 5 second. -t 25 until 25 sec
+        preview_start = PREVIEW_SEEK_SECONDS if media.duration > PREVIEW_SEEK_SECONDS else 0
         command = [
             settings.FFMPEG_COMMAND,
             "-y",
             "-threads",
             "1",
             "-ss",
-            "3",
+            str(preview_start),
             "-i",
             media.media_file.path,
             "-hide_banner",
@@ -427,9 +431,12 @@ def encode_media(
                 rm_file(tf)
                 record_encoding_outcome(True)
                 return True
-        else:
-            record_encoding_failure("preview did not produce an image")
-            return False
+        rm_file(tf)
+        encoding.logs = ret.get("error", "")
+        encoding.status = "fail"
+        encoding.save(update_fields=["status", "logs"])
+        record_encoding_failure("preview did not produce an image")
+        return False
     original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:

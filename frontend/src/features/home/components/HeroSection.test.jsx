@@ -4,10 +4,18 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HeroSection } from './HeroSection';
 
 vi.mock('./HeroVideoPlayer', () => ({
-	default: function HeroVideoPlayerMock({ poster, className, sources = [], videoInfo = {}, enableAutoplay }) {
+	default: function HeroVideoPlayerMock({
+		poster,
+		className,
+		sources = [],
+		videoInfo = {},
+		enableAutoplay,
+		analyticsMedia = null,
+	}) {
 		return (
 			<div
 				data-testid="hero-video-player"
+				data-analytics-media={JSON.stringify(analyticsMedia)}
 				data-poster={poster}
 				data-class-name={className}
 				data-sources={JSON.stringify(sources)}
@@ -311,6 +319,35 @@ describe('HeroSection', () => {
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/hero-video.mp4', type: 'video/mp4' },
 		]);
+	});
+
+	it('gives hero analytics the media state and title so public hero plays are named', async () => {
+		renderHero(
+			[
+				{
+					...SAMPLE_MEDIA,
+					state: 'public',
+					hero_playback: {
+						...SAMPLE_MEDIA.hero_playback,
+						uid: '12345678-1234-4234-8234-123456789abc',
+						analytics_revision: '87654321-4321-4321-8321-cba987654321',
+						measurement_token: 'grant',
+					},
+				},
+			],
+			<HeroSection.Player />
+		);
+
+		const player = await activateHeroPlayer();
+		expect(JSON.parse(player.dataset.analyticsMedia)).toEqual({
+			id: '12345678-1234-4234-8234-123456789abc',
+			type: 'video',
+			context: 'hero',
+			revision: '87654321-4321-4321-8321-cba987654321',
+			measurement_token: 'grant',
+			state: 'public',
+			title: 'Test Featured Video',
+		});
 	});
 
 	it('uses nested resolution and codec encoding info when it is already present', async () => {

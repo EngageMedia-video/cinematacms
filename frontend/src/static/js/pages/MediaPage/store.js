@@ -259,6 +259,7 @@ class MediaPageStore extends EventEmitter {
 
 		window.CinemataAnalytics?.switchMedia({
 			id: data.uid,
+			title: data.title,
 			type: data.media_type,
 			state: data.state,
 			revision: data.analytics_revision,
