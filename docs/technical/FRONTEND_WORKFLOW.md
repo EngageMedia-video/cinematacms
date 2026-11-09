@@ -145,6 +145,9 @@ The mount-node check prevents legacy pages from booting into the modern shell.
 The old `UI_VARIANT_*` settings and preview parameter no longer select a UI.
 See [deployment and rollback](ui-variant-gate-deployment.md) before upgrading.
 
+To roll out the next migrated page, keep its v1 template and follow
+[Roll out a migrated page](../features/feature_flags.md#roll-out-a-migrated-page).
+
 ### Django Integration (django-vite)
 
 Django templates use `django-vite` template tags to load Vite assets:
