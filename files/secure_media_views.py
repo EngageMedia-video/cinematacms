@@ -5,6 +5,8 @@ import os
 import re
 from urllib.parse import quote, unquote
 
+from csp.constants import NONE
+from csp.decorators import csp_replace
 from django.conf import settings
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden
@@ -1237,6 +1239,8 @@ class SecureMediaView(View):
             raise Http404("File could not be read") from e
 
 
+# Browsers ignore X-Frame-Options: DENY once an enforced frame-ancestors is present.
+@csp_replace({"frame-ancestors": [NONE]})
 @require_http_methods(["GET", "HEAD"])
 def secure_media_file(request, file_path: str) -> HttpResponse:
     """Function-based view wrapper for SecureMediaView."""

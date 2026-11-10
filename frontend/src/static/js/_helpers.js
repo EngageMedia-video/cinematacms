@@ -4,7 +4,7 @@ import { AppLayout, Sidebar } from '../../features/layout';
 import { LegacyTopbarMount } from '../../features/layout/topbar/LegacyTopbarMount';
 
 function shouldUseModernShell() {
-	return document.body?.dataset.uiVariant === 'revamp' && document.getElementById('app-root') !== null;
+	return document.body?.dataset.uiVariant === 'v2' && document.getElementById('app-root') !== null;
 }
 
 export function renderPage(idSelector, PageComponent) {

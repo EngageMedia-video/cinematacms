@@ -26,8 +26,8 @@ describe('renderPage', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('routes revamp pages through the modern shell root', async () => {
-		document.body.dataset.uiVariant = 'revamp';
+	it('routes v2 pages through the modern shell root', async () => {
+		document.body.dataset.uiVariant = 'v2';
 		document.body.innerHTML = '<div id="app-root"></div>';
 
 		function HomePage() {
@@ -47,8 +47,8 @@ describe('renderPage', () => {
 		);
 	});
 
-	it('keeps legacy split mounts for non-revamp pages', async () => {
-		document.body.dataset.uiVariant = 'legacy';
+	it('keeps split mounts for v1 pages', async () => {
+		document.body.dataset.uiVariant = 'v1';
 		document.body.innerHTML = '<div id="app-header"></div><div id="app-sidebar"></div><div id="page-home"></div>';
 
 		function HomePage() {
