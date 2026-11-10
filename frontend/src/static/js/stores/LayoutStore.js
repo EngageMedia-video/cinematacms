@@ -49,7 +49,6 @@ class LayoutStore extends EventEmitter {
 					? true
 					: false,
 			visibleSidebar: this.cache.get('visible-sidebar'),
-			visibleMobileSearch: false,
 		};
 
 		this.state.visibleSidebar =
@@ -68,8 +67,6 @@ class LayoutStore extends EventEmitter {
 				return this.state.enabledSidebar;
 			case 'visible-sidebar':
 				return this.state.visibleSidebar;
-			case 'visible-mobile-search':
-				return this.state.visibleMobileSearch;
 			case 'container-width':
 				return window.innerWidth;
 			case 'container-height':
@@ -84,10 +81,6 @@ class LayoutStore extends EventEmitter {
 				onSidebarVisibilityChange(this.state.visibleSidebar);
 				this.cache.set('visible-sidebar', this.state.visibleSidebar);
 				this.emit('sidebar-visibility-change');
-				break;
-			case 'CHANGE_MOBILE_SEARCH_VISIBILITY':
-				this.state.visibleMobileSearch = action.visible;
-				this.emit('mobile-search-visibility-change');
 				break;
 		}
 	}

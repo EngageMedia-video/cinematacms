@@ -97,8 +97,6 @@
         "playlist_remove",
         "link_copy",
         "embed_copy",
-        "comment_success",
-        "comment_delete",
         "community_impact_submit",
         "media_delete",
         "playlist_create",
