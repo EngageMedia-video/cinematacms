@@ -138,6 +138,10 @@ class ChunkCleanupTests(TestCase):
 
         with (
             patch("files.models.helpers.run_command", side_effect=concatenate),
+            patch(
+                "files.models.helpers.media_file_info",
+                return_value={"is_video": True, "video_duration": float(self.media.duration)},
+            ),
             patch.object(Media, "post_encode_actions"),
             patch("files.models._schedule_storage_usage_refresh_for_media"),
         ):
