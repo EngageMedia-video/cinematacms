@@ -812,6 +812,10 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # django-waffle feature flag settings
 WAFFLE_CREATE_MISSING_SWITCHES = True
+WAFFLE_CREATE_MISSING_FLAGS = True
+# Waffle stores this in a new flag's Everyone field. Any other value overrides all targeting.
+WAFFLE_FLAG_DEFAULT = None
+WAFFLE_SECURE = SESSION_COOKIE_SECURE
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/")

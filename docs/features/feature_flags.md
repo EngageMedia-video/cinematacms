@@ -50,6 +50,37 @@ The setting `WAFFLE_CREATE_MISSING_SWITCHES = True` is enabled. If code checks a
 3. The switch will auto-create as inactive on first request
 4. Optionally, add it to the `seed_waffle_switches` management command with a specific default value and description
 
+## Roll out a migrated page
+
+A page moving to the v2 shell uses a waffle **flag**, because a flag can target
+staff, groups, users, or a percentage of visitors. Switches only turn on or off
+for everyone.
+
+1. Add the page to `PAGES_IN_ROLLOUT` in `cms/ui_variant.py` with its old and
+   new templates.
+2. Render the page with `resolve_template(request, "<page_key>")`. The page
+   follows the flag `ui_v2_<page_key>`.
+3. Deploy. The page's first request creates the flag, and visitors keep v1.
+   Superusers see v2 straight away, because a flag's **Superusers** option
+   starts on. Clear it to keep them on v1.
+4. In Django admin, open the flag and leave **Everyone** on **Unknown** while
+   you target. Set **Staff** to preview v2 as staff, then widen with groups,
+   users, or a percentage. Saving the flag takes effect without a redeploy.
+5. To finish, set **Everyone** to **Yes**. To roll back, set it to **No**.
+6. Once v2 is permanent, move the page to `UI_VARIANT_PAGES` and delete its v1
+   template. Delete the flag only after that release is live. A missing flag
+   reads as off, so deleting it first returns every visitor to v1.
+
+Target groups or users on a page that requires sign-in. A percentage assigns
+each browser by cookie, so one person can get different shells on two devices.
+Each visit renews the cookie for 30 days, so changing the percentage does not
+move browsers that already have one. Before you raise a percentage, set the
+flag's **Rollout** option. It keeps a v1 assignment for the browser session
+only, so those browsers draw again at the new percentage.
+
+Do not use the flag's **Testing** option as a staff preview. It lets any visitor
+turn the flag on with `?dwft_<flag>=1`.
+
 ## Configuration
 
 All waffle-related Django settings are in `cms/settings.py`:
@@ -66,11 +97,14 @@ MIDDLEWARE = [
 ]
 
 WAFFLE_CREATE_MISSING_SWITCHES = True
+WAFFLE_CREATE_MISSING_FLAGS = True
+WAFFLE_FLAG_DEFAULT = None
+WAFFLE_SECURE = SESSION_COOKIE_SECURE
 ```
 
 ## Seeding Switches
 
-Deployment scripts run the seed command after migrations to create any missing switches from settings defaults. You can also run it manually:
+The installer runs the seed command after migrations to create switches from settings defaults. Upgrades do not run it, because a missing switch is created on first check. You can also run it manually:
 
 ```bash
 python manage.py seed_waffle_switches
