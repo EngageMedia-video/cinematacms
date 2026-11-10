@@ -15,6 +15,11 @@ def strip_delimiters(input_string):
     return "".join(char for char in input_string if char not in delimiters)
 
 
+def clean_filename(filename):
+    # basename first: a client-supplied path must not reach the filesystem
+    return strip_delimiters(os.path.basename(filename))
+
+
 def is_valid_uuid_format(uuid_string):
     pattern = re.compile(
         r"^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$",
@@ -35,9 +40,7 @@ class BaseFineUploader:
             # not sure if this will work with the chunked uploads though
             self.uuid = uuid.uuid4()
 
-        self.filename = os.path.basename(self.filename)
-        self.filename = strip_delimiters(self.filename)
-        # avoid possibility of passing a fake path here
+        self.filename = clean_filename(self.filename)
 
         self.file = data.get("qqfile")
         self.storage_class = settings.FILE_STORAGE

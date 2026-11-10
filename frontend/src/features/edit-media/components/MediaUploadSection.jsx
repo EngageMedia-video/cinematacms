@@ -4,6 +4,7 @@ import { Text } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { UploadMediaItem } from '../../shared/components/UploadMediaItem';
 import { getCSRFToken } from '../../add-media/utils/helpers';
+import { createResumableUploader } from '../../shared/utils/resumableUpload';
 import { sendUploadIdHeader } from '../../shared/utils/uploadId';
 import { useReplacementUploadState } from '../hooks/useReplacementUploadState';
 
@@ -43,15 +44,11 @@ export function MediaUploadSection({ config, disabled, ref }) {
 		}
 
 		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() || config.csrfToken || '' };
-		uploaderRef.current = new window.qq.FineUploaderBasic({
+		uploaderRef.current = createResumableUploader(window.qq.FineUploaderBasic, {
 			debug: false,
 			request: {
 				endpoint: config.uploadEndpoint,
 				customHeaders: uploadHeaders,
-			},
-			retry: {
-				enableAuto: true,
-				maxAutoAttempts: 2,
 			},
 			validation: {
 				itemLimit: 1,

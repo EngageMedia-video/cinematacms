@@ -222,10 +222,38 @@ _OWNED_ROUTE_RULES = (
     # uploader.urls
     _rule("fu/upload/", "upload_transfer", "upload_transfer", url_name="upload", namespace="uploader"),
     _rule(
+        "fu/upload/session/",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="session_lookup",
+        namespace="uploader",
+    ),
+    _rule(
+        "fu/upload/session/<uuid:upload_id>/",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="session",
+        namespace="uploader",
+    ),
+    _rule(
         "fu/^upload/update/(?P<friendly_token>[\\w-]+)/$",
         "upload_transfer",
         "upload_transfer",
         url_name="update",
+        namespace="uploader",
+    ),
+    _rule(
+        "fu/^upload/update/(?P<friendly_token>[\\w-]+)/session/$",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="update_session_lookup",
+        namespace="uploader",
+    ),
+    _rule(
+        "fu/^upload/update/(?P<friendly_token>[\\w-]+)/session/(?P<upload_id>[0-9a-f-]{36})/$",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="update_session",
         namespace="uploader",
     ),
     _rule(

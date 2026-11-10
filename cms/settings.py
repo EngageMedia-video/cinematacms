@@ -659,6 +659,9 @@ ORPHANED_DRAFT_CLEANUP_HOURS = 168
 ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = env_int("UPLOAD_MAX_SIZE", 800 * 1024 * 1000 * 5)
+# bytes per chunk of a chunked upload; must match UPLOAD_PART_SIZE in
+# frontend/src/features/shared/utils/resumableUpload.js
+UPLOAD_PART_SIZE = 2_000_000
 
 # Default file count for the single-upload page's FineUploader. NOTE: this value
 # is overridden per-user in files/context_processors.py (advanced users -> 10,
