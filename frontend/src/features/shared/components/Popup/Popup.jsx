@@ -29,12 +29,6 @@ Popup.propTypes = {
 	style: PropTypes.object,
 };
 
-PopupTop.propTypes = {
-	children: PropTypes.node,
-	className: PropTypes.string,
-	style: PropTypes.object,
-};
-
 export function PopupMain({ children, className = '', style = null }) {
 	if (children === undefined) {
 		return null;
