@@ -23,6 +23,12 @@ const rawColorSelectors = [
 	{ selector: inlineColorProperty, message: semanticTokenMessage },
 ];
 
+// templates/config/index.html defines MediaCMS; templates/root.html loads the video.js UMD build.
+const pageGlobals = {
+	MediaCMS: 'readonly',
+	videojs: 'readonly',
+};
+
 export default [
 	{
 		ignores: ['build/**', 'node_modules/**', 'packages/**', 'config/**', 'scripts/**'],
@@ -34,6 +40,26 @@ export default [
 			parserOptions: {
 				ecmaFeatures: { jsx: true },
 			},
+		},
+	},
+
+	{
+		files: [
+			'src/features/**/*.{js,jsx}',
+			'src/test/**/*.{js,jsx}',
+			'.storybook/**/*.{js,jsx,mjs}',
+			'vitest.config.js',
+		],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+				...globals.node,
+				...globals.vitest,
+				...pageGlobals,
+			},
+		},
+		rules: {
+			'no-undef': 'error',
 		},
 	},
 
@@ -83,6 +109,8 @@ export default [
 			globals: {
 				...globals.browser,
 				...globals.node,
+				...globals.vitest,
+				...pageGlobals,
 			},
 		},
 		rules: {
@@ -103,7 +131,7 @@ export default [
 					],
 				},
 			],
-			'no-undef': 'warn',
+			'no-undef': 'error',
 			'no-unused-vars': [
 				'warn',
 				{
