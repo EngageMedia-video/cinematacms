@@ -173,9 +173,8 @@ describe('TextField', () => {
 		expect(input).toHaveAccessibleDescription('External description Local helper text');
 	});
 
-	// The inset box-shadow mask loses to `focus:ring-0` while focused, and the
-	// 9999s transition only delays Chrome's #E8F0FE autofill background.
-	it('hides the browser autofill background while the field is focused, however long it stays filled', () => {
+	// Checks the declaration only: jsdom cannot paint Chrome's autofill state.
+	it('clips the autofill background to the text', () => {
 		const declarations = declarationsFor(textFieldStyles, ['.field-input', ':-webkit-autofill']);
 
 		expect(declarations['background-clip']).toBe('text');
