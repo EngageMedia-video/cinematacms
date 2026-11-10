@@ -28,7 +28,7 @@ class ContentSecurityPolicyTests(SimpleTestCase):
     def test_report_only_header_denies_unknown_sources(self):
         response = self.client.get("/nonce-page/")
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn("Content-Security-Policy", response)
+        self.assertEqual(response["Content-Security-Policy"], "frame-ancestors 'self'")
         policy = response["Content-Security-Policy-Report-Only"]
         self.assertIn("default-src 'none'", policy)
         self.assertIn("object-src 'none'", policy)
@@ -74,6 +74,29 @@ class ContentSecurityPolicyTests(SimpleTestCase):
         self.assertIn("Content-Security-Policy", response)
         self.assertNotIn("Content-Security-Policy-Report-Only", response)
         self.assertIn("default-src 'none'", response["Content-Security-Policy"])
+        self.assertEqual(response["Content-Security-Policy"].count("frame-ancestors"), 1)
+
+    def test_report_only_mode_enforces_frame_ancestors_for_the_analytics_origin(self):
+        from cms.csp import build_policy, frame_ancestors_only
+
+        policy = build_policy(
+            static_url="/static/",
+            media_url="/media/",
+            upload_url="/upload",
+            vite={},
+            analytics_url="https://analytics.example.test/umami",
+        )
+        with override_settings(
+            MIDDLEWARE=["csp.middleware.CSPMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"],
+            CONTENT_SECURITY_POLICY=frame_ancestors_only(policy),
+            CONTENT_SECURITY_POLICY_REPORT_ONLY=policy,
+        ):
+            response = self.client.get("/nonce-page/")
+        self.assertEqual(response["Content-Security-Policy"], "frame-ancestors 'self' https://analytics.example.test")
+        report_only = response["Content-Security-Policy-Report-Only"]
+        self.assertIn("default-src 'none'", report_only)
+        self.assertIn("https://analytics.example.test/umami/script.js", report_only)
+        self.assertEqual(response["X-Frame-Options"], "SAMEORIGIN")
 
     def test_templates_authorize_inline_scripts_and_styles(self):
         for template in (Path(settings.BASE_DIR) / "templates").rglob("*.html"):
@@ -98,10 +121,37 @@ class ContentSecurityPolicyTests(SimpleTestCase):
         self.assertNotRegex(html, r"<script(?![^>]*\bsrc=)")
 
     def test_embed_can_be_framed_without_removing_other_protections(self):
-        with override_settings(ROOT_URLCONF="cms.urls"):
+        with override_settings(
+            ROOT_URLCONF="cms.urls",
+            MIDDLEWARE=["csp.middleware.CSPMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"],
+        ):
             response = self.client.get("/embed")
+        self.assertNotIn("Content-Security-Policy", response)
+        self.assertNotIn("X-Frame-Options", response)
         self.assertNotIn("frame-ancestors", response["Content-Security-Policy-Report-Only"])
         self.assertIn("object-src 'none'", response["Content-Security-Policy-Report-Only"])
+
+    def test_secure_media_files_refuse_framing_in_both_policy_modes(self):
+        """Browsers ignore X-Frame-Options: DENY once an enforced frame-ancestors is present."""
+        policy = settings.CONTENT_SECURITY_POLICY_REPORT_ONLY
+        for mode, policies in (
+            ("report-only", {"CONTENT_SECURITY_POLICY_REPORT_ONLY": policy}),
+            ("enforced", {"CONTENT_SECURITY_POLICY": policy, "CONTENT_SECURITY_POLICY_REPORT_ONLY": None}),
+        ):
+            with (
+                self.subTest(mode=mode),
+                override_settings(
+                    ROOT_URLCONF="cms.urls",
+                    MIDDLEWARE=["csp.middleware.CSPMiddleware"],
+                    USE_X_ACCEL_REDIRECT=True,
+                    **policies,
+                ),
+            ):
+                response = self.client.get("/media/tinymce_media/guide.pdf")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["X-Frame-Options"], "DENY")
+                self.assertIn("frame-ancestors 'none'", response["Content-Security-Policy"])
+                self.assertEqual(response["Content-Security-Policy"].count("frame-ancestors"), 1)
 
     def test_configured_asset_origins_and_vite_are_scoped(self):
         from cms.csp import build_policy

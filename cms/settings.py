@@ -5,7 +5,7 @@ from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
-from .csp import build_policy
+from .csp import build_policy, frame_ancestors_only
 from .runtime_config import (
     env_bool,
     env_csv,
@@ -722,7 +722,7 @@ _csp_policy = build_policy(
     extra_sources=CSP_EXTRA_SOURCES,
     report_uri=CSP_REPORT_URI,
 )
-CONTENT_SECURITY_POLICY = None if CSP_REPORT_ONLY else _csp_policy
+CONTENT_SECURITY_POLICY = frame_ancestors_only(_csp_policy) if CSP_REPORT_ONLY else _csp_policy
 CONTENT_SECURITY_POLICY_REPORT_ONLY = _csp_policy if CSP_REPORT_ONLY else None
 EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
 EMAIL_TRANSPORT_BACKEND = os.getenv("EMAIL_TRANSPORT_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
