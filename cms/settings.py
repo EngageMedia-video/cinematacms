@@ -5,7 +5,7 @@ from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
-from .csp import build_policy
+from .csp import build_policy, frame_ancestors_only
 from .runtime_config import (
     env_bool,
     env_csv,
@@ -725,7 +725,7 @@ _csp_policy = build_policy(
     extra_sources=CSP_EXTRA_SOURCES,
     report_uri=CSP_REPORT_URI,
 )
-CONTENT_SECURITY_POLICY = None if CSP_REPORT_ONLY else _csp_policy
+CONTENT_SECURITY_POLICY = frame_ancestors_only(_csp_policy) if CSP_REPORT_ONLY else _csp_policy
 CONTENT_SECURITY_POLICY_REPORT_ONLY = _csp_policy if CSP_REPORT_ONLY else None
 EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
 EMAIL_TRANSPORT_BACKEND = os.getenv("EMAIL_TRANSPORT_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -815,6 +815,10 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # django-waffle feature flag settings
 WAFFLE_CREATE_MISSING_SWITCHES = True
+WAFFLE_CREATE_MISSING_FLAGS = True
+# Waffle stores this in a new flag's Everyone field. Any other value overrides all targeting.
+WAFFLE_FLAG_DEFAULT = None
+WAFFLE_SECURE = SESSION_COOKIE_SECURE
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/")

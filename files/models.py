@@ -83,6 +83,12 @@ CHUNK_ACTIVE_STATUSES = {"pending", "running"}
 CHUNK_RECOVERY_WINDOW = timedelta(days=1)
 # Tells a merge's work directories from everything else in TEMP_DIRECTORY, which other users can write to.
 CHUNK_MERGE_DIRECTORY_PREFIX = "cinematacms-chunk-merge-"
+# ffmpeg's concat demuxer logs this for a chunk it cannot open, then skips the chunk and exits 0.
+CONCAT_SKIPPED_INPUT_MESSAGE = "Impossible to open"
+# Media.duration is rounded to whole seconds and chunk boundaries fall on keyframes, so a complete
+# merge can come out slightly shorter than it. Every chunk but the last is VIDEO_CHUNKS_DURATION long.
+CHUNK_MERGE_DURATION_TOLERANCE_SECONDS = 2
+CHUNK_MERGE_LOG_TAIL_CHARS = 2000
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
 # Celery's Redis transport consumes priority 0 first and 9 last, the reverse of RabbitMQ.
 # Unprioritised tasks such as create_hls also land in 0, so later encodes yield to them.
@@ -1389,9 +1395,12 @@ class Media(models.Model):
         for encoding in self.encodings.select_related("profile").filter(chunk=False):
             if encoding.profile.extension == "gif":
                 continue
-            enc = self.get_encoding_info(encoding, full=full)
             resolution = encoding.profile.resolution
-            ret[resolution][encoding.profile.codec] = enc
+            current = ret[resolution].get(encoding.profile.codec)
+            # A row that did not succeed, such as a failed re-encode, must not hide the rendition that still plays.
+            if current and current["status"] == "success" and encoding.status != "success":
+                continue
+            ret[resolution][encoding.profile.codec] = self.get_encoding_info(encoding, full=full)
         # if a file is broken in chunks and they are being
         # encoded, the final encoding file won't appear until
         # they are finished. Thus, produce the info for these
@@ -2932,6 +2941,8 @@ def _finalize_failed_chunk_group(instance):
         if not any(chunk.status == "fail" for chunk in chunks):
             return False
 
+        # A merge that already published this group outranks a chunk that fails afterwards, on a task retry.
+        published = _published_encoding_of_group(instance)
         aggregate_exists = (
             Encoding.objects.select_for_update()
             .filter(
@@ -2943,7 +2954,7 @@ def _finalize_failed_chunk_group(instance):
             )
             .exists()
         )
-        if not aggregate_exists:
+        if published is None and not aggregate_exists:
             chunks_paths = [chunk.media_file.path for chunk in chunks if chunk.media_file]
             all_logs = "\n".join(chunk.logs for chunk in chunks)
             aggregate = Encoding(
@@ -2967,6 +2978,11 @@ def _finalize_failed_chunk_group(instance):
         finally:
             _suppress_chunk_cleanup_scheduling.reset(cleanup_suppression)
     schedule_chunk_file_cleanup(chunk_file_paths)
+    if published is not None:
+        # The merge published and then raised before its cleanup. With the chunks gone, no later
+        # callback reaches the group, so the older renditions are retired here, after the commit
+        # because deleting them also removes their files.
+        _retire_superseded_encodings(published)
     return True
 
 
@@ -3017,6 +3033,81 @@ def _log_chunk_finalisation(outcome, reason_code="none", **fields):
     )
 
 
+class ChunkMergeError(Exception):
+    """The concat of a chunk group did not produce the full rendition, so the merge published nothing.
+
+    The message is a fixed reason code, safe to log; ffmpeg's output, which names files, goes to
+    the chunk's logs instead.
+    """
+
+    @property
+    def retryable(self):
+        # ffmpeg can exit non-zero because of the worker, such as a full temp disk. Every other
+        # reason comes from the chunk files or the merged output, which another run reads again.
+        return str(self) == "concat_failed"
+
+
+def _published_encoding_of_group(chunk):
+    """Return the merged encoding published from this chunk's group, or None.
+
+    A merged encoding keeps its group's chunks_info, which no other group shares, so a callback
+    that arrives after publication can tell its group is done even while chunks are left over.
+    """
+    return (
+        Encoding.objects.filter(
+            media=chunk.media,
+            profile=chunk.profile,
+            chunk=False,
+            status="success",
+            chunks_info=chunk.chunks_info,
+        )
+        .exclude(media_file="")
+        .order_by("-pk")
+        .first()
+    )
+
+
+def _retire_superseded_encodings(encoding):
+    """Delete the chunks and the older encodings of the profile that a published merge replaces.
+
+    Only encodings created before this one are deleted, so when two merges overlap the later one
+    stays instead of each deleting the other's result.
+    """
+    superseded = Encoding.objects.filter(media=encoding.media, profile=encoding.profile, pk__lt=encoding.pk)
+    print(
+        f"{encoding.media.friendly_token} Deleting",
+        [enco.id for enco in superseded],
+        encoding.id,
+    )
+    superseded.delete()
+
+
+def _merge_rejection_reason(merged_path, concat_result, expected_duration):
+    """Return why the merged file must not be published, or None when it is the full rendition."""
+    if "out" not in concat_result:  # run_command sets "out" only when the command exits with status 0
+        return "concat_failed"
+    # concat skips a chunk it cannot open and still exits 0 with a shorter file
+    if CONCAT_SKIPPED_INPUT_MESSAGE in concat_result.get("error", ""):
+        return "chunk_unreadable"
+    if not os.path.isfile(merged_path) or os.path.getsize(merged_path) == 0:
+        return "empty_output"
+    info = helpers.media_file_info(merged_path)
+    if not (info.get("is_video") or info.get("is_audio")):
+        return "not_playable"
+    duration = float(
+        info.get("video_duration") or info.get("audio_duration") or info.get("audio_info", {}).get("duration") or 0
+    )
+    if expected_duration and duration < expected_duration - CHUNK_MERGE_DURATION_TOLERANCE_SECONDS:
+        return "too_short"
+    return None
+
+
+def _record_merge_rejection(chunk, reason, concat_result):
+    """Append the rejection and the end of ffmpeg's output to the chunk's logs, for the failed aggregate."""
+    ffmpeg_tail = concat_result.get("error", "")[-CHUNK_MERGE_LOG_TAIL_CHARS:]
+    Encoding.objects.filter(pk=chunk.pk).update(logs=f"{chunk.logs}\nChunk merge rejected: {reason}\n{ffmpeg_tail}")
+
+
 def chunk_finalize_lock_key(media_id, profile_id):
     """Cache key that whoever merges or rebuilds a media's chunk group for one profile must hold."""
     return f"chunk_finalize_lock_{media_id}_{profile_id}"
@@ -3027,7 +3118,8 @@ def finalize_chunk_group(instance, expected_chunk_paths):
 
     Every chunk completion reaches this point, and the last chunks can complete at the same
     time. The first caller claims the group; a concurrent caller backs off, and a caller that
-    claims after the merge finished finds the chunks gone and backs off too.
+    claims after the merge finished finds the chunks gone and backs off too. A caller that finds
+    the group published with chunks left over finishes the cleanup instead of merging again.
 
     Return whether this caller merged the group.
     """
@@ -3062,6 +3154,11 @@ def finalize_chunk_group(instance, expected_chunk_paths):
             _record_chunk_finalisation_outcome("skipped", "lock_held")
             return False
         try:
+            published = _published_encoding_of_group(instance)
+            if published is not None:
+                _retire_superseded_encodings(published)
+                _log_chunk_finalisation("skipped", "already_finalised", **log_fields)
+                return False
             chunks = _encoded_chunks_when_complete(instance, expected_chunk_paths)
             if chunks is None:
                 _log_chunk_finalisation("skipped", "already_finalised", **log_fields)
@@ -3070,6 +3167,13 @@ def finalize_chunk_group(instance, expected_chunk_paths):
             _merge_chunks(instance, chunks)
             _log_chunk_finalisation("succeeded", **log_fields)
             return True
+        except ChunkMergeError:
+            logger.exception(
+                "cinematacms.media.pipeline",
+                extra={"stage": "chunk_finalize", "outcome": "failed", "reason_code": "encoding_failed", **log_fields},
+            )
+            _record_chunk_finalisation_outcome("failed", "encoding_failed")
+            raise
         except Exception:
             logger.exception(
                 "cinematacms.media.pipeline",
@@ -3145,11 +3249,18 @@ def _merge_chunks(instance, chunks):
             tf,
         ]
         stdout = helpers.run_command(cmd)
+        # Nothing is published or deleted until the output is the full rendition, so a failed concat
+        # leaves the profile's current encoding in place.
+        rejection = _merge_rejection_reason(tf, stdout, instance.media.duration)
+        if rejection:
+            _record_merge_rejection(instance, rejection, stdout)
+            raise ChunkMergeError(rejection)
         encoding = Encoding(
             media=instance.media,
             profile=instance.profile,
             status="success",
             progress=100,
+            chunks_info=instance.chunks_info,
         )
         all_logs = "\n".join([st.logs for st in chunks])
         encoding.logs = f"{chunks_paths}\n{stdout}\n{all_logs}"
@@ -3158,20 +3269,18 @@ def _merge_chunks(instance, chunks):
         start_date = min([st.add_date for st in chunks])
         end_date = max([st.update_date for st in chunks])
         encoding.total_run_time = (end_date - start_date).seconds
-        encoding.save()
+        # Store the file first, so the row is never visible as a success without its file.
         with open(tf, "rb") as f:
             myfile = File(f)
             output_name = f"{helpers.get_file_name(instance.media.media_file.path)}.{instance.profile.extension}"
-            encoding.media_file.save(content=myfile, name=output_name)
-        # The merged encoding is saved: delete the chunks and any older encoding of this profile.
-        # The caller holds the finalisation claim, so no other merge can have produced one of them.
-        replaced = Encoding.objects.filter(media=encoding.media, profile=encoding.profile).exclude(id=encoding.id)
-        print(
-            f"{encoding.media.friendly_token} Deleting",
-            [enco.id for enco in replaced],
-            encoding.id,
-        )
-        replaced.delete()
+            encoding.media_file.save(content=myfile, name=output_name, save=False)
+        try:
+            encoding.save()
+        except Exception:
+            if encoding.pk is None:  # no row points at the stored file
+                encoding.media_file.delete(save=False)
+            raise
+        _retire_superseded_encodings(encoding)
         instance.media.post_encode_actions(encoding=instance, action="add")
 
 

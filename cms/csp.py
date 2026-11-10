@@ -78,6 +78,13 @@ def build_policy(
     return {"DIRECTIVES": directives}
 
 
+def frame_ancestors_only(policy: Mapping[str, Mapping[str, Sequence[str]]]):
+    """Browsers ignore X-Frame-Options for an enforced frame-ancestors, not a
+    report-only one. django-csp fills a missing default-src with 'self', so it
+    is cleared explicitly."""
+    return {"DIRECTIVES": {"default-src": None, "frame-ancestors": policy["DIRECTIVES"]["frame-ancestors"]}}
+
+
 class NonceCacheControlMiddleware:
     """Keep pages carrying a request nonce out of browser and shared caches."""
 

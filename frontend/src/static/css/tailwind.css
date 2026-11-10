@@ -119,6 +119,15 @@ body .auth-figma-page .auth-field input::placeholder {
 	opacity: 1;
 }
 
+/* Chrome's autofill colors are UA `!important`, so they cannot be overridden.
+ * Clip its background to the glyphs and repaint the glyphs with the theme. */
+body .auth-figma-page .auth-field input:-webkit-autofill {
+	-webkit-text-fill-color: var(--text-strong);
+	caret-color: var(--text-strong);
+	-webkit-background-clip: text;
+	background-clip: text;
+}
+
 body .auth-figma-page .auth-icon {
 	color: var(--bg-primary);
 }

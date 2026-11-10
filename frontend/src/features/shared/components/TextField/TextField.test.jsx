@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { declarationsFor } from '../../../../test/cssDeclarations';
+import textFieldStyles from './TextField.css?raw';
 import { TextField } from './TextField';
 
 describe('TextField', () => {
@@ -169,5 +171,12 @@ describe('TextField', () => {
 		expect(describedBy).toContain('external-description');
 		expect(describedBy).toContain('helper-text');
 		expect(input).toHaveAccessibleDescription('External description Local helper text');
+	});
+
+	// Checks the declaration only: jsdom cannot paint Chrome's autofill state.
+	it('clips the autofill background to the text', () => {
+		const declarations = declarationsFor(textFieldStyles, ['.field-input', ':-webkit-autofill']);
+
+		expect(declarations['background-clip']).toBe('text');
 	});
 });

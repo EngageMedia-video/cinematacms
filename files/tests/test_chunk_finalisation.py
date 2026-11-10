@@ -1,9 +1,13 @@
 import json
 import os
+import shutil
 import stat
+import subprocess
 import tempfile
 import threading
+from contextlib import ExitStack
 from datetime import timedelta
+from unittest import skipUnless
 from unittest.mock import patch
 
 from django.conf import settings
@@ -13,13 +17,31 @@ from django.db.models.signals import post_save
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
-from files import models
+from files import helpers, models
 from files.models import EncodeProfile, Encoding, Media, encoding_file_save
 from files.tasks import EncodingTask, recover_stalled_chunk_groups
 from files.tests.helpers import create_test_media, create_test_user
 
 CHUNK_COUNT = 2
 BARRIER_TIMEOUT_SECONDS = 3
+REAL_CHUNK_SECONDS = 3
+
+
+def concat_calls(run_command):
+    return [call for call in run_command.call_args_list if "concat" in call.args[0]]
+
+
+def concatenate(command):
+    """Stand in for an ffmpeg concat that exits cleanly and writes its output file."""
+    with open(command[-1], "wb") as output_file:
+        output_file.write(b"merged rendition")
+    return {"out": ""}
+
+
+def concat_skips_an_unreadable_chunk(command):
+    """Stand in for ffmpeg 8 and 9, which skip a chunk they cannot open and still exit 0."""
+    concatenate(command)
+    return {"out": "", "error": "[concat @ 0x1] Impossible to open '/media/01_segment.mkv'"}
 
 
 class ChunkFinalisationRaceTests(TransactionTestCase):
@@ -52,12 +74,20 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
             # update() skips the post_save receiver, which would finalise on the last chunk
             Encoding.objects.filter(pk=chunk.pk).update(status="success", media_file=chunk.media_file.name)
 
+    def _merging(self, run_command=concatenate, media_info=None):
+        """Patch the concat, its ffprobe check and the post-encode side effects, and return the run_command mock."""
+        stack = ExitStack()
+        self.addCleanup(stack.close)
+        mock = stack.enter_context(patch("files.models.helpers.run_command", side_effect=run_command))
+        full_length = {"is_video": True, "video_duration": float(self.media.duration)}
+        stack.enter_context(patch("files.models.helpers.media_file_info", return_value=media_info or full_length))
+        stack.enter_context(patch.object(Media, "post_encode_actions"))
+        stack.enter_context(patch("files.models._schedule_storage_usage_refresh_for_media"))
+        return stack, mock
+
     def _recover_stalled_groups(self):
-        with (
-            patch("files.models.helpers.run_command", return_value="concat ok"),
-            patch.object(Media, "post_encode_actions"),
-            patch("files.models._schedule_storage_usage_refresh_for_media"),
-        ):
+        stack, _ = self._merging()
+        with stack:
             return recover_stalled_chunk_groups()
 
     def test_recovery_merges_a_group_whose_finaliser_died(self):
@@ -236,17 +266,14 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         directories_with_files_before_merge = self._directories_with_files()
         merge_directories = []
 
-        def recover_while_merging(*args, **kwargs):
+        def recover_while_merging(command):
             merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
             recover_stalled_chunk_groups()
             merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
-            return "concat ok"
+            return concatenate(command)
 
-        with (
-            patch("files.models.helpers.run_command", side_effect=recover_while_merging),
-            patch.object(Media, "post_encode_actions"),
-            patch("files.models._schedule_storage_usage_refresh_for_media"),
-        ):
+        stack, _ = self._merging(run_command=recover_while_merging)
+        with stack:
             merged = models.finalize_chunk_group(Encoding.objects.filter(chunk=True).first(), self.chunk_paths)
 
         before_recovery, after_recovery = merge_directories
@@ -287,27 +314,250 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
 
         chunk_pks = list(Encoding.objects.filter(chunk=True).values_list("pk", flat=True))
         threads = [threading.Thread(target=finalise, args=(pk,)) for pk in chunk_pks]
-        with (
-            patch("files.models.helpers.run_command", return_value="concat ok"),
-            patch.object(Media, "post_encode_actions"),
-            patch("files.models._schedule_storage_usage_refresh_for_media"),
-        ):
+        stack, _ = self._merging()
+        with stack:
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
         self.assertEqual(errors, [])
 
+    def _assert_one_merged_rendition(self):
+        merged = list(Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False))
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0].status, "success")
+        self.assertTrue(os.path.exists(merged[0].media_file.path))
+        self.assertEqual(
+            os.listdir(os.path.dirname(merged[0].media_file.path)), [os.path.basename(merged[0].media_file.path)]
+        )
+        self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
+        return merged[0]
+
     def test_concurrent_finalisation_keeps_exactly_one_merged_encoding(self):
         self._hold_aggregates_until_both_exist()
 
         self._finalise_from_concurrent_workers()
 
-        merged = list(Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False))
-        self.assertEqual(len(merged), 1)
-        self.assertEqual(merged[0].status, "success")
-        self.assertTrue(os.path.exists(merged[0].media_file.path))
+        self._assert_one_merged_rendition()
+
+    def test_merges_that_overlap_after_the_claim_is_lost_keep_exactly_one_merged_encoding(self):
+        # Both workers claim, as they would after the cache evicts or expires the first claim.
+        self._hold_aggregates_until_both_exist()
+
+        with patch.object(models.chunk_finalisation_cache, "add", return_value=True):
+            self._finalise_from_concurrent_workers()
+
+        self._assert_one_merged_rendition()
+
+    def _publish_previous_rendition(self, profile=None):
+        """Store a finished rendition from an earlier encode, as a re-encode finds it."""
+        previous = Encoding(media=self.media, profile=profile or self.profile, status="success", progress=100)
+        previous.media_file.save("previous.mp4", ContentFile(b"previous rendition"), save=False)
+        with (
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            previous.save()
+        return previous
+
+    def test_merge_output_is_validated_before_anything_is_published(self):
+        previous = self._publish_previous_rendition()
+
+        def concat_exits_with_an_error(command):
+            return {"error": "concat failed"}
+
+        def concat_writes_nothing(command):
+            open(command[-1], "wb").close()
+            return {"out": ""}
+
+        shorter_than_the_media = {"is_video": True, "video_duration": self.media.duration / 2}
+        cases = [
+            ("ffmpeg exits with an error", concat_exits_with_an_error, None, "concat_failed"),
+            ("ffmpeg skips a chunk it cannot open", concat_skips_an_unreadable_chunk, None, "chunk_unreadable"),
+            ("ffmpeg writes an empty file", concat_writes_nothing, None, "empty_output"),
+            ("ffprobe finds no audio or video", concatenate, {"fail": True}, "not_playable"),
+            ("the merge is shorter than the media", concatenate, shorter_than_the_media, "too_short"),
+        ]
+        chunk = Encoding.objects.filter(chunk=True).first()
+        for name, run_command, media_info, reason in cases:
+            with self.subTest(name):
+                stack, _ = self._merging(run_command=run_command, media_info=media_info)
+                with stack, self.assertRaises(models.ChunkMergeError) as raised:
+                    models.finalize_chunk_group(chunk, self.chunk_paths)
+
+                self.assertEqual(str(raised.exception), reason)
+                self.assertIn(f"Chunk merge rejected: {reason}", Encoding.objects.get(pk=chunk.pk).logs)
+                self.assertEqual(
+                    list(Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False)), [previous]
+                )
+                self.assertTrue(os.path.exists(previous.media_file.path))
+                self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True).count(), CHUNK_COUNT)
+
+    def test_a_failed_merge_fails_the_group_and_the_previous_rendition_stays_usable(self):
+        previous = self._publish_previous_rendition()
+        last_chunk = Encoding.objects.filter(chunk=True).first()
+
+        stack, _ = self._merging(run_command=concat_skips_an_unreadable_chunk)
+        with stack, self.assertRaises(models.ChunkMergeError):
+            encoding_file_save(sender=Encoding, instance=last_chunk, created=False)
+
+        # the exception left encoding.save() in encode_media, so Celery runs on_failure
+        task = EncodingTask()
+        task.encoding = last_chunk
+        with patch("files.tasks.kill_ffmpeg_process"):
+            task.on_failure(models.ChunkMergeError("not playable"), "task-id", (), {}, None)
+
+        previous.refresh_from_db()
+        self.assertEqual(previous.status, "success")
+        self.assertTrue(os.path.exists(previous.media_file.path))
+        self._assert_group_failed_with("chunk_unreadable")
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.encoding_status, "success")
+        rendition = self.media.encodings_info[self.profile.resolution][self.profile.codec]
+        self.assertEqual((rendition["status"], rendition["encoding_id"]), ("success", previous.pk))
+        self.assertIsNotNone(rendition["url"])
+
+    def _assert_group_failed_with(self, reason):
+        """Assert the group ended as one failed aggregate whose logs say why the merge was rejected."""
+        (aggregate,) = Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False, status="fail")
+        self.assertIn(f"Chunk merge rejected: {reason}", aggregate.logs)
+        self.assertIn("Impossible to open", aggregate.logs)  # the end of ffmpeg's output
         self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
+
+    def test_recovery_fails_a_group_whose_merge_is_rejected(self):
+        previous = self._publish_previous_rendition()
+
+        stack, _ = self._merging(run_command=concat_skips_an_unreadable_chunk)
+        with stack:
+            result = recover_stalled_chunk_groups()
+            second_run = recover_stalled_chunk_groups()
+
+        self.assertEqual(
+            result, {"outcome": "failed", "reason_code": "item_errors", "processed": 1, "changed": 0, "failed": 1}
+        )
+        self.assertEqual(second_run["processed"], 0)
+        self._assert_group_failed_with("chunk_unreadable")
+        self.assertTrue(Encoding.objects.filter(pk=previous.pk, status="success").exists())
+
+    def test_recovery_retries_a_concat_that_exits_with_an_error(self):
+        # A non-zero exit can come from the worker, such as a full temp disk, not from the chunks.
+        def concat_exits_with_an_error(command):
+            return {"error": "No space left on device"}
+
+        stack, run_command = self._merging(run_command=concat_exits_with_an_error)
+        with stack:
+            result = recover_stalled_chunk_groups()
+            second_run = recover_stalled_chunk_groups()
+
+        expected = {"outcome": "failed", "reason_code": "item_errors", "processed": 1, "changed": 0, "failed": 1}
+        self.assertEqual((result, second_run), (expected, expected))
+        self.assertEqual(len(concat_calls(run_command)), 2)
+        self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True, status="success").count(), CHUNK_COUNT)
+        self.assertFalse(Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False).exists())
+
+    def test_a_merge_that_is_the_full_rendition_is_accepted(self):
+        merged_path = os.path.join(self.tmpdir.name, "merged.mp4")
+        with open(merged_path, "wb") as merged_file:
+            merged_file.write(b"merged rendition")
+        expected = float(self.media.duration)
+        cases = [
+            ("video as long as the media", {"is_video": True, "video_duration": expected}),
+            (
+                "video short by less than the tolerance",
+                {"is_video": True, "video_duration": expected - models.CHUNK_MERGE_DURATION_TOLERANCE_SECONDS + 0.5},
+            ),
+            ("audio only, with the duration in its stream", {"is_audio": True, "audio_info": {"duration": "120.0"}}),
+        ]
+        for name, media_info in cases:
+            with self.subTest(name), patch("files.models.helpers.media_file_info", return_value=media_info):
+                self.assertIsNone(models._merge_rejection_reason(merged_path, {"out": ""}, self.media.duration))
+
+    def test_publication_replaces_the_previous_rendition_and_keeps_other_profiles(self):
+        previous = self._publish_previous_rendition()
+        other_profile = EncodeProfile.objects.create(name="480p", extension="mp4", codec="h264", resolution=480)
+        other_rendition = self._publish_previous_rendition(profile=other_profile)
+
+        stack, _ = self._merging()
+        with stack:
+            self.assertTrue(models.finalize_chunk_group(Encoding.objects.filter(chunk=True).first(), self.chunk_paths))
+
+        merged = self._assert_one_merged_rendition()
+        self.assertNotEqual(merged.pk, previous.pk)
+        self.assertFalse(os.path.exists(previous.media_file.path))
+        self.assertTrue(Encoding.objects.filter(pk=other_rendition.pk).exists())
+        self.assertTrue(os.path.exists(other_rendition.media_file.path))
+
+    def test_callbacks_and_retries_after_publication_keep_the_merged_rendition(self):
+        stale_chunk = Encoding.objects.filter(chunk=True).first()
+        stack, run_command = self._merging()
+        with stack:
+            encoding_file_save(sender=Encoding, instance=stale_chunk, created=False)
+        merged = self._assert_one_merged_rendition()
+
+        def success_callback():
+            encoding_file_save(sender=Encoding, instance=stale_chunk, created=False)
+
+        def task_failure_after_publication():
+            task = EncodingTask()
+            task.encoding = stale_chunk
+            with patch("files.tasks.kill_ffmpeg_process"):
+                task.on_failure(RuntimeError("worker lost"), "task-id", (), {}, None)
+
+        def recovery_run():
+            recover_stalled_chunk_groups()
+
+        cases = [
+            ("duplicate success callback", success_callback),
+            ("task failure after publication", task_failure_after_publication),
+            ("recovery run", recovery_run),
+        ]
+        for name, retry in cases:
+            with self.subTest(name):
+                stack, run_command = self._merging()
+                with stack:
+                    retry()
+
+                self.assertEqual(concat_calls(run_command), [])
+                self.assertEqual(self._assert_one_merged_rendition().pk, merged.pk)
+
+    def _publish_without_cleanup(self):
+        """Publish the merged rendition and die before its chunks and older renditions are deleted."""
+        stack, _ = self._merging()
+        with (
+            stack,
+            patch("files.models._retire_superseded_encodings", side_effect=OSError("worker lost")),
+            self.assertRaises(OSError),
+        ):
+            models.finalize_chunk_group(Encoding.objects.filter(chunk=True).first(), self.chunk_paths)
+        return Encoding.objects.get(media=self.media, profile=self.profile, chunk=False, chunks_info__gt="")
+
+    def test_a_success_callback_finishes_the_cleanup_of_a_published_group_without_merging_again(self):
+        previous = self._publish_previous_rendition()
+        published = self._publish_without_cleanup()
+        leftover = Encoding.objects.filter(chunk=True).first()
+
+        stack, run_command = self._merging()
+        with stack:
+            encoding_file_save(sender=Encoding, instance=leftover, created=False)
+
+        self.assertEqual(concat_calls(run_command), [])
+        self.assertEqual(self._assert_one_merged_rendition().pk, published.pk)
+        self.assertFalse(Encoding.objects.filter(pk=previous.pk).exists())
+
+    def test_a_chunk_failing_after_its_group_was_published_keeps_the_merged_rendition(self):
+        previous = self._publish_previous_rendition()
+        published = self._publish_without_cleanup()
+        leftover = Encoding.objects.filter(chunk=True).first()
+
+        task = EncodingTask()
+        task.encoding = leftover
+        with patch("files.tasks.kill_ffmpeg_process"):
+            task.on_failure(RuntimeError("task retry failed"), "task-id", (), {}, None)
+
+        self.assertEqual(self._assert_one_merged_rendition().pk, published.pk)
+        self.assertFalse(Encoding.objects.filter(pk=previous.pk).exists())
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.encoding_status, "success")
 
     def test_cache_outage_on_the_claim_fails_the_group_through_the_task_failure_path(self):
         last_chunk = Encoding.objects.filter(chunk=True).first()
@@ -342,3 +592,108 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
         self.media.refresh_from_db()
         self.assertEqual(self.media.encoding_status, "fail")
+
+
+@skipUnless(
+    shutil.which(settings.FFMPEG_COMMAND) and shutil.which(settings.FFPROBE_COMMAND), "needs ffmpeg and ffprobe"
+)
+class ChunkMergeWithFFmpegTests(TransactionTestCase):
+    """Run the real concat, which exits 0 after skipping a chunk it cannot open."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        override = override_settings(MEDIA_ROOT=self.tmpdir.name, TEMP_DIRECTORY=self.tmpdir.name)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.user = create_test_user(username="ffmpeg_merge_owner")
+        self.profile = EncodeProfile.objects.create(name="240p", extension="mp4", codec="h264", resolution=240)
+
+    def _media_with_encoded_chunks(self, count=3):
+        media = create_test_media(self.user, duration=count * REAL_CHUNK_SECONDS)
+        stored_name = Media._meta.get_field("media_file").storage.save("original.mp4", ContentFile(b"original"))
+        Media.objects.filter(pk=media.pk).update(media_file=stored_name)
+        media.refresh_from_db()
+        sources = [os.path.join(self.tmpdir.name, f"{media.pk}_{index:02d}_segment.mkv") for index in range(count)]
+        chunks_info = json.dumps(dict.fromkeys(sources, "checksum"))
+        for source in sources:
+            encoded = os.path.join(self.tmpdir.name, f"encoded_{os.path.basename(source)}")
+            subprocess.run(
+                [
+                    settings.FFMPEG_COMMAND,
+                    "-loglevel",
+                    "error",
+                    "-y",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    f"testsrc=duration={REAL_CHUNK_SECONDS}:size=64x48:rate=10",
+                    "-c:v",
+                    "mpeg4",
+                    encoded,
+                ],
+                check=True,
+            )
+            chunk = Encoding.objects.create(
+                media=media,
+                profile=self.profile,
+                status="pending",
+                chunk=True,
+                chunk_file_path=source,
+                chunks_info=chunks_info,
+                md5sum="checksum",
+            )
+            Encoding.objects.filter(pk=chunk.pk).update(status="success", media_file=os.path.basename(encoded))
+        return media, sources
+
+    def _publish_previous_rendition(self, media):
+        previous = Encoding(media=media, profile=self.profile, status="success", progress=100)
+        previous.media_file.save("previous.mp4", ContentFile(b"previous rendition"), save=False)
+        with (
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            previous.save()
+        return previous
+
+    def _finalize(self, media, chunk_paths):
+        with (
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            return models.finalize_chunk_group(Encoding.objects.filter(media=media, chunk=True).first(), chunk_paths)
+
+    def test_a_complete_group_is_published(self):
+        media, chunk_paths = self._media_with_encoded_chunks()
+
+        self.assertTrue(self._finalize(media, chunk_paths))
+
+        merged = Encoding.objects.get(media=media, chunk=False)
+        merged_info = helpers.media_file_info(merged.media_file.path)
+        self.assertAlmostEqual(merged_info["video_duration"], media.duration, delta=0.5)
+
+    def test_a_concat_that_skips_a_chunk_publishes_nothing(self):
+        def remove(path):
+            os.remove(path)
+
+        def overwrite_with_garbage(path):
+            with open(path, "wb") as chunk_file:
+                chunk_file.write(os.urandom(100))
+
+        cases = [
+            ("the second chunk is missing", 1, remove),
+            ("the last chunk is missing", 2, remove),
+            ("the second chunk is not video", 1, overwrite_with_garbage),
+        ]
+        for name, index, damage in cases:
+            with self.subTest(name):
+                media, chunk_paths = self._media_with_encoded_chunks()
+                previous = self._publish_previous_rendition(media)
+                chunks = list(Encoding.objects.filter(media=media, chunk=True).order_by("pk"))
+                damage(chunks[index].media_file.path)
+
+                with self.assertRaises(models.ChunkMergeError):
+                    self._finalize(media, chunk_paths)
+
+                self.assertEqual(list(Encoding.objects.filter(media=media, chunk=False)), [previous])
+                self.assertTrue(os.path.exists(previous.media_file.path))
