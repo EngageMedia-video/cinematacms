@@ -128,22 +128,25 @@ renderPage("page-home", HomePage);
 
 Legacy pages still use `templates/base.html`, which keeps Django-owned header/sidebar slots and lets `renderPage()` mount into `#app-header`, `#app-sidebar`, and the page-specific `#page-*` node.
 
-Home, Media, Upload, Edit Media, and Profile always use `templates/base_modern.html`. That template exposes a single `#app-root`, and `renderPage()` detects `data-ui-variant="revamp"` before mounting the React-owned app shell from `frontend/src/features/layout/`.
+Home, Media, Upload, Edit Media, and Profile always use `templates/base_modern.html`. That template exposes a single `#app-root`, and `renderPage()` detects `data-ui-variant="v2"` before mounting the React-owned app shell from `frontend/src/features/layout/`.
 
 Shell selection:
 
 - The migrated pages use their `*_revamp.html` templates.
 - Channel, History, Liked, and other unmigrated pages retain the legacy shell.
 - The base template declares the shell in its `ui_variant` block:
-  `root.html` renders `<body data-ui-variant="legacy">`, and
-  `base_modern.html` overrides it with `revamp`.
+  `root.html` renders `<body data-ui-variant="v1">`, and
+  `base_modern.html` overrides it with `v2`.
 - the helper only activates the modern shell when both conditions are true:
-  - `<body data-ui-variant="revamp">`
+  - `<body data-ui-variant="v2">`
   - `#app-root` exists in the template
 
 The mount-node check prevents legacy pages from booting into the modern shell.
 The old `UI_VARIANT_*` settings and preview parameter no longer select a UI.
 See [deployment and rollback](ui-variant-gate-deployment.md) before upgrading.
+
+To roll out the next migrated page, keep its v1 template and follow
+[Roll out a migrated page](../features/feature_flags.md#roll-out-a-migrated-page).
 
 ### Django Integration (django-vite)
 

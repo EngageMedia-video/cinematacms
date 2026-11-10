@@ -284,6 +284,7 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
         backend_exception=None,
         capture_exception=False,
         task_retries=None,
+        run_command=None,
     ):
         from files.tasks import encode_media
 
@@ -360,7 +361,7 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
                 stack.enter_context(patch("builtins.open", mock_open(read_data=b"encoded")))
                 stack.enter_context(patch("files.tasks.File"))
             if extension == "gif":
-                stack.enter_context(patch("files.tasks.run_command", return_value={"out": ""}))
+                stack.enter_context(patch("files.tasks.run_command", run_command or Mock(return_value={"out": ""})))
                 stack.enter_context(patch("files.tasks.rm_file"))
 
             try:
@@ -382,6 +383,29 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(encoding.status, "success")
         observer.assert_called_once_with(media, profile, "success")
+
+    def test_gif_failure_is_persisted_with_the_ffmpeg_output(self):
+        """A preview left in 'running' is re-encoded by check_running_states for ever."""
+        ffmpeg = Mock(return_value={"error": "Error writing trailer: Invalid argument"})
+
+        result, media, profile, encoding, observer = self._run_encode_media(extension="gif", run_command=ffmpeg)
+
+        self.assertFalse(result)
+        self.assertEqual(encoding.status, "fail")
+        self.assertEqual(encoding.logs, "Error writing trailer: Invalid argument")
+        encoding.save.assert_any_call(update_fields=["status", "logs"])
+        observer.assert_called_once_with(media, profile, "fail")
+
+    def test_gif_preview_does_not_seek_past_the_end_of_a_short_media(self):
+        """ffmpeg writes no frame, and no file, when -ss lands at or beyond the last frame."""
+        for duration, seek in ((3, "0"), (4, "3")):
+            with self.subTest(duration=duration):
+                ffmpeg = Mock(return_value={"error": ""})
+
+                self._run_encode_media(extension="gif", duration=duration, run_command=ffmpeg)
+
+                command = ffmpeg.call_args.args[0]
+                self.assertEqual(command[command.index("-ss") + 1], seek)
 
     def test_missing_duration_records_one_failure(self):
         result, media, profile, encoding, observer = self._run_encode_media(duration=0)
