@@ -73,7 +73,10 @@ for everyone.
 
 Target groups or users on a page that requires sign-in. A percentage assigns
 each browser by cookie, so one person can get different shells on two devices.
-Lowering a percentage does not move browsers already on v2.
+Each visit renews the cookie for 30 days, so changing the percentage does not
+move browsers that already have one. Before you raise a percentage, set the
+flag's **Rollout** option. It keeps a v1 assignment for the browser session
+only, so those browsers draw again at the new percentage.
 
 Do not use the flag's **Testing** option as a staff preview. It lets any visitor
 turn the flag on with `?dwft_<flag>=1`.
