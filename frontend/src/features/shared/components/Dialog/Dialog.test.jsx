@@ -108,6 +108,31 @@ describe('Dialog', () => {
 		expect(latestHandler).toHaveBeenCalledWith(false);
 	});
 
+	it('stays open when an inner widget already handled the Escape key', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<Dialog defaultOpen>
+				<DialogContent aria-label="Nested escape dialog">
+					<button
+						type="button"
+						onKeyDown={(event) => {
+							if (event.key === 'Escape') {
+								event.preventDefault();
+							}
+						}}
+					>
+						Inner menu
+					</button>
+				</DialogContent>
+			</Dialog>
+		);
+
+		await user.keyboard('{Escape}');
+
+		expect(screen.getByRole('dialog', { name: 'Nested escape dialog' })).toBeVisible();
+	});
+
 	it('traps focus inside the dialog and restores focus to the trigger on close', async () => {
 		const user = userEvent.setup();
 		const { container } = render(

@@ -62,7 +62,8 @@ export function Dialog({ children, open, defaultOpen = false, onOpenChange }) {
 	// An effect event reads the latest onOpenChange, so a close rule that
 	// depends on state set after the dialog opened still applies on Escape.
 	const handleKeyDown = useEffectEvent((event) => {
-		if (event.key === 'Escape') {
+		// An inner widget (e.g. an open Dropdown menu) marks the Escape it consumed.
+		if (event.key === 'Escape' && !event.defaultPrevented) {
 			setOpen(false);
 		}
 	});
