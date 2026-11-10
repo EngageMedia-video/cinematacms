@@ -49,8 +49,9 @@ The similarly named legacy django-csp 3.x settings do not configure version 4.
 ## Check report-only behavior
 
 1. Keep `CSP_REPORT_ONLY=true` and restart web workers.
-2. Inspect a page response. Expect `Content-Security-Policy-Report-Only` and
-   no enforced CSP header.
+2. Inspect a page response. Expect the full policy in
+   `Content-Security-Policy-Report-Only` and an enforced
+   `Content-Security-Policy` that holds only `frame-ancestors`.
 3. Check home, search, profiles, playlists, login, signup, MFA, contact CAPTCHA,
    uploads, replacement uploads, metadata/subtitle editing, MP4/HLS playback,
    captions, embeds, maintenance pages, and the admin editor. Check both themes
@@ -100,9 +101,18 @@ Configure reverse proxies and CDNs to bypass HTML caching. Never reuse a
 rendered nonce or cache the body independently of its CSP header. Responses
 that do not generate a nonce retain their existing cache policy.
 
-Normal pages permit same-origin framing. When `ANALYTICS_URL` is set, they also permit framing by its origin, which Umami's heatmap view needs. This takes effect only once the policy is enforced, because a report-only policy does not override `X-Frame-Options: SAMEORIGIN`. Both embed views remove only
-`frame-ancestors` and retain their existing X-Frame-Options exemptions and
-authorization checks.
+Normal pages permit same-origin framing. When `ANALYTICS_URL` is set, they also
+permit framing by its origin, which Umami's heatmap view needs. A report-only
+policy does not override `X-Frame-Options: SAMEORIGIN`, so in report-only mode
+pages also send an enforced `Content-Security-Policy` that holds only
+`frame-ancestors`, with the same value as the report-only policy. Browsers that
+support `frame-ancestors` then ignore `X-Frame-Options`, which stays on the
+response for older browsers. Both embed views remove `frame-ancestors` from
+both headers and retain their existing X-Frame-Options exemptions and
+authorization checks, so they send no enforced CSP header in report-only mode.
+Files served from `/media/` keep `X-Frame-Options: DENY` and set
+`frame-ancestors 'none'` in both modes, so an enforced `frame-ancestors` cannot
+relax it.
 
 ## Enable enforcement
 
