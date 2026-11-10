@@ -1,0 +1,144 @@
+{
+  "source": "emilkowalski/skills",
+  "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
+  "skills": {
+    "emil-design-eng": {
+      "path": "skills/emil-design-eng",
+      "upstreamFiles": {
+        "SKILL.md": "965cc3108047a1f68e504977ae7816c66115b202a32e7509c0b8305314839c54"
+      },
+      "files": {
+        "SKILL.md": "965cc3108047a1f68e504977ae7816c66115b202a32e7509c0b8305314839c54"
+      }
+    },
+    "animate": {
+      "path": "skills/animate",
+      "upstreamFiles": {
+        "RECIPES.md": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2",
+        "SKILL.md": "39138996033e0dbe53e73217514116eaeca774bae84a0687c80d445a4e0cc3a6"
+      },
+      "files": {
+        "RECIPES.md": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2",
+        "SKILL.md": "39138996033e0dbe53e73217514116eaeca774bae84a0687c80d445a4e0cc3a6"
+      }
+    },
+    "review-animations": {
+      "path": "skills/review-animations",
+      "upstreamFiles": {
+        "SKILL.md": "5f9fb98b69cace7107af8b393a4196fd42fa42d98bce0e5afc1f866ff3b8a41c",
+        "STANDARDS.md": "8f5fe3f5a04537556dd4e6a37f7a8d6f616d840eb80f2f68b5b594febb170657"
+      },
+      "files": {
+        "SKILL.md": "5f9fb98b69cace7107af8b393a4196fd42fa42d98bce0e5afc1f866ff3b8a41c",
+        "STANDARDS.md": "8f5fe3f5a04537556dd4e6a37f7a8d6f616d840eb80f2f68b5b594febb170657"
+      }
+    },
+    "improve-animations": {
+      "path": "skills/improve-animations",
+      "upstreamFiles": {
+        "AUDIT.md": "63fa8fcf7e7b3a3e252938e55c60e1f399f607e73553163e8dacf9df40f3ebed",
+        "PLAN-TEMPLATE.md": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
+        "SKILL.md": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
+      },
+      "files": {
+        "AUDIT.md": "63fa8fcf7e7b3a3e252938e55c60e1f399f607e73553163e8dacf9df40f3ebed",
+        "PLAN-TEMPLATE.md": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
+        "SKILL.md": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
+      }
+    },
+    "find-animation-opportunities": {
+      "path": "skills/find-animation-opportunities",
+      "upstreamFiles": {
+        "SKILL.md": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
+      },
+      "files": {
+        "SKILL.md": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
+      }
+    },
+    "remove-animations": {
+      "path": "skills/remove-animations",
+      "upstreamFiles": {
+        "SKILL.md": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9"
+      },
+      "files": {
+        "SKILL.md": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9"
+      }
+    },
+    "choreograph": {
+      "path": "skills/choreograph",
+      "upstreamFiles": {
+        "RECIPES.md": "b61f03b5c47398cf71ce9db4157cc919617228981b1d74a72d6a5fa27e4aaad2",
+        "SKILL.md": "815c7d889230bafc72c03bb0769087aeede310130e8795c7949b3e3a1684e464"
+      },
+      "files": {
+        "RECIPES.md": "b61f03b5c47398cf71ce9db4157cc919617228981b1d74a72d6a5fa27e4aaad2",
+        "SKILL.md": "815c7d889230bafc72c03bb0769087aeede310130e8795c7949b3e3a1684e464"
+      }
+    },
+    "animation-performance": {
+      "path": "skills/animation-performance",
+      "upstreamFiles": {
+        "SKILL.md": "6c60f45ab416ff3f7d7765a5427beead77fab0d82487fe610d2a298397558d0a"
+      },
+      "files": {
+        "SKILL.md": "6c60f45ab416ff3f7d7765a5427beead77fab0d82487fe610d2a298397558d0a"
+      }
+    },
+    "animation-vocabulary": {
+      "path": "skills/animation-vocabulary",
+      "upstreamFiles": {
+        "SKILL.md": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
+      },
+      "files": {
+        "SKILL.md": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
+      }
+    },
+    "apple-design": {
+      "path": "skills/apple-design",
+      "upstreamFiles": {
+        "SKILL.md": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
+      },
+      "files": {
+        "SKILL.md": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
+      }
+    },
+    "gestures": {
+      "path": "skills/gestures",
+      "upstreamFiles": {
+        "SKILL.md": "0835dddc0ce4f4257fdc707ec137d75810f0bdbd8d4eaf69d1de55bfbbf260c2"
+      },
+      "files": {
+        "SKILL.md": "0835dddc0ce4f4257fdc707ec137d75810f0bdbd8d4eaf69d1de55bfbbf260c2"
+      }
+    },
+    "pick-ui-library": {
+      "path": "skills/pick-ui-library",
+      "upstreamFiles": {
+        "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
+      },
+      "files": {
+        "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
+      }
+    },
+    "mobile-native": {
+      "path": "skills/mobile-native",
+      "upstreamFiles": {
+        "SKILL.md": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
+      },
+      "files": {
+        "SKILL.md": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
+      }
+    },
+    "break-ui": {
+      "path": "skills/break-ui",
+      "upstreamFiles": {
+        "CATALOG.md": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15",
+        "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
+      },
+      "files": {
+        "CATALOG.md": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15",
+        "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
+      }
+    }
+  }
+}

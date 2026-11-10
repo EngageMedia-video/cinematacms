@@ -213,6 +213,18 @@ Planning outputs stay local unless publication is requested. Tracker skills use
 existing CinemataCMS labels rather than installing the upstream state machine.
 Existing repository skills retain their adaptations and original source pin.
 
+The frontend UI and animation skills (`emil-design-eng`, `animate`,
+`review-animations`, `improve-animations`, `find-animation-opportunities`,
+`remove-animations`, `choreograph`, `animation-performance`,
+`animation-vocabulary`, `apple-design`, `gestures`, `pick-ui-library`,
+`mobile-native`, and `break-ui`) are imported unedited from
+[Emil Kowalski's skills](https://github.com/emilkowalski/skills/tree/715c1807e08c497cfd1dc4feb450a2a3300ef2a9)
+at commit `715c1807e08c497cfd1dc4feb450a2a3300ef2a9`. Their hashes are recorded
+in [the import manifest](../../.agents/skills/SOURCES.emilkowalski.json), and
+they retain the upstream [MIT license](../../.agents/skills/LICENSE.emilkowalski).
+They advise on motion and interface detail only. The modern track rules in
+`CODING_STANDARDS.md` still decide how a component is built.
+
 Repository skills do not update automatically. To import an upstream change,
 compare it with the pinned commit, preserve the repository-specific boundaries,
 update the pin, and run the validation steps below.
