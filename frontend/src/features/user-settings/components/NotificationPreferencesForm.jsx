@@ -33,6 +33,11 @@ const PREFERENCE_CATEGORIES = [
 				label: 'Film added to a curated collection',
 				status: 'active',
 			},
+			{
+				key: 'on_community_impact',
+				label: 'Community Impact record added to your film',
+				status: 'active',
+			},
 			{ label: 'Request for screening or usage', status: 'coming_soon' },
 		],
 	},
