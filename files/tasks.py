@@ -44,7 +44,7 @@ from .helpers import (
     rm_file,
     run_command,
 )
-from .methods import list_tasks, notify_users, pre_save_action
+from .methods import notify_users, pre_save_action
 from .metrics import observe_media_pipeline, record_domain_outcome, record_stale_encoding
 from .models import (
     Category,
@@ -1177,81 +1177,6 @@ def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
                 chunk_finalisation_cache.delete(lock_key)
 
 
-@task(name="check_media_states", queue="short_tasks")
-def check_media_states():
-    # check encoding status of not success media
-    media = Media.objects.filter(
-        Q(encoding_status="running") | Q(encoding_status="fail") | Q(encoding_status="pending")
-    )
-
-    logger.info(f"got {media.count()} media that are not in state success")
-
-    changed = 0
-    for m in media:
-        m.set_encoding_status()
-        m.save(update_fields=["encoding_status"])
-        changed += 1
-    if changed:
-        logger.info(f"changed encoding status to {changed} media items")
-    return True
-
-
-@task(name="check_pending_states", queue="short_tasks")
-def check_pending_states():
-    # check encoding profiles that are on state pending and not on a queue
-    encodings = Encoding.objects.filter(status="pending")
-
-    if not encodings:
-        return True
-
-    changed = 0
-    tasks = list_tasks()
-    task_ids = tasks["task_ids"]
-    media_profile_pairs = tasks["media_profile_pairs"]
-    for encoding in encodings:
-        if encoding.task_id and encoding.task_id in task_ids:
-            # encoding is in one of the active/reserved/scheduled tasks list
-            continue
-        elif (
-            encoding.media.friendly_token,
-            encoding.profile.id,
-        ) in media_profile_pairs:
-            continue
-            # encoding is in one of the reserved/scheduled tasks list.
-            # has no task_id but will be run, so need to re-enter the queue
-        else:
-            media = encoding.media
-            profile = encoding.profile
-            encoding.delete()
-            media.encode(profiles=[profile], force=False)
-            changed += 1
-    if changed:
-        logger.info(f"set to the encode queue {changed} encodings that were on pending state")
-    return True
-
-
-@task(name="check_missing_profiles", queue="short_tasks")
-def check_missing_profiles():
-    # check if video files have missing profiles. If so, add them
-    media = Media.objects.filter(media_type="video")
-    profiles = list(EncodeProfile.objects.all())
-
-    changed = 0
-
-    for m in media:
-        existing_profiles = [p.profile for p in m.encodings.all()]
-        missing_profiles = [p for p in profiles if p not in existing_profiles]
-        if missing_profiles:
-            m.encode(profiles=missing_profiles, force=False)
-            # since we call with force=False
-            # encode_media won't delete existing profiles
-            # if they appear on the meanwhile (eg on a big queue)
-            changed += 1
-    if changed:
-        logger.info(f"set to the encode queue {changed} profiles")
-    return True
-
-
 @task(name="clear_sessions", queue="short_tasks")
 def clear_sessions():
     try:
@@ -1509,27 +1434,8 @@ def update_listings_thumbnails():
     return {"outcome": "succeeded", "processed": total_changed, "changed": total_changed}
 
 
-@task(name="start_missing_encodings", queue="short_tasks")
-def start_missing_encodings():
-    # TODO: check with a settings on settings, default on, if this is needed.
-    # see if media file has not all encodings and set this
-    # (NOT for failed, only if not exist)
-    return True
-
-
-# simple celery testers!
-@task(name="sum_two_numbers", queue="short_tasks")
-def add(x, y):
-    return x + y
-
-
 @task(name="sum_two_numbers_two", queue="long_tasks")
 def add_two(x, y):
-    return x + y
-
-
-@task(name="beat_test")
-def beat_test(x, y):
     return x + y
 
 
@@ -1667,12 +1573,6 @@ def kill_all_ffmpeg_processes():
                 _graceful_kill(pid, label="(worker shutdown)")
     except Exception as e:
         logger.error(f"Error during ffmpeg cleanup on worker shutdown: {e}")
-
-
-@task(name="remove_media_file", base=Task, queue="long_tasks")
-def remove_media_file(media_file=None):
-    rm_file(media_file)
-    return True
 
 
 # TODO LIST
@@ -2055,8 +1955,7 @@ def _apply_visibility_schedules_inner():
                 went_public = expected == "public"
                 media.state = expected
                 # Keep Media.save() from interpreting this state-only transition as a
-                # media-file or thumbnail-time edit and dispatching encoding work.
-                media._Media__original_media_file = media.media_file
+                # thumbnail-time edit and dispatching encoding work.
                 media._Media__original_thumbnail_time = media.thumbnail_time
 
                 update_fields = ["state"]

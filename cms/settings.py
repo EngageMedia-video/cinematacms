@@ -404,14 +404,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "check_running_states",
         "schedule": crontab(minute="*/10"),
     },
-    #    'check_pending_states': {
-    #        'task': 'check_pending_states',
-    #        'schedule': crontab(minute='*/120'),
-    #    },
-    #    'check_media_states': {
-    #        'task': 'check_media_states',
-    #        'schedule': crontab(hour='*/10'),
-    #    },
     # clear expired sessions, every sunday 1.01am. By default Django has 2week expire date
     "clear_sessions": {
         "task": "clear_sessions",
@@ -455,8 +447,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "recover_stalled_chunk_groups",
         "schedule": crontab(minute="*/30"),
     },
-    #     "schedule": timedelta(seconds=5),
-    #     "args": (16, 16)
 }
 
 

@@ -158,19 +158,6 @@ class User(AbstractUser):
         return None
 
     @property
-    def playlists_info(self):
-        ret = []
-        for playlist in self.playlists.all():
-            c = {}
-            c["title"] = playlist.title
-            c["description"] = playlist.description
-            c["media_count"] = playlist.media_count
-            c["add_date"] = playlist.add_date
-            c["url"] = playlist.get_absolute_url()
-            ret.append(c)
-        return ret
-
-    @property
     def media_info(self):
         ret = {}
         results = []

@@ -88,18 +88,6 @@ def max_bulk_upload_files(user):
     return trusted_limit if is_trusted_uploader(user) else regular_limit
 
 
-def user_allowed_to_bulk_upload(request):
-    """Whether a user may use the dedicated bulk-upload page.
-
-    The user must be allowed to upload at all and have a per-batch limit of at
-    least two files. Single-file-only users (limit < 2) are rejected here and
-    sent to the single-upload page (issue #524, decision D8).
-    """
-    if not user_allowed_to_upload(request):
-        return False
-    return max_bulk_upload_files(request.user) >= 2
-
-
 def user_requires_mfa(user):
     if not user.is_authenticated:
         return False

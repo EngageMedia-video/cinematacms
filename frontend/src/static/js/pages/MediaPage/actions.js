@@ -28,18 +28,6 @@ export function unlikeMedia() {
 	});
 }
 
-export function dislikeMedia() {
-	Dispatcher.dispatch({
-		type: 'DISLIKE_MEDIA',
-	});
-}
-
-export function undislikeMedia() {
-	Dispatcher.dispatch({
-		type: 'UNDISLIKE_MEDIA',
-	});
-}
-
 export function reportMedia(reportDescription) {
 	Dispatcher.dispatch({
 		type: 'REPORT_MEDIA',
@@ -67,24 +55,10 @@ export function removeMedia() {
 	});
 }
 
-export function submitComment(commentText) {
-	Dispatcher.dispatch({
-		type: 'SUBMIT_COMMENT',
-		commentText,
-	});
-}
-
 export function submitCommunityImpact(communityImpactData) {
 	Dispatcher.dispatch({
 		type: 'SUBMIT_COMMUNITY_IMPACT',
 		communityImpactData,
-	});
-}
-
-export function deleteComment(commentId) {
-	Dispatcher.dispatch({
-		type: 'DELETE_COMMENT',
-		commentId,
 	});
 }
 

@@ -40,10 +40,6 @@ CACHE_VERSION_PREFIX = "cinemata:cache_version"
 MEDIA_DETAIL_TIMEOUT = 300  # 5 minutes
 PLAYLIST_DETAIL_TIMEOUT = 600  # 10 minutes
 MEDIA_LIST_TIMEOUT = 120  # 2 minutes
-MEDIA_SEARCH_TIMEOUT = 120  # 2 minutes
-CATEGORY_LIST_TIMEOUT = 900  # 15 minutes
-TAG_LIST_TIMEOUT = 900  # 15 minutes
-RELATED_MEDIA_TIMEOUT = 300  # 5 minutes
 CACHE_VERSION_TIMEOUT = 86400 * 7  # 7 days - version keys live longer than data
 
 

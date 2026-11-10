@@ -2,7 +2,6 @@ from allauth.account.adapter import DefaultAccountAdapter
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.shortcuts import resolve_url
-from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from cms.analytics import queue_action, visitor_segment
@@ -27,10 +26,6 @@ class MyAccountAdapter(DefaultAccountAdapter):
     def decrypt(self, encrypted_text: str):
         decrypted_bytes = self.cipher_suite.decrypt(encrypted_text.encode("utf-8"))
         return decrypted_bytes.decode("utf-8")
-
-    def get_email_confirmation_url_stub(self, request, emailconfirmation):
-        url = reverse("account_confirm_email", args=[emailconfirmation.key])
-        return settings.SSL_FRONTEND_HOST + url
 
     def clean_email(self, email):
         if email.split("@")[1] in settings.RESTRICTED_DOMAINS_FOR_USER_REGISTRATION:

@@ -1,4 +1,4 @@
-import { buildEditFormData, getMediaEditUrl, selectSubmittableFiles } from './buildSubmitItems';
+import { buildEditFormData, getMediaEditUrl } from './buildSubmitItems';
 import { createDefaultMetadata } from './useBulkUploadStore';
 
 describe('buildEditFormData', () => {
@@ -104,18 +104,6 @@ describe('buildEditFormData', () => {
 		});
 		expect(data.get('uploaded_poster')).toBeInstanceOf(File);
 		expect(data.get('thumbnail_time')).toBeNull();
-	});
-});
-
-describe('selectSubmittableFiles', () => {
-	it('keeps only files that finished uploading (have a token)', () => {
-		const files = [
-			{ friendlyToken: 'tok1', metadata: createDefaultMetadata() },
-			{ friendlyToken: null, metadata: createDefaultMetadata() },
-		];
-		const submittable = selectSubmittableFiles(files);
-		expect(submittable).toHaveLength(1);
-		expect(submittable[0].friendlyToken).toBe('tok1');
 	});
 });
 

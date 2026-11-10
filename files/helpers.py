@@ -58,7 +58,6 @@ BUF_SIZE_MULTIPLIER = 1.5
 
 # in seconds, anything between 2 and 6 makes sense
 KEYFRAME_DISTANCE = 4
-KEYFRAME_DISTANCE_MIN = 2
 
 # speed presets
 # see https://trac.ffmpeg.org/wiki/Encode/H.264
@@ -122,7 +121,6 @@ AUDIO_ENCODERS = {"h264": "aac", "h265": "aac", "vp9": "libopus"}
 
 AUDIO_BITRATES = {"h264": 128, "h265": 128, "vp9": 96}
 
-EXTENSIONS = {"h264": "mp4", "h265": "mp4", "vp9": "webm"}
 
 VIDEO_PROFILES = {"h264": "main", "h265": "main"}
 

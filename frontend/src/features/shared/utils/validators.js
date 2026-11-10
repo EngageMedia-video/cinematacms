@@ -25,10 +25,6 @@ export function maxWords(max, message) {
 	return (value) => (countWords(value) > max ? (message ?? `Maximum ${max} words`) : '');
 }
 
-export function maxLength(max, message) {
-	return (value) => (toText(value).length > max ? (message ?? `Maximum ${max} characters`) : '');
-}
-
 export function minLength(min, message) {
 	const text = (value) => toText(value);
 	return (value) =>

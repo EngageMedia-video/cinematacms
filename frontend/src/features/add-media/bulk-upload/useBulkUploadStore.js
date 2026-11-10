@@ -2,8 +2,6 @@ import { create } from 'zustand';
 
 import { getAddMediaConfig } from '../utils/helpers';
 
-export const SUB_STEPS = ['basic', 'thumbnail', 'other', 'final'];
-
 export const UPLOAD_STATUS = {
 	UPLOADING: 'uploading',
 	PROCESSING: 'processing',

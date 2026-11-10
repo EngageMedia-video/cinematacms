@@ -29,18 +29,7 @@ export const LICENSE_OPTIONS = [
 	{ value: 'no_license', label: 'All Rights Reserved' },
 ];
 
-export const SORT_OPTIONS = [
-	{ value: 'add_date', label: 'Upload date' },
-	{ value: 'title', label: 'Name' },
-	{ value: 'edit_date', label: 'Last updated' },
-	{ value: 'views', label: 'View count' },
-	{ value: 'likes', label: 'Like count' },
-	{ value: 'comment_count', label: 'Most discussed' },
-	{ value: 'featured_date', label: 'Most featured' },
-];
-
 // Engagement/popularity sorts only — surfaced as the rail "Popularity" section.
-// The full SORT_OPTIONS list stays on the top-right Sort button (general sorting + direction).
 export const POPULARITY_OPTIONS = [
 	{ value: 'views', label: 'View count' },
 	{ value: 'likes', label: 'Like count' },

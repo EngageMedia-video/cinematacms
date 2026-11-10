@@ -111,17 +111,14 @@ function initialMediaState() {
 	return {
 		likedMedia: false,
 		dislikedMedia: false,
-		// Track likes/dislikes performed in this page session so the
+		// Track likes performed in this page session so the
 		// getter can apply an optimistic +1 only for fresh actions
 		// (not for prior actions already counted in data.likes).
 		likedInSession: false,
-		dislikedInSession: false,
 		reported_times: 0,
 		while: {
 			deleteMedia: false,
-			submitComment: false,
 			submitCommunityImpact: false,
-			deleteCommentId: null,
 		},
 	};
 }
@@ -146,13 +143,8 @@ class MediaPageStore extends EventEmitter {
 		this.removeMediaResponse = this.removeMediaResponse.bind(this);
 		this.removeMediaFail = this.removeMediaFail.bind(this);
 
-		this.submitCommentFail = this.submitCommentFail.bind(this);
-		this.submitCommentResponse = this.submitCommentResponse.bind(this);
 		this.submitCommunityImpactFail = this.submitCommunityImpactFail.bind(this);
 		this.submitCommunityImpactResponse = this.submitCommunityImpactResponse.bind(this);
-
-		this.removeCommentFail = this.removeCommentFail.bind(this);
-		this.removeCommentResponse = this.removeCommentResponse.bind(this);
 	}
 
 	loadData() {
@@ -821,56 +813,6 @@ class MediaPageStore extends EventEmitter {
 		}
 	}
 
-	requestMediaDislike() {
-		if (!MediaPageStoreData[this.id].mediaId) {
-			console.warn('Invalid media id:', MediaPageStoreData[this.id].mediaId);
-			return false;
-		}
-
-		const url = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId + '/actions';
-		this.dislikeActionResponse = this.dislikeActionResponse.bind(this);
-		postRequest(
-			url,
-			{
-				type: 'dislike',
-			},
-			{
-				headers: {
-					'X-CSRFToken': getCSRFToken(),
-				},
-			},
-			false,
-			this.dislikeActionResponse,
-			function () {
-				this.emit('disliked_media_failed_request');
-			}.bind(this)
-		);
-	}
-
-	dislikeActionResponse(response) {
-		// console.warn( response );
-
-		if (response) {
-			if (response instanceof Error) {
-				// console.error( response );
-			} else if (response.data) {
-				MediaPageStoreData[this.id].dislikedMedia = true;
-
-				if (void 0 !== response.data.dislikes && MediaPageStoreData[this.id].data) {
-					MediaPageStoreData[this.id].data.dislikes = response.data.dislikes;
-				} else {
-					MediaPageStoreData[this.id].dislikedInSession = true;
-				}
-
-				this.emit('disliked_media');
-			} else {
-				// @todo: ......
-			}
-		} else {
-			// @todo: ......
-		}
-	}
-
 	requestMediaReport(descr) {
 		if (!MediaPageStoreData[this.id].mediaId) {
 			console.warn('Invalid media id:', MediaPageStoreData[this.id].mediaId);
@@ -982,22 +924,6 @@ class MediaPageStore extends EventEmitter {
 					r =
 						void 0 !== MediaPageStoreData[this.id].data && void 0 !== MediaPageStoreData[this.id].data.likes
 							? MediaPageStoreData[this.id].data.likes
-							: 'N/A';
-				}
-				break;
-			case 'media-dislikes':
-				tmp = MediaPageStoreData[this.id].dislikedInSession ? 1 : 0;
-				if (tmp) {
-					r =
-						void 0 !== MediaPageStoreData[this.id].data &&
-						void 0 !== MediaPageStoreData[this.id].data.dislikes
-							? MediaPageStoreData[this.id].data.dislikes + tmp
-							: tmp;
-				} else {
-					r =
-						void 0 !== MediaPageStoreData[this.id].data &&
-						void 0 !== MediaPageStoreData[this.id].data.dislikes
-							? MediaPageStoreData[this.id].data.dislikes
 							: 'N/A';
 				}
 				break;
@@ -1276,23 +1202,6 @@ class MediaPageStore extends EventEmitter {
                     this.emit("liked_media");*/
 				}
 				break;
-			case 'DISLIKE_MEDIA':
-				if (!MediaPageStoreData[this.id].likedMedia && !MediaPageStoreData[this.id].dislikedMedia) {
-					this.requestMediaDislike();
-					/*MediaPageStoreData[this.id].dislikedMedia = true;
-                    MediaPageStoreData[this.id].likedMedia = false;
-                    this.emit("disliked_media");*/
-				}
-				break;
-			case 'UNDISLIKE_MEDIA':
-				/*if( MediaPageStoreData[this.id].dislikedMedia ){
-                    MediaPageStoreData[this.id].dislikedMedia = false;
-                    this.emit("undisliked_media");
-                }*/
-				// if( ! MediaPageStoreData[this.id].dislikedMedia ){
-				//     this.dislikeActionResponse();
-				// }
-				break;
 			case 'REPORT_MEDIA':
 				if (!MediaPageStoreData[this.id].reported_times) {
 					if ('' !== action.reportDescription) {
@@ -1325,31 +1234,6 @@ class MediaPageStore extends EventEmitter {
 					this.removeMediaFail
 				);
 				break;
-			case 'SUBMIT_COMMENT':
-				if (MediaPageStoreData[this.id].while.submitComment) {
-					return;
-				}
-
-				MediaPageStoreData[this.id].while.submitComment = true;
-
-				/*const A = JSON.parse( JSON.stringify( MediaPageStoreData[this.id].comments[0] ) );
-                A.uid += '.' + (new Date).toTimeString() ;
-                A.text = action.commentText;
-                MediaPageStoreData[this.id].comments.push( A );
-                this.emit('comment_submit');
-                setTimeout(function(ins){
-                    MediaPageStoreData[ins.id].while.submitComment = false;
-                }, 100, this);*/
-
-				postRequest(
-					this.commentsAPIUrl,
-					{ text: action.commentText },
-					{ headers: { 'X-CSRFToken': getCSRFToken() } },
-					false,
-					this.submitCommentResponse,
-					this.submitCommentFail
-				);
-				break;
 			case 'SUBMIT_COMMUNITY_IMPACT':
 				if (MediaPageStoreData[this.id].while.submitCommunityImpact) {
 					return;
@@ -1358,31 +1242,6 @@ class MediaPageStore extends EventEmitter {
 				MediaPageStoreData[this.id].while.submitCommunityImpact = true;
 
 				this.submitCommunityImpact(action.communityImpactData);
-				break;
-			case 'DELETE_COMMENT':
-				if (null !== MediaPageStoreData[this.id].while.deleteCommentId) {
-					return;
-				}
-				/*let k;
-                let newComments = [];
-                for(k in MediaPageStoreData[this.id].comments){
-                    if( MediaPageStoreData[this.id].comments.hasOwnProperty(k) ){
-                        if( action.commentId !== MediaPageStoreData[this.id].comments[k].uid ){
-                            newComments.push( MediaPageStoreData[this.id].comments[k] );
-                        }
-                    }
-                }
-                MediaPageStoreData[this.id].comments = newComments;
-                newComments = null;
-                this.emit('comment_delete', action.commentId);*/
-				MediaPageStoreData[this.id].while.deleteCommentId = action.commentId;
-				deleteRequest(
-					this.commentsAPIUrl + '/' + action.commentId,
-					{ headers: { 'X-CSRFToken': getCSRFToken() } },
-					false,
-					this.removeCommentResponse,
-					this.removeCommentFail
-				);
 				break;
 			case 'CREATE_PLAYLIST':
 				postRequest(
@@ -1453,70 +1312,6 @@ class MediaPageStore extends EventEmitter {
 		setTimeout(
 			function (ins) {
 				MediaPageStoreData[ins.id].while.deleteMedia = null;
-			},
-			100,
-			this
-		);
-	}
-
-	removeCommentFail(err) {
-		this.emit('comment_delete_fail', MediaPageStoreData[this.id].while.deleteCommentId);
-		setTimeout(
-			function (ins) {
-				MediaPageStoreData[ins.id].while.deleteCommentId = null;
-			},
-			100,
-			this
-		);
-	}
-
-	removeCommentResponse(response) {
-		if (response && 204 === response.status) {
-			let k;
-			let newComments = [];
-			for (k in MediaPageStoreData[this.id].comments) {
-				if (MediaPageStoreData[this.id].comments.hasOwnProperty(k)) {
-					if (
-						MediaPageStoreData[this.id].while.deleteCommentId !==
-						MediaPageStoreData[this.id].comments[k].uid
-					) {
-						newComments.push(MediaPageStoreData[this.id].comments[k]);
-					}
-				}
-			}
-			MediaPageStoreData[this.id].comments = newComments;
-			newComments = null;
-
-			this.emit('comment_delete', MediaPageStoreData[this.id].while.deleteCommentId);
-		}
-		setTimeout(
-			function (ins) {
-				MediaPageStoreData[ins.id].while.deleteCommentId = null;
-			},
-			100,
-			this
-		);
-	}
-
-	submitCommentFail(err) {
-		this.emit('comment_submit_fail');
-		setTimeout(
-			function (ins) {
-				MediaPageStoreData[ins.id].while.submitComment = false;
-			},
-			100,
-			this
-		);
-	}
-
-	submitCommentResponse(response) {
-		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
-			MediaPageStoreData[this.id].comments.push(response.data);
-			this.emit('comment_submit', response.data.uid);
-		}
-		setTimeout(
-			function (ins) {
-				MediaPageStoreData[ins.id].while.submitComment = false;
 			},
 			100,
 			this
@@ -1608,8 +1403,6 @@ Object.entries({
 	media_playlist_removal_completed: 'playlist_remove',
 	copied_media_link: 'link_copy',
 	copied_embed_media_code: 'embed_copy',
-	comment_submit: 'comment_success',
-	comment_delete: 'comment_delete',
 	community_impact_submit: 'community_impact_submit',
 	media_delete: 'media_delete',
 	playlist_creation_completed: 'playlist_create',

@@ -26,8 +26,3 @@ export const PageLayout = ({ children }) => (
 		<Notifications />
 	</>
 );
-
-export default {
-	usePage,
-	PageLayout,
-};

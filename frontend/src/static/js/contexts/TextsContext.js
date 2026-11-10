@@ -12,7 +12,4 @@ const texts = {
 
 const TextsContext = React.createContext(texts);
 
-// export const TextsProvider = TextsContext.Provider;
-export const TextsConsumer = TextsContext.Consumer;
-
 export default TextsContext;
