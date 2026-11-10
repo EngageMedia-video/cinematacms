@@ -439,6 +439,22 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         self._assert_group_failed_with("chunk_unreadable")
         self.assertTrue(Encoding.objects.filter(pk=previous.pk, status="success").exists())
 
+    def test_recovery_retries_a_concat_that_exits_with_an_error(self):
+        # A non-zero exit can come from the worker, such as a full temp disk, not from the chunks.
+        def concat_exits_with_an_error(command):
+            return {"error": "No space left on device"}
+
+        stack, run_command = self._merging(run_command=concat_exits_with_an_error)
+        with stack:
+            result = recover_stalled_chunk_groups()
+            second_run = recover_stalled_chunk_groups()
+
+        expected = {"outcome": "failed", "reason_code": "item_errors", "processed": 1, "changed": 0, "failed": 1}
+        self.assertEqual((result, second_run), (expected, expected))
+        self.assertEqual(len(concat_calls(run_command)), 2)
+        self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True, status="success").count(), CHUNK_COUNT)
+        self.assertFalse(Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False).exists())
+
     def test_a_merge_that_is_the_full_rendition_is_accepted(self):
         merged_path = os.path.join(self.tmpdir.name, "merged.mp4")
         with open(merged_path, "wb") as merged_file:

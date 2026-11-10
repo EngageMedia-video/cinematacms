@@ -3040,6 +3040,12 @@ class ChunkMergeError(Exception):
     the chunk's logs instead.
     """
 
+    @property
+    def retryable(self):
+        # ffmpeg can exit non-zero because of the worker, such as a full temp disk. Every other
+        # reason comes from the chunk files or the merged output, which another run reads again.
+        return str(self) == "concat_failed"
+
 
 def _published_encoding_of_group(chunk):
     """Return the merged encoding published from this chunk's group, or None.

@@ -1936,7 +1936,7 @@ def recover_stalled_chunk_groups():
     A killed worker's task is not redelivered, so nothing else would call the merge again.
     The dead worker's claim blocks this until it expires, and a live merge keeps its group.
     It also removes the work directories that killed merges left behind, and fails a group whose
-    merge is rejected instead of retrying it.
+    merge is rejected for its chunk files instead of retrying it.
     """
     removed_work_dirs = remove_stale_chunk_merge_dirs()
     if removed_work_dirs:
@@ -1948,11 +1948,12 @@ def recover_stalled_chunk_groups():
             merged += finalize_chunk_group(chunk, list(json.loads(chunk.chunks_info)))
         except SoftTimeLimitExceeded:
             raise
-        except ChunkMergeError:
-            # The merge was rejected for what is in the chunk files, which another run would read
-            # again. Fail the group as EncodingTask.on_failure does in the encode task.
+        except ChunkMergeError as error:
             failed += 1
-            _fail_unmergeable_chunk_group(chunk)
+            # A retryable rejection waits for the next run inside the recovery window. Any other
+            # would only repeat, so fail the group as EncodingTask.on_failure does in the encode task.
+            if not error.retryable:
+                _fail_unmergeable_chunk_group(chunk)
         except Exception:
             # finalize_chunk_group logged the cause, and the next run retries inside the recovery window.
             failed += 1
