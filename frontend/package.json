@@ -21,7 +21,7 @@
 		"test:coverage": "vitest run --coverage",
 		"test:components": "vitest run",
 		"test:components:watch": "vitest",
-		"lint:modern": "eslint .storybook src/features vitest.config.js src/test/setup.js",
+		"lint:modern": "eslint .storybook src/features vitest.config.js src/test",
 		"lint:legacy": "eslint src/static/js/pages/ src/static/js/components/"
 	},
 	"devDependencies": {

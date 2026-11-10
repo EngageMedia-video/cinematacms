@@ -1,6 +1,14 @@
 @import '../../../css/config/index.scss';
 
 .manage-film-impact-page {
+	// The selects below are transparent, and Chrome paints an open option list
+	// with the select's own background. Give the options an opaque themed
+	// surface so the list stays readable in the dark theme.
+	select option {
+		background-color: var(--bg-surface, var(--popup-bg-color));
+		color: var(--text-strong, var(--body-text-color));
+	}
+
 	&__filters {
 		display: flex;
 		flex-wrap: wrap;
