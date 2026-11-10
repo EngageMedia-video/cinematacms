@@ -17,7 +17,7 @@
 const MENTION_PATTERN = /(^|\s)@([\p{L}\p{N}\p{M}\p{Pc}][\p{L}\p{N}\p{M}\p{Pc}.@-]*)/gu;
 const TRAILING_PUNCTUATION = /[.\-_@]+$/;
 
-export const MENTION_SUGGESTIONS_URL = '/api/v1/users/mention-suggestions';
+const MENTION_SUGGESTIONS_URL = '/api/v1/users/mention-suggestions';
 
 /** Fetch autocomplete candidates for `query` (the text typed after "@"). */
 export async function fetchMentionSuggestions(query, { signal } = {}) {

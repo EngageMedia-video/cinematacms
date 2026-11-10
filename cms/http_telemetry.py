@@ -15,31 +15,6 @@ HTTP_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTI
 HTTP_ROUTE_METHODS = HTTP_METHODS | {"OTHER"}
 
 
-HTTP_ROUTE_GROUPS = frozenset(
-    {
-        "system",
-        "pages",
-        "web_search",
-        "media_delivery",
-        "upload_ui",
-        "upload_transfer",
-        "search_api",
-        "media_api",
-        "moderation_api",
-        "moderation_ui",
-        "self_upload_api",
-        "notifications_api",
-        "users_api",
-        "playlists_api",
-        "taxonomy_api",
-        "task_api",
-        "api_other",
-        "third_party",
-        "unmatched",
-    }
-)
-
-
 @dataclass(frozen=True)
 class RouteOperation:
     route_group: str
@@ -393,18 +368,6 @@ def _build_registry() -> dict[tuple[str, str, str, str], RouteOperation]:
 
 
 ROUTE_OPERATION_REGISTRY = _build_registry()
-# These aliases make the owned contract discoverable without requiring callers
-# to know the implementation's historical name.
-HTTP_ROUTE_REGISTRY = ROUTE_OPERATION_REGISTRY
-ROUTE_REGISTRY = ROUTE_OPERATION_REGISTRY
-
-
-# Retain the named-operation view for code and tests that only need a URL name.
-# Route classification itself always performs the complete route-and-method
-# lookup above.
-NAMED_OPERATIONS = {
-    rule.url_name: rule.default for rule in _OWNED_ROUTE_RULES if rule.url_name and rule.namespace == ""
-}
 
 
 THIRD_PARTY_NAMESPACES = frozenset({"admin", "djdt", "rest_framework"})

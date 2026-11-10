@@ -42,7 +42,7 @@ export function formatDayLabel(value) {
 	return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function getVideoPlayer() {
+function getVideoPlayer() {
 	if (typeof document === 'undefined' || typeof window === 'undefined') return null;
 	const el = document.querySelector(PLAYER_SELECTOR);
 	if (!el || typeof window.videojs !== 'function') return null;

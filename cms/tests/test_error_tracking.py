@@ -27,17 +27,15 @@ from cms.urls import _error_tracking_diagnostic_rate_limited, error_tracking_dia
 
 class LoggingPrivacyConfigurationTests(SimpleTestCase):
     def test_overriding_logging_handlers_attach_the_sanitizing_filter(self):
-        for module_name in ("cms.dev_settings", "cms.test_settings"):
-            with self.subTest(module_name=module_name):
-                logging_config = importlib.import_module(module_name).LOGGING
+        logging_config = importlib.import_module("cms.test_settings").LOGGING
 
-                self.assertEqual(
-                    logging_config["filters"]["otel_trace"]["()"],
-                    "cms.observability.OpenTelemetryLogFilter",
-                )
-                for handler_name, handler in logging_config["handlers"].items():
-                    with self.subTest(module_name=module_name, handler_name=handler_name):
-                        self.assertIn("otel_trace", handler.get("filters", []))
+        self.assertEqual(
+            logging_config["filters"]["otel_trace"]["()"],
+            "cms.observability.OpenTelemetryLogFilter",
+        )
+        for handler_name, handler in logging_config["handlers"].items():
+            with self.subTest(handler_name=handler_name):
+                self.assertIn("otel_trace", handler.get("filters", []))
 
 
 class ErrorTrackingPrivacyTests(SimpleTestCase):

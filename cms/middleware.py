@@ -52,7 +52,6 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
 
             # Add to request for use in templates
             request.maintenance_remaining = int(remaining)
-            request.maintenance_start_time = start_time
             request.maintenance_total_duration = retry_after
             request.maintenance_is_extended = is_extended
             request.maintenance_extension_time = int(extension_time)
@@ -61,7 +60,6 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
             # Not in maintenance mode, clean up
             self._clear_timing()
             request.maintenance_remaining = 0
-            request.maintenance_start_time = None
             request.maintenance_total_duration = 0
             request.maintenance_is_extended = False
             request.maintenance_extension_time = 0

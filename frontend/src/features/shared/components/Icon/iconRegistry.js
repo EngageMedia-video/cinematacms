@@ -36,7 +36,7 @@ function buildRegistry() {
 	return Object.freeze(registry);
 }
 
-export const iconRegistry = buildRegistry();
+const iconRegistry = buildRegistry();
 export const iconNames = Object.freeze(Object.keys(iconRegistry).sort());
 
 export function getIconComponent(name) {

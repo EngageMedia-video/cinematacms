@@ -1055,10 +1055,6 @@ class SecureMediaView(View):
         # Return True if it's NOT a video file (so it can bypass authorization)
         return not is_video_like
 
-    def _user_has_elevated_access(self, user, media: Media) -> bool:
-        """Delegate to module-level function."""
-        return user_has_elevated_access(user, media)
-
     def _get_valid_restricted_token(self, request, media: Media) -> str | None:
         """Resolve the first valid restricted-media token from the request.
 

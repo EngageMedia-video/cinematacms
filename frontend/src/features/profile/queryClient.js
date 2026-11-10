@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 
-export const PROFILE_QUERY_STALE_TIME_MS = 120_000;
+const PROFILE_QUERY_STALE_TIME_MS = 120_000;
 
 const profileQueryClient = new QueryClient({
 	defaultOptions: {

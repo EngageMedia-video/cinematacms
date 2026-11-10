@@ -1,6 +1,6 @@
 import { Children, isValidElement } from 'react';
 import { cn } from '../../utils/classNames';
-export const VARIANT_CLASSES = {
+const VARIANT_CLASSES = {
 	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
 	secondary: 'border border-transparent bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	'action-inverse':
@@ -20,7 +20,7 @@ export function getVariantClasses(variant) {
 	return VARIANT_CLASSES[variant] ?? VARIANT_CLASSES.primary;
 }
 
-export const ALIGN_CLASSES = {
+const ALIGN_CLASSES = {
 	left: 'justify-start',
 	center: 'justify-center',
 	right: 'justify-end',
@@ -31,23 +31,23 @@ export function getAlignClasses(align) {
 	return ALIGN_CLASSES[align] ?? ALIGN_CLASSES.center;
 }
 
-export const SIZE_CLASSES = {
+const SIZE_CLASSES = {
 	base: 'px-space-base py-size-10',
 	sm: 'px-size-12 py-size-8 rounded-ds-8',
 	xs: 'px-size-12 py-size-4 rounded-ds-4',
 };
 
-export function getSizeClasses(size) {
+function getSizeClasses(size) {
 	return SIZE_CLASSES[size] ?? SIZE_CLASSES.base;
 }
 
-export const ICON_ONLY_SIZE_CLASSES = {
+const ICON_ONLY_SIZE_CLASSES = {
 	base: 'p-size-12 rounded-ds-4',
 	sm: 'p-size-10 rounded-ds-8',
 	xs: 'p-size-8 rounded-ds-4',
 };
 
-export function getIconOnlySizeClasses(size) {
+function getIconOnlySizeClasses(size) {
 	return ICON_ONLY_SIZE_CLASSES[size] ?? ICON_ONLY_SIZE_CLASSES.base;
 }
 

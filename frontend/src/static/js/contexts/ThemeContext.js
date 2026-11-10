@@ -10,7 +10,4 @@ const theme = {
 
 const ThemeContext = React.createContext(theme);
 
-export const ThemeProvider = ThemeContext.Provider;
-export const ThemeConsumer = ThemeContext.Consumer;
-
 export default ThemeContext;

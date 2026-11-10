@@ -1,1 +1,0 @@
-export { GetNotifiedButton } from './GetNotifiedButton';

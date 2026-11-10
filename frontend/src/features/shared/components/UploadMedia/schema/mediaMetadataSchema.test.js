@@ -1,8 +1,6 @@
 import {
 	validateMetadata,
 	countSynopsisWords,
-	hasErrors,
-	synopsisWordsRemaining,
 	SYNOPSIS_MAX_WORDS,
 	MEDIA_PASSWORD_MIN_LENGTH,
 	MEDIA_PASSWORD_MIN_LENGTH_ERROR,
@@ -23,12 +21,6 @@ describe('countSynopsisWords', () => {
 		expect(countSynopsisWords('  hello   world ')).toBe(2);
 		expect(countSynopsisWords('')).toBe(0);
 		expect(countSynopsisWords(null)).toBe(0);
-	});
-});
-
-describe('synopsisWordsRemaining', () => {
-	it('returns the remaining word budget', () => {
-		expect(synopsisWordsRemaining('one two')).toBe(SYNOPSIS_MAX_WORDS - 2);
 	});
 });
 
@@ -81,17 +73,5 @@ describe('validateMetadata', () => {
 		);
 		const exact = 'x'.repeat(MEDIA_PASSWORD_MIN_LENGTH);
 		expect(validateMetadata({ ...validMetadata, state: 'restricted', password: exact }).password).toBeUndefined();
-	});
-});
-
-describe('hasErrors', () => {
-	it('returns false for empty, null, or undefined error objects', () => {
-		expect(hasErrors({})).toBe(false);
-		expect(hasErrors(null)).toBe(false);
-		expect(hasErrors(undefined)).toBe(false);
-	});
-
-	it('returns true for non-empty error objects', () => {
-		expect(hasErrors({ summary: 'Required' })).toBe(true);
 	});
 });

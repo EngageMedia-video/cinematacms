@@ -146,7 +146,6 @@ CODECS = (
     ("h264", "h264"),
     ("vp9", "vp9"),
 )
-ENCODE_EXTENSIONS_KEYS = [extension for extension, name in ENCODE_EXTENSIONS]
 ENCODE_RESOLUTIONS_KEYS = [resolution for resolution, name in ENCODE_RESOLUTIONS]
 
 
@@ -608,7 +607,6 @@ class Media(models.Model):
     year_produced = models.IntegerField(help_text="Year media was produced", blank=True, null=True)
     allow_whisper_transcribe = models.BooleanField("Transcribe auto-detected language", default=False)
     allow_whisper_transcribe_and_translate = models.BooleanField("Translate to English", default=False)
-    __original_media_file = None
     __original_thumbnail_time = None
     __original_uploaded_poster = None
     __original_state = None
@@ -658,7 +656,6 @@ class Media(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Media, self).__init__(*args, **kwargs)
-        self.__original_media_file = self.media_file
         self.__original_thumbnail_time = self.thumbnail_time
         self.__original_uploaded_poster = self.uploaded_poster
         self.__original_state = self.state
@@ -767,7 +764,6 @@ class Media(models.Model):
                     self.analytics_revision = stored_analytics["analytics_revision"]
                     self.analytics_revisions = stored_analytics["analytics_revisions"]
             if persists("media_file") and stored_analytics and self.media_file.name != stored_analytics["media_file"]:
-                self.__original_media_file = self.media_file
                 self.analytics_revisions = [*self.analytics_revisions, str(self.analytics_revision)]
                 self.analytics_revision = uuid.uuid4()
                 if update_fields is not None:
@@ -2101,14 +2097,6 @@ class Encoding(models.Model):
                 md5sum = stdout.strip().split()[0]
                 self.md5sum = md5sum
         super(Encoding, self).save(*args, **kwargs)
-
-    def set_progress(self, progress, commit=True):
-        if isinstance(progress, int):
-            if 0 <= progress <= 100:
-                self.progress = progress
-                self.save(update_fields=["progress"])
-                return True
-        return False
 
     def __str__(self):
         return f"{self.profile.name}-{self.media.title}"

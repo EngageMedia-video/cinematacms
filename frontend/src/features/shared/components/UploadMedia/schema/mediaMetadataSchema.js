@@ -21,10 +21,6 @@ export function countSynopsisWords(text) {
 	return value.split(/\s+/).length;
 }
 
-export function synopsisWordsRemaining(text) {
-	return SYNOPSIS_MAX_WORDS - countSynopsisWords(text);
-}
-
 function isBlank(value) {
 	return value === undefined || value === null || String(value).trim() === '';
 }
@@ -91,8 +87,4 @@ export function validateMetadata(metadata = {}) {
 	}
 
 	return errors;
-}
-
-export function hasErrors(errors) {
-	return Boolean(errors && Object.keys(errors).length > 0);
 }

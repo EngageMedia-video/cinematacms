@@ -13,7 +13,7 @@ import { ProfileLikedPage } from './ProfilePage/Liked';
 
 import { addClassname } from '../functions/dom.js';
 
-export class AnonymousLikedMediaPage extends Page {
+class AnonymousLikedMediaPage extends Page {
 	constructor(props) {
 		super(props, 'liked-media');
 

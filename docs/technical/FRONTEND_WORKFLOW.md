@@ -247,8 +247,7 @@ cinematacms/
 │   │   └── media-player/
 │   ├── vite.config.js               # Vite configuration
 │   └── postcss.config.js            # PostCSS (autoprefixer)
-├── static/                          # Django & third-party static files (DO NOT DELETE)
-│   ├── admin/                      # Django admin static files
+├── static/                          # Third-party libraries and site images (DO NOT DELETE)
 │   ├── lib/                        # Libraries (video.js, fonts, etc.)
 │   ├── css/_extra.css              # Site-specific CSS overrides
 │   └── ...
@@ -261,7 +260,7 @@ cinematacms/
     └── build_frontend.sh            # Build automation script
 ```
 
-**Important**: The `static/` folder contains Django admin files, third-party libraries, and `_extra.css`. Do NOT delete it.
+**Important**: The `static/` folder contains third-party libraries, site images, and `_extra.css`. Do NOT delete it. `collectstatic` takes Django admin and other package assets from the installed packages.
 
 ## Makefile Commands
 

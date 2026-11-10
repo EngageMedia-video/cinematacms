@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { HorizontalMovieItem, MovieItem, VerticalMovieItem } from './MovieItem';
+import { HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 
 const samplePoster =
 	'data:image/svg+xml;utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"%3E%3Crect width="160" height="90" rx="6" fill="%23102746"/%3E%3Ccircle cx="120" cy="24" r="20" fill="%2385c4ff" fill-opacity="0.35"/%3E%3Cpath d="M0 66c24-18 47-27 68-27 21 0 52 12 92 35v16H0V66z" fill="%23D0735F"/%3E%3C/svg%3E';
@@ -75,36 +75,9 @@ describe('MovieItem', () => {
 		expect(screen.getByText('·')).toHaveClass('mr-1');
 	});
 
-	it('switches variants through the generic MovieItem orientation prop', () => {
-		const { rerender } = render(
-			<MovieItem
-				orientation="horizontal"
-				imageSrc={samplePoster}
-				imageAlt="Horizontal poster"
-				title="The Blue Boat"
-				metadata={['2024', 'Documentary']}
-			/>
-		);
-
-		expect(screen.getByRole('article')).toBeInTheDocument();
-
-		rerender(
-			<MovieItem
-				orientation="vertical"
-				imageSrc={samplePoster}
-				imageAlt="Vertical poster"
-				title="The Blue Boat"
-				metadata={['2024', 'Documentary']}
-			/>
-		);
-
-		expect(screen.getByRole('article')).toBeInTheDocument();
-	});
-
 	it('renders as a link when a detail URL is provided', () => {
 		render(
-			<MovieItem
-				orientation="vertical"
+			<VerticalMovieItem
 				imageSrc={samplePoster}
 				imageAlt="Clickable poster"
 				title="Cinema Paradiso"
