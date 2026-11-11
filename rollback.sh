@@ -151,6 +151,10 @@ case "$ans" in
     ;;
 esac
 
+# This step can fail, and it changes nothing that is served, so it runs before the
+# checkout moves. It also needs deploy/exchange-paths.py of the deployed commit.
+adopt_served_frontend
+
 trap restart_application_services_after_interrupted_deploy EXIT
 
 PRE_ROLLBACK_SHA=$(git rev-parse HEAD)
@@ -161,12 +165,9 @@ git checkout --detach "$TARGET_SHA"
 echo -e "${YELLOW}Reinstalling Python requirements...${NC}"
 pip install -r requirements.txt
 
-echo -e "${YELLOW}Rebuilding frontend...${NC}"
-if ! make quick-build; then
-  echo -e "${RED}Frontend build failed at rolled-back commit.${NC}" >&2
-  echo -e "${RED}You are now on detached HEAD $TARGET_SHA with a partial deploy.${NC}" >&2
-  exit 1
-fi
+echo -e "${YELLOW}Restoring the frontend of $TARGET_SHA...${NC}"
+# Not a condition: `set -e` must stop a step that fails before the release is served.
+roll_back_static_release "$TARGET_SHA"
 
 echo -e "${YELLOW}Updating ownership...${NC}"
 # The Collector rereads a log from its first line after losing read access to it,
