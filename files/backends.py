@@ -1,8 +1,10 @@
 # ffmpeg only backend
 
+import codecs
 import locale
 import logging
 import re
+from collections import deque
 from subprocess import PIPE, Popen
 
 logger = logging.getLogger(__name__)
@@ -15,7 +17,44 @@ class VideoEncodingError(Exception):
 
 
 RE_TIMECODE = re.compile(r"time=(\d+:\d+:\d+.\d+)")
+RE_STDERR_SEGMENT = re.compile(r"([^\r\n]*)([\r\n])")
+# Needs the "-loglevel level+..." flag, which tags each line after its "[context @ 0x...]" prefix.
+RE_ERROR_LINE = re.compile(r"^(?:\[[^\]]+\] )?\[(?:error|fatal|panic)\] ")
+RE_LOG_CONTEXT_ADDRESS = re.compile(r" @ 0x[0-9a-fA-F]+")
 console_encoding = locale.getdefaultlocale()[1] or "UTF-8"
+
+
+class FFmpegLogExcerpt:
+    """The first error lines and the last lines of FFmpeg's log, kept in log order."""
+
+    FIRST_ERROR_LINES = 10
+    TAIL_LINES = 20
+    MAX_LINE_CHARS = 500
+
+    def __init__(self):
+        self.first_errors = []
+        self.tail = deque(maxlen=self.TAIL_LINES)
+        self.line_count = 0
+
+    def add(self, line):
+        entry = (self.line_count, line[: self.MAX_LINE_CHARS])
+        self.line_count += 1
+        if len(self.first_errors) < self.FIRST_ERROR_LINES and RE_ERROR_LINE.match(line):
+            self.first_errors.append(entry)
+        self.tail.append(entry)
+
+    def lines(self):
+        kept = dict(self.first_errors)
+        kept.update(self.tail)
+        return [kept[position] for position in sorted(kept)]
+
+    def failure_message(self, returncode):
+        """Open with the first error, minus run-specific addresses, so one cause groups as one error."""
+        if self.first_errors:
+            header = RE_LOG_CONTEXT_ADDRESS.sub("", self.first_errors[0][1])
+        else:
+            header = f"FFmpeg exited with status {returncode}"
+        return "\n".join([header, *self.lines()])
 
 
 class FFmpegBackend:
@@ -78,33 +117,33 @@ class FFmpegBackend:
 
     def encode(self, cmd):
         self.process = self._spawn(cmd)
-        buf = output = ""
+        decoder = codecs.getincrementaldecoder(console_encoding)(errors="replace")
+        excerpt = FFmpegLogExcerpt()
+        pending = ""
         while True:
-            out = self.process.stderr.read(10)
-
-            if not out:
+            chunk = self.process.stderr.read(10)
+            pending += decoder.decode(chunk, final=not chunk)
+            consumed = 0
+            for segment in RE_STDERR_SEGMENT.finditer(pending):
+                text, terminator = segment.groups()
+                consumed = segment.end()
+                if terminator == "\r":
+                    progress = RE_TIMECODE.findall(text)
+                    yield progress[0] if progress else progress
+                elif text:
+                    excerpt.add(text)
+            pending = pending[consumed:]
+            if not chunk:
                 break
-            try:
-                out = out.decode(console_encoding)
-            except UnicodeDecodeError:
-                out = ""
-            output = output[-500:] + out
-            buf = buf[-500:] + out
-            try:
-                line, buf = buf.split("\r", 1)
-            except:
-                continue
+        if pending:
+            excerpt.add(pending)
 
-            progress = RE_TIMECODE.findall(line)
-            if progress:
-                progress = progress[0]
-            yield progress
+        returncode = self._check_returncode(self.process)["code"]
+        if returncode != 0:
+            raise VideoEncodingError(excerpt.failure_message(returncode))
 
-        process_check = self._check_returncode(self.process)
-        if process_check["code"] != 0:
-            raise VideoEncodingError(output[-1000:])  # output could be huge
-
+        output = "\n".join(excerpt.lines())
         if not output:
             raise VideoEncodingError("No output from FFmpeg.")
 
-        yield output[-1000:]  # output could be huge
+        yield output
