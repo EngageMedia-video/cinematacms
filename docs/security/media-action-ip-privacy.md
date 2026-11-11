@@ -95,10 +95,12 @@ the expiry step clears them. An IP field is kept for 7 days plus the delay until
 the next successful run: with a healthy scheduler and worker, up to one hour
 plus execution time. A stopped scheduler or worker extends that delay until it
 recovers. A backlog larger than one run's work extends it too: each hourly run
-starts no batch after four minutes, which keeps it under the `short_tasks`
-worker's 300-second soft limit, reports the fields it cleared as a success, and
-leaves the rest to the next run. The manual command has no time budget; run it
-to clear a large backlog at once. This policy limits retained rows; a stable key
+starts no batch after four minutes, which leaves its last batch about a minute
+before the `short_tasks` worker's 300-second soft limit. This reduces the risk
+of reaching the limit; a batch that runs longer can still reach it. A run that
+finishes reports the fields it cleared as a success and leaves the rest to the
+next run. The manual command has no time budget; run it to clear a large
+backlog at once. This policy limits retained rows; a stable key
 can still link repeat activity across the retained window. User and session
 identifiers have their own lifecycle and are not anonymized by IP cleanup.
 

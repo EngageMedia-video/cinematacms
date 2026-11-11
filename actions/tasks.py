@@ -2,7 +2,7 @@ from celery import shared_task
 
 from .ip_cleanup import expire_action_ips
 
-# The short_tasks worker's soft limit is 300 seconds; the spare minute covers the last batch.
+# A minute under the short_tasks worker's 300-second soft limit; a slower last batch can still reach it.
 TIME_BUDGET_SECONDS = 240
 
 
