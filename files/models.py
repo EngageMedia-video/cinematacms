@@ -706,12 +706,14 @@ class Media(models.Model):
     def save(self, *args, update_fields=None, initial_state=None, **kwargs):
         # A deferred load left these originals unrecorded. The stored row holds
         # them; without it a publish would not notify and an unchanged state
-        # would read as changed.
+        # would read as changed. They stay skipped until the lookup succeeds, so
+        # a save retried after a failed lookup reads them again.
         if self.__skipped_originals:
-            skipped, self.__skipped_originals = self.__skipped_originals, frozenset()
+            skipped = self.__skipped_originals
             stored = type(self)._base_manager.using(self._state.db).filter(pk=self.pk).only(*skipped).first()
             if stored is not None:
                 self._record_originals(stored, skipped)
+            self.__skipped_originals = frozenset()
 
         # A FieldFile.save(save=True) reaches here with no update_fields. Scope it
         # to the field that triggered it instead of replaying the whole instance.

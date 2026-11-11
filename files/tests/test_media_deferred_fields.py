@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from django.db import OperationalError, connection
 from django.test import TestCase
 
 from files.models import Media
@@ -49,6 +50,27 @@ class MediaDeferredSaveTest(TestCase):
             media.save()
 
         self.assertEqual(Media.objects.get(pk=stored.pk).state, "public")
+        notify_users.assert_any_call(friendly_token=stored.friendly_token, action="media_published")
+
+    def test_retrying_a_save_after_the_originals_lookup_fails_still_notifies_users(self):
+        stored = create_test_media(self.user, state="private")
+        media = Media.objects.only("id", "title").get(pk=stored.pk)
+        media.state = "public"
+        failed_sql = []
+
+        def fail_first_query(execute, sql, params, many, context):
+            if not failed_sql:
+                failed_sql.append(sql)
+                raise OperationalError("database unavailable")
+            return execute(sql, params, many, context)
+
+        with connection.execute_wrapper(fail_first_query), self.assertRaises(OperationalError):
+            media.save()
+        self.assertIn('"files_media"."state"', failed_sql[0])
+
+        with patch("files.methods.notify_users") as notify_users:
+            media.save()
+
         notify_users.assert_any_call(friendly_token=stored.friendly_token, action="media_published")
 
     def test_editing_the_title_of_a_media_loaded_with_only_keeps_viewer_access(self):
