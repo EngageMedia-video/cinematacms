@@ -63,6 +63,128 @@ anything else:
 sudo systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
 ```
 
+## Size the process budget for a small server
+
+The released process counts suit a server with memory to spare. On a small
+server, set a lower count for each service in `/etc/cinematacms/app.env`:
+
+| Key | Sets | Default | Trial value |
+| --- | --- | ---: | ---: |
+| `CINEMATA_WEB_WORKERS` | uWSGI workers, each with 10 threads | 8 | 4 |
+| `CINEMATA_CELERY_LONG_CONCURRENCY` | `celery_long` pool, which runs the encodings | 4 | 1 |
+| `CINEMATA_CELERY_SHORT_CONCURRENCY` | `celery_short` pool | 10 | 2 |
+| `CINEMATA_CELERY_EMAIL_CONCURRENCY` | `celery_email` pool | 4 | 1 |
+| `CINEMATA_CELERY_WHISPER_CONCURRENCY` | `celery_whisper` pool | 1 | 1 |
+
+The defaults live in `uwsgi.ini` and in the `deploy/celery_*.service` units. A
+key in `app.env` replaces its default, and a missing key keeps it. The release
+updater preserves the keys. It accepts only a positive integer for each, with
+no comment on the same line. For any other value it stops before it restarts a
+service.
+
+The trial values come from one development server with about 6 GiB of memory,
+recorded in
+[issue #999](https://github.com/EngageMedia-video/cinematacms/issues/999). Use
+them as a starting point, not as a rule. No out-of-memory kill occurred in the
+51 hours after the change, but one heavy encoding still left less than 1 GiB
+available. Measure available memory under your own encoding load and adjust.
+
+A drop-in that already sets `CELERYD_OPTS` with its own `--concurrency` still
+decides that pool size. Remove the option from the drop-in when you move the
+value to `app.env`.
+
+### Return freed web memory to the system
+
+The trial also set a fixed glibc `mmap` threshold for the web service. Every
+unit loads `app.env`, so set it in a drop-in for the web unit only,
+`/etc/systemd/system/mediacms.service.d/allocator.conf`:
+
+```ini
+[Service]
+Environment=MALLOC_MMAP_THRESHOLD_=131072
+```
+
+By default, glibc raises this threshold as a process frees large blocks, up to
+32 MiB on a 64-bit system, and keeps the freed blocks in the heap of the
+process. A fixed 128 KiB
+threshold makes glibc map each larger block separately and return it to the
+system when the process frees it. The cost is a system call and new page faults
+for each of those allocations. The trial did not measure this setting apart
+from the lower process counts, so its share of the saving is unknown. Leave it
+out unless measurements on your server show that web memory stays high after
+traffic falls.
+
+The release updater replaces only the unit files, so a drop-in directory stays
+in place.
+
+### Apply and verify
+
+First let the release updater check the new values. It reports an invalid count
+and changes no service:
+
+```bash
+sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart
+```
+
+A restart of the web service does not touch a running task, so it is safe at
+any time:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart mediacms
+```
+
+Do not restart any Celery unit while an encoding runs. The restart of one
+worker, including `celery_short` or `celery_email`, can stop an encoding that
+another worker runs. When no encoding is active, restart the Celery units:
+
+```bash
+sudo systemctl restart celery_long celery_short celery_email celery_whisper
+```
+
+While an encoding runs, leave the units running and remove idle processes from
+each pool instead. The key in `app.env` then takes effect at the next restart.
+The number is how many processes to remove, and the name before `@` is `long`,
+`short`, `email`, or `whisper`:
+
+```bash
+cd /home/cinemata/cinematacms
+sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/bin/celery -A cms control pool_shrink 3 -d "long@$(hostname)"'
+```
+
+Then check the live sizes. The first command counts the uWSGI workers. In the
+output of the second, the length of each `pool.processes` list is the live size
+of that pool. `max-concurrency` keeps the size the worker started with, so it
+does not show a later `pool_shrink`.
+
+```bash
+pgrep -c -P "$(systemctl show -p MainPID --value mediacms)"
+sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/bin/celery -A cms inspect stats'
+```
+
+To roll back, delete the keys from `app.env` and the drop-in, then repeat the
+steps above. The defaults return. `pool_grow` adds processes to a running pool
+as `pool_shrink` removes them.
+
+### Add swap for short peaks
+
+Swap is an optional capacity measure that an operator provisions outside this
+repository. It absorbs a short memory peak, such as one heavy encoding, that
+would otherwise end in an out-of-memory kill. On the trial server, 2 GiB of
+swap peaked at 187 MiB of use over 51 hours. Swap that stays in heavy use means
+the process budget is too large for the server.
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+To remove it, run `sudo swapoff /swapfile`, delete the `/swapfile` line from
+`/etc/fstab`, and delete the file.
+
 ## Install a new server
 
 Run the interactive installer:

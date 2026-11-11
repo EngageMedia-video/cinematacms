@@ -4,6 +4,7 @@
 import argparse
 import ast
 import os
+import re
 import runpy
 import secrets
 import shlex
@@ -110,6 +111,15 @@ IGNORED_LEGACY_SETTINGS = {
     "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_SUBDOMAIN",  # No application consumer exists.
 }
+# Optional overrides of the process counts in uwsgi.ini and the Celery units.
+PROCESS_COUNT_SETTINGS = (
+    "CINEMATA_WEB_WORKERS",
+    "CINEMATA_CELERY_LONG_CONCURRENCY",
+    "CINEMATA_CELERY_SHORT_CONCURRENCY",
+    "CINEMATA_CELERY_EMAIL_CONCURRENCY",
+    "CINEMATA_CELERY_WHISPER_CONCURRENCY",
+)
+POSITIVE_INTEGER = re.compile(r"[1-9][0-9]*")
 
 
 def parse_env(path):
@@ -121,6 +131,22 @@ def parse_env(path):
             key, value = line.split("=", 1)
             values[key] = value
     return values
+
+
+def is_positive_integer(raw):
+    try:
+        words = shlex.split(raw)
+    except ValueError:
+        return False
+    return len(words) == 1 and POSITIVE_INTEGER.fullmatch(words[0]) is not None
+
+
+def check_process_counts(values):
+    # uWSGI starts no worker for an empty count, and Celery reads 0 as one
+    # process for each CPU core.
+    invalid = [key for key in PROCESS_COUNT_SETTINGS if key in values and not is_positive_integer(values[key])]
+    if invalid:
+        raise RuntimeError("process counts must be positive integers: " + ", ".join(invalid))
 
 
 def serialize(value):
@@ -235,6 +261,7 @@ def main():
     values.setdefault("OTEL_EXPORTER_OTLP_HEADERS", "")
     values.setdefault("OTEL_TRACES_SAMPLER_ARG", "1.0")
     values.setdefault("OTEL_PRIORITY_TRACES_SAMPLER_ARG", "1.0")
+    check_process_counts(values)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_name(f".{args.output.name}.{os.getpid()}")

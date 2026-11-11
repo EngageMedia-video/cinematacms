@@ -19,7 +19,8 @@ Environment=CELERY_APP="cms"
 # or fully qualified:
 #CELERY_APP="proj.tasks:app"
 # Extra command-line arguments to the worker
-Environment=CELERYD_OPTS="--soft-time-limit=300 --concurrency=10"
+Environment=CELERYD_OPTS="--soft-time-limit=300"
+Environment=CINEMATA_CELERY_SHORT_CONCURRENCY=10
 # - %n will be replaced with the first part of the nodename.
 # - %I will be replaced with the current child process index
 #   and is important when using the prefork pool to avoid race conditions.
@@ -32,7 +33,7 @@ Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 Environment=OTEL_SERVICE_ROLE="short-task"
 WorkingDirectory=/home/cinemata/cinematacms
 
-ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker -n short@%H --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
+ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker -n short@%H --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} --concurrency=${CINEMATA_CELERY_SHORT_CONCURRENCY} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
 
 ExecStop=/bin/kill -s TERM $MAINPID
 

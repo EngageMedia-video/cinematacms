@@ -1036,6 +1036,198 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         )
         self.assertTrue(lifecycle_actions.isdisjoint(systemctl_commands))
 
+    WEB_WORKERS = "CINEMATA_WEB_WORKERS"
+    CELERY_POOL_SIZES = {
+        "long": "CINEMATA_CELERY_LONG_CONCURRENCY",
+        "short": "CINEMATA_CELERY_SHORT_CONCURRENCY",
+        "email": "CINEMATA_CELERY_EMAIL_CONCURRENCY",
+        "whisper": "CINEMATA_CELERY_WHISPER_CONCURRENCY",
+    }
+
+    def celery_worker_arguments(self, pool, overrides, units=PROJECT_ROOT / "deploy"):
+        """Run the start command of a Celery unit and return what Celery receives.
+
+        systemd applies the Environment= lines of a unit first and the values of
+        its EnvironmentFile= over them. The overrides stand for those values.
+        """
+        unit = (units / f"celery_{pool}.service").read_text()
+        environment = dict(re.findall(r'^Environment=(\w+)="?([^"\n]*)"?$', unit, re.MULTILINE))
+        start_command = re.search(r"^ExecStart=/bin/sh -c '(.*)'$", unit, re.MULTILINE).group(1)
+        recorder = Path(self.temp_dir.name) / "celery"
+        recorder.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$0.arguments"\n')
+        recorder.chmod(recorder.stat().st_mode | stat.S_IXUSR)
+        subprocess.run(
+            ["/bin/sh", "-c", start_command],
+            env={**environment, **overrides, "CELERY_BIN": str(recorder)},
+            check=True,
+        )
+        return Path(f"{recorder}.arguments").read_text().splitlines()
+
+    def celery_pool_size(self, pool, overrides, **unit_source):
+        sizes = [
+            argument.removeprefix("--concurrency=")
+            for argument in self.celery_worker_arguments(pool, overrides, **unit_source)
+            if argument.startswith("--concurrency=")
+        ]
+        # Celery keeps the last value of an option that is given twice.
+        return sizes[-1]
+
+    def web_workers(self, environment):
+        """Ask uWSGI for the worker count that the repository uwsgi.ini gives it."""
+        bound_to_the_server = ("chdir", "virtualenv", "module", "uid", "gid", "socket", "logto", "touch-logreopen")
+        portable = Path(self.temp_dir.name) / "uwsgi.ini"
+        portable.write_text(
+            "".join(
+                line
+                for line in (PROJECT_ROOT / "uwsgi.ini").read_text().splitlines(keepends=True)
+                if line.split("=")[0].strip() not in bound_to_the_server
+            )
+        )
+        result = subprocess.run(
+            [str(Path(sys.executable).parent / "uwsgi"), "--ini", str(portable), "--show-config", "--no-server"],
+            cwd=self.temp_dir.name,
+            env={"PATH": os.environ["PATH"], **environment},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # uWSGI applies its options in order, so the last count is the one it uses.
+        return re.findall(r"^(?:workers|processes) = (\d+)$", result.stderr, re.MULTILINE)[-1]
+
+    def render_app_env(self, existing):
+        output = Path(self.temp_dir.name) / "app.env"
+        output.write_text(existing)
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result, output.read_text()
+
+    def test_celery_pools_keep_their_sizes_and_options_without_an_override(self):
+        released = {
+            "long": ("4", ["-Ofair", "--prefetch-multiplier=1"]),
+            "short": ("10", ["--soft-time-limit=300"]),
+            "email": ("4", ["--prefetch-multiplier=1"]),
+            "whisper": ("1", ["-Ofair", "--prefetch-multiplier=1"]),
+        }
+        for pool, (size, options) in released.items():
+            with self.subTest(pool=pool):
+                arguments = self.celery_worker_arguments(pool, {})
+
+                self.assertEqual(
+                    [argument for argument in arguments if argument.startswith("--concurrency")],
+                    [f"--concurrency={size}"],
+                )
+                self.assertLessEqual(set(options), set(arguments))
+                self.assertEqual(arguments[-2:], ["-Q", f"{pool}_tasks"])
+
+    def test_app_env_sets_the_size_of_each_celery_pool(self):
+        for pool, key in self.CELERY_POOL_SIZES.items():
+            with self.subTest(pool=pool):
+                self.assertEqual(self.celery_pool_size(pool, {key: "3"}), "3")
+
+    def test_drop_in_that_sets_celeryd_opts_still_sets_the_pool_size(self):
+        drop_in = {"CELERYD_OPTS": "-Ofair --prefetch-multiplier=1 --concurrency=2"}
+
+        self.assertEqual(self.celery_pool_size("long", drop_in), "2")
+
+    def test_web_keeps_eight_workers_without_an_override(self):
+        self.assertEqual(self.web_workers({}), "8")
+
+    def test_app_env_sets_the_web_worker_count(self):
+        self.assertEqual(self.web_workers({self.WEB_WORKERS: "4"}), "4")
+
+    def test_small_host_process_budget_survives_a_second_apply(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+        budget = {self.WEB_WORKERS: "4", **dict.fromkeys(self.CELERY_POOL_SIZES.values(), "1")}
+        budget[self.CELERY_POOL_SIZES["short"]] = "2"
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        app_env_path.write_text(app_env_path.read_text() + "".join(f"{key}={value}\n" for key, value in budget.items()))
+        web_allocator = "[Service]\nEnvironment=MALLOC_MMAP_THRESHOLD_=131072\n"
+        drop_in = self.deploy_root / "etc/systemd/system/mediacms.service.d/allocator.conf"
+        drop_in.parent.mkdir()
+        drop_in.write_text(web_allocator)
+
+        second = self.run_updater()
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(drop_in.read_text(), web_allocator)
+        app_env = dict(line.split("=", 1) for line in app_env_path.read_text().splitlines())
+        self.assertEqual(self.web_workers({self.WEB_WORKERS: app_env[self.WEB_WORKERS]}), "4")
+        installed_units = {"units": self.deploy_root / "etc/systemd/system"}
+        self.assertEqual(
+            {pool: self.celery_pool_size(pool, app_env, **installed_units) for pool in self.CELERY_POOL_SIZES},
+            {"long": "1", "short": "2", "email": "1", "whisper": "1"},
+        )
+
+    def test_invalid_process_count_stops_the_apply_before_any_restart(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        app_env_path.write_text(app_env_path.read_text() + f"{self.WEB_WORKERS}=\n")
+
+        second = self.run_updater()
+
+        self.assertNotEqual(second.returncode, 0)
+        self.assertIn(self.WEB_WORKERS, second.stderr)
+        self.assertNotIn("systemctl restart", self.command_log.read_text())
+
+    def test_renderer_rejects_a_process_count_that_is_not_a_positive_integer(self):
+        for value in ("", "0", "-1", "1.5", "four", "4 # web", "4 4", '"4'):
+            with self.subTest(value=value):
+                existing = f"{self.WEB_WORKERS}={value}\n"
+
+                result, app_env = self.render_app_env(existing)
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(self.WEB_WORKERS, result.stderr)
+                self.assertEqual(app_env, existing)
+
+    def test_renderer_checks_every_process_count(self):
+        for key in (self.WEB_WORKERS, *self.CELERY_POOL_SIZES.values()):
+            with self.subTest(key=key):
+                result, _ = self.render_app_env(f"{key}=0\n")
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(key, result.stderr)
+
+    def test_renderer_accepts_a_plain_or_quoted_process_count(self):
+        for value in ("1", "12", '"4"', "'4'"):
+            with self.subTest(value=value):
+                result, app_env = self.render_app_env(f"{self.WEB_WORKERS}={value}\n")
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"{self.WEB_WORKERS}={value}\n", app_env)
+
     def test_installed_mediacms_unit_uses_systemd_process_shutdown(self):
         result = self.run_updater(
             "--domain",
