@@ -595,7 +595,11 @@ class TracingConfiguredAcrossProcessesTests(SimpleTestCase):
         with patch.dict(os.environ):
             os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
             os.environ.pop("prometheus_multiproc_dir", None)
-            worker_process_shutdown.send(sender=None, pid=os.getpid(), exitcode=0)
+            responses = worker_process_shutdown.send(sender=None, pid=os.getpid(), exitcode=0)
+
+        # Celery's Signal.send logs and returns a receiver's exception instead of raising it.
+        failures = [response for _, response in responses if isinstance(response, Exception)]
+        self.assertEqual(failures, [])
 
 
 class EndpointGroupingTests(SimpleTestCase):
