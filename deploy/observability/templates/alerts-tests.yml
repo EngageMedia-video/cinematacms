@@ -231,6 +231,29 @@ tests:
           - exp_labels: {severity: critical, service_role: long}
             exp_annotations: {summary: "A Celery worker heartbeat is stale"}
 
+  # One failed configuration keeps the role degraded until a later process of that role configures tracing.
+  - interval: 1m
+    input_series:
+      - series: 'cinematacms_tracing_configured{service_role="transcription"}'
+        values: '1 0+0x20'
+      - series: 'cinematacms_tracing_configured{service_role="web"}'
+        values: '1+0x20'
+    alert_rule_test:
+      - {eval_time: 4m, groupname: cinematacms-contract, alertname: CinemataTracingUnconfigured, exp_alerts: []}
+      - eval_time: 15m
+        groupname: cinematacms-contract
+        alertname: CinemataTracingUnconfigured
+        exp_alerts:
+          - exp_labels: {severity: warning, service_role: transcription}
+            exp_annotations: {summary: "A service role is running without tracing"}
+
+  - interval: 1m
+    input_series:
+      - series: 'cinematacms_tracing_configured{service_role="transcription"}'
+        values: '0+0x10 1+0x10'
+    alert_rule_test:
+      - {eval_time: 15m, groupname: cinematacms-contract, alertname: CinemataTracingUnconfigured, exp_alerts: []}
+
   # Each job is judged by its own window: the same age is inside one window and past the other.
   - interval: 1m
     input_series:

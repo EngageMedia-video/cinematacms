@@ -629,7 +629,8 @@
     "cinematacms.scheduled_job.outcome",
     "cinematacms.error_tracking.exception",
     "cinematacms.telemetry.emission_failed",
-    "cinematacms.telemetry.contract_violation"
+    "cinematacms.telemetry.contract_violation",
+    "cinematacms.telemetry.tracing_configured"
   ],
   "panel_exceptions": {
     "cinematacms.http.request.trace": "No code logs this name.",
@@ -641,7 +642,8 @@
     "cinematacms.email.delivery": "No code logs this name. The delivery is logged as the message email_delivery and traced as the span email.delivery.",
     "cinematacms.scheduled_job.outcome": "No code logs this name. An outcome is the metric cinematacms_scheduled_job_runs_total.",
     "cinematacms.error_tracking.exception": "No code logs this name. The exception goes to the error tracking service.",
-    "cinematacms.telemetry.contract_violation": "No code logs this name. A violation is the metric cinematacms_telemetry_contract_violations_total."
+    "cinematacms.telemetry.contract_violation": "No code logs this name. A violation is the metric cinematacms_telemetry_contract_violations_total.",
+    "cinematacms.telemetry.tracing_configured": "No code logs this name. The state is the metric cinematacms_tracing_configured."
   },
   "log_correlation": {
     "upload_ref": {
@@ -1036,6 +1038,16 @@
         "job": "scheduled_jobs"
       },
       "description": "cinematacms_scheduled_job_absence_threshold_seconds application telemetry signal"
+    },
+    "cinematacms_tracing_configured": {
+      "type": "gauge",
+      "labels": [
+        "service_role"
+      ],
+      "dimension_registries": {
+        "service_role": "service_roles"
+      },
+      "description": "cinematacms_tracing_configured application telemetry signal"
     },
     "cinematacms_celery_beat_freshness_timestamp_seconds": {
       "type": "gauge",
@@ -2412,6 +2424,46 @@
         ],
         "telemetry_stages": [
           "export"
+        ]
+      }
+    },
+    {
+      "id": "telemetry.tracing_configuration",
+      "status": "covered",
+      "domain": "telemetry",
+      "operation": "tracing_configuration",
+      "outcomes": [
+        "configured",
+        "unconfigured",
+        "disabled"
+      ],
+      "metric": [
+        "cinematacms_tracing_configured"
+      ],
+      "dimensions": [
+        "service_role"
+      ],
+      "events": [
+        "cinematacms.telemetry.tracing_configured"
+      ],
+      "instrumentation_seam": "cms.observability.configure_celery_observability",
+      "privacy_constraints": [
+        "service_role is a bounded registry value; never use hostnames, process IDs, or exception text."
+      ],
+      "tests": [
+        "cms.tests.test_observability.TracingConfigurationStateTests"
+      ],
+      "operator_query": "Find service roles whose cinematacms_tracing_configured is 0; restart that role's services after a package change and check its logs for the configuration error.",
+      "registry_coverage": {
+        "domains": [
+          "telemetry"
+        ],
+        "service_roles": [
+          "web",
+          "long-task",
+          "short-task",
+          "transcription",
+          "email"
         ]
       }
     },

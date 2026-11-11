@@ -36,6 +36,19 @@ The row's runtime tiles read `celery_task_runtime_bucket` from the exporter, whi
 
 The web process configures Django tracing during WSGI startup. A Celery child configures tracing from `worker_process_init`, after the fork. Set `OTEL_SERVICE_ROLE` to `web`, `long-task`, `short-task`, `transcription`, `email`, or `beat`. All roles use the `CinemataCMS` service namespace by default.
 
+Each process that configures tracing sets `cinematacms_tracing_configured` for
+its `service_role`. The value is 1 when the tracer provider and the
+instrumentation are set up, and 0 when either fails, for example on an
+`ImportError` or a credentialed endpoint without HTTPS. The failure stays
+non-fatal: the process keeps running without spans. A deployment with tracing
+disabled writes no sample, and `beat` never configures tracing. The gauge keeps
+the most recent write across the processes of a role, so a process that
+configures tracing later hides an earlier one that failed.
+`CinemataTracingUnconfigured` fires when a role reports 0 for five minutes.
+Restart that role's services and read their logs for the configuration error.
+A process that keeps running after the Python packages change can import new
+modules beside old ones and fail this way.
+
 `OTEL_TRACES_SAMPLER_ARG` sets the ordinary trace ratio. `OTEL_PRIORITY_TRACES_SAMPLER_ARG` sets the ratio for Celery, media, transcription, HLS, and email spans. Parent sampling decisions propagate across queued work.
 
 The deployment mode controls who owns the Collector. `local` installs the

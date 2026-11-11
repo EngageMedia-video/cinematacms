@@ -116,13 +116,25 @@ def _credentialed_endpoint_is_secure(endpoint: str, headers: dict[str, str] | No
         return False
 
 
+def _service_role() -> str:
+    role = getattr(settings, "OTEL_SERVICE_ROLE", "web")
+    return role if role in ALLOWED_SERVICE_ROLES else "web"
+
+
+def _record_tracing_configured(configured: bool) -> None:
+    try:
+        from files.metrics import TRACING_CONFIGURED
+
+        TRACING_CONFIGURED.labels(service_role=_service_role()).set(1 if configured else 0)
+    except Exception:
+        _record_telemetry_failure("metrics", "application", "emit")
+
+
 def _configure_tracer_provider() -> bool:
     global _tracer_configured
 
     if _tracer_configured:
         return True
-    if not observability_enabled():
-        return False
 
     try:
         from opentelemetry import trace
@@ -135,9 +147,7 @@ def _configure_tracer_provider() -> bool:
         logger.exception("OpenTelemetry packages are not installed")
         return False
 
-    role = getattr(settings, "OTEL_SERVICE_ROLE", "web")
-    if role not in ALLOWED_SERVICE_ROLES:
-        role = "web"
+    role = _service_role()
     namespace = getattr(settings, "OTEL_SERVICE_NAMESPACE", "CinemataCMS")
     resource = Resource.create(
         {
@@ -202,11 +212,8 @@ def sanitize_django_request_span(span, environ) -> None:
         _record_telemetry_failure("traces", "http", "attribute")
 
 
-def configure_django_observability() -> None:
+def _instrument_django() -> bool:
     global _django_instrumented
-
-    if not _configure_tracer_provider():
-        return
 
     try:
         if not _django_instrumented:
@@ -218,13 +225,12 @@ def configure_django_observability() -> None:
     except Exception as error:
         logger.exception("Failed to configure Django observability")
         capture_unexpected_exception(error)
+        return False
+    return True
 
 
-def configure_celery_observability() -> None:
+def _instrument_celery() -> bool:
     global _celery_instrumented
-
-    if not _configure_tracer_provider():
-        return
 
     try:
         if not _celery_instrumented:
@@ -236,6 +242,18 @@ def configure_celery_observability() -> None:
     except Exception as error:
         logger.exception("Failed to configure Celery observability")
         capture_unexpected_exception(error)
+        return False
+    return True
+
+
+def configure_django_observability() -> None:
+    if observability_enabled():
+        _record_tracing_configured(_configure_tracer_provider() and _instrument_django())
+
+
+def configure_celery_observability() -> None:
+    if observability_enabled():
+        _record_tracing_configured(_configure_tracer_provider() and _instrument_celery())
 
 
 def configure_celery_worker_process() -> None:
