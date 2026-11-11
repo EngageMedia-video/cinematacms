@@ -612,6 +612,9 @@ class Media(models.Model):
     __original_state = None
     __original_password = None
     __original_is_encrypted = None
+    # The columns save() compares against their value at load time.
+    _ORIGINAL_FIELDS = frozenset({"thumbnail_time", "uploaded_poster", "state", "password", "is_encrypted"})
+    __skipped_originals = frozenset()
 
     class Meta:
         ordering = ["-add_date"]
@@ -656,11 +659,17 @@ class Media(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(Media, self).__init__(*args, **kwargs)
-        self.__original_thumbnail_time = self.thumbnail_time
-        self.__original_uploaded_poster = self.uploaded_poster
-        self.__original_state = self.state
-        self.__original_password = self.password
-        self.__original_is_encrypted = self.is_encrypted
+        # Reading a deferred field here loads it through refresh_from_db(), whose
+        # .only() query builds another Media with the rest deferred, so the load
+        # recursed until RecursionError (#1105). This is get_deferred_fields()'s
+        # test limited to these columns, because every Media instance runs it.
+        deferred = self._ORIGINAL_FIELDS.difference(self.__dict__)
+        self.__skipped_originals = deferred
+        self._record_originals(self, self._ORIGINAL_FIELDS - deferred)
+
+    def _record_originals(self, source, field_names):
+        for field_name in field_names:
+            setattr(self, f"_Media__original_{field_name}", getattr(source, field_name))
 
     def expected_visibility_state(self, now=None):
         """Return the state this media should have for its visibility window."""
@@ -695,6 +704,15 @@ class Media(models.Model):
     FILE_FIELDS = frozenset({"media_file", "thumbnail", "poster", "uploaded_thumbnail", "uploaded_poster", "sprites"})
 
     def save(self, *args, update_fields=None, initial_state=None, **kwargs):
+        # A deferred load left these originals unrecorded. The stored row holds
+        # them; without it a publish would not notify and an unchanged state
+        # would read as changed.
+        if self.__skipped_originals:
+            skipped, self.__skipped_originals = self.__skipped_originals, frozenset()
+            stored = type(self)._base_manager.using(self._state.db).filter(pk=self.pk).only(*skipped).first()
+            if stored is not None:
+                self._record_originals(stored, skipped)
+
         # A FieldFile.save(save=True) reaches here with no update_fields. Scope it
         # to the field that triggered it instead of replaying the whole instance.
         # Only for an existing row: update_fields on an insert makes Django force

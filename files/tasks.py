@@ -1916,10 +1916,9 @@ def apply_visibility_schedules():
 def _apply_visibility_schedules_inner():
     now = timezone.now()
     # Load full rows (no .only()): the candidate set is small (only scheduled
-    # media), and deferring fields here is unsafe — Media.save() fires the
-    # track_featured_change pre_save signal which reads `featured`, and
-    # Media.__init__ reads `media_file`/`thumbnail_time`. If any of those are
-    # deferred, lazy-loading re-enters __init__ and recurses infinitely.
+    # media), and each row is saved. Media.save() and the track_featured_change
+    # pre_save signal read many columns, and a deferred column costs its own
+    # query when read.
     scheduled_media = Media.objects.filter(
         Q(visibility_start_date__isnull=False) | Q(visibility_expires_at__isnull=False)
     ).order_by("id")
