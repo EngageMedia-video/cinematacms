@@ -71,9 +71,9 @@ CELERY_WORKER_HEARTBEAT_TIMESTAMP = Gauge(
 )
 TRACING_CONFIGURED = Gauge(
     "cinematacms_tracing_configured",
-    "1 when the last process of a service role to configure tracing succeeded, 0 when it failed",
+    "1 when every live process of a service role configured tracing, 0 when any of them failed",
     ["service_role"],
-    multiprocess_mode="mostrecent",
+    multiprocess_mode="livemin",
 )
 CELERY_BEAT_FRESHNESS_TIMESTAMP = Gauge(
     "cinematacms_celery_beat_freshness_timestamp_seconds",

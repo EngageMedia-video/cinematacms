@@ -231,7 +231,7 @@ tests:
           - exp_labels: {severity: critical, service_role: long}
             exp_annotations: {summary: "A Celery worker heartbeat is stale"}
 
-  # One failed configuration keeps the role degraded until a later process of that role configures tracing.
+  # A role stays degraded while any live process of it reports 0, and recovers once those processes exit.
   - interval: 1m
     input_series:
       - series: 'cinematacms_tracing_configured{service_role="transcription"}'

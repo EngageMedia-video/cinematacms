@@ -1,7 +1,8 @@
 import os
 
 from celery import Celery
-from celery.signals import worker_process_init
+from celery.signals import worker_process_init, worker_process_shutdown
+from prometheus_client import multiprocess
 
 from cms.error_tracking import configure_error_tracking
 from cms.observability import configure_celery_worker_process
@@ -23,6 +24,13 @@ app.conf.worker_prefetch_multiplier = 1
 @worker_process_init.connect(weak=False, dispatch_uid="cinematacms_otel_worker_process")
 def configure_worker_observability(**kwargs):
     configure_celery_worker_process()
+
+
+@worker_process_shutdown.connect(weak=False, dispatch_uid="cinematacms_metrics_worker_process_exit")
+def drop_exited_worker_live_gauges(pid, **kwargs):
+    metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
+    if metrics_dir:
+        multiprocess.mark_process_dead(pid, metrics_dir)
 
 
 @app.task(bind=True)
