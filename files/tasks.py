@@ -1483,11 +1483,18 @@ def worker_shutdown_handler(sender=None, **kwargs):
     `celery worker --detach` calls it. ffmpeg keeps that session after its
     prefork child dies and init adopts it, so orphans are found too, while
     other workers' encoders run in other sessions and keep running.
+
+    Processes match by executable name, not command line, because the
+    worker's own argv can contain "ffmpeg" (`-n long@ffmpeg-node`).
     """
+    worker_pid = os.getpid()
     worker_session = os.getsid(0)
-    candidates = subprocess.run(["pgrep", "-f", "ffmpeg"], capture_output=True, text=True).stdout.split()
+    encoder_name = os.path.basename(settings.FFMPEG_COMMAND)
+    candidates = subprocess.run(["pgrep", "-x", encoder_name], capture_output=True, text=True).stdout.split()
     owned = []
     for pid in candidates:
+        if int(pid) == worker_pid:
+            continue
         try:
             if os.getsid(int(pid)) == worker_session:
                 owned.append(pid)
