@@ -16,7 +16,6 @@ class VideoEncodingError(Exception):
         super(VideoEncodingError, self).__init__(*args, **kwargs)
 
 
-RE_TIMECODE = re.compile(r"time=(\d+:\d+:\d+.\d+)")
 RE_STDERR_SEGMENT = re.compile(r"([^\r\n]*)([\r\n])")
 # Needs the "-loglevel level+..." flag, which tags each line after its "[context @ 0x...]" prefix.
 RE_ERROR_LINE = re.compile(r"^(?:\[[^\]]+\] )?\[(?:error|fatal|panic)\] ")
@@ -128,8 +127,7 @@ class FFmpegBackend:
                 text, terminator = segment.groups()
                 consumed = segment.end()
                 if terminator == "\r":
-                    progress = RE_TIMECODE.findall(text)
-                    yield progress[0] if progress else progress
+                    yield text
                 elif text:
                     excerpt.add(text)
             pending = pending[consumed:]
