@@ -3,6 +3,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -23,6 +24,7 @@ RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
 FRONTEND_ARTIFACT_TOOL = PROJECT_ROOT / "deploy" / "frontend-artifact.py"
+FRONTEND_BUILD = Path("frontend/build/production/static")
 # A hook passes GIT_DIR and GIT_INDEX_FILE to its commands, which would point a test repository at this one.
 GIT_ENVIRONMENT = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")} | {
     "GIT_CONFIG_GLOBAL": os.devnull,
@@ -1754,6 +1756,90 @@ class FrontendArtifactTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertGreater((self.target / "lib/video.js").stat().st_mtime, collected_before_the_deploy)
+
+
+class StaticFilesSettingsTests(unittest.TestCase):
+    PRINTS_WHAT_DJANGO_READS_FROM_THE_SETTINGS = (
+        "import json; "
+        "from django.conf import settings; "
+        "print(json.dumps({"
+        "'collected': settings.STATIC_ROOT, "
+        "'sources': settings.STATICFILES_DIRS, "
+        "'manifest': settings.DJANGO_VITE['default']['manifest_path']"
+        "}))"
+    )
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_root = Path(self.temp_dir.name)
+
+    def collect_static_files(self, *, collectstatic, served_build=str(FRONTEND_BUILD)):
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir()
+        python = fake_bin / "python"
+        python.write_text(f"#!/bin/sh\n{collectstatic}\n")
+        python.chmod(0o755)
+        temporary_files = self.test_root / "tmp"
+        temporary_files.mkdir()
+        env = os.environ.copy()
+        env.update(
+            {
+                "PATH": f"{fake_bin}:{env['PATH']}",
+                "SECRET_KEY": "placeholder-for-tests",
+                "TMPDIR": str(temporary_files),
+            }
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; FRONTEND_BUILD=$2; collect_static_files /srv/release/build /srv/release/collected',
+                "restart-test",
+                str(RESTART_SCRIPT),
+                served_build,
+            ],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result, list(temporary_files.iterdir())
+
+    def django_reads_the_settings(self):
+        return f"exec {shlex.quote(sys.executable)} -c {shlex.quote(self.PRINTS_WHAT_DJANGO_READS_FROM_THE_SETTINGS)}"
+
+    def test_collect_run_reads_the_build_and_writes_the_destination_that_it_names(self):
+        result, left_behind = self.collect_static_files(collectstatic=self.django_reads_the_settings())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            json.loads(result.stdout.strip().splitlines()[-1]),
+            {
+                "collected": "/srv/release/collected",
+                "sources": ["/srv/release/build", str(PROJECT_ROOT / "static")],
+                "manifest": "/srv/release/build/.vite/manifest.json",
+            },
+        )
+        self.assertEqual(left_behind, [])
+
+    def test_collect_run_stops_when_the_settings_do_not_collect_the_served_build(self):
+        # The run would otherwise collect the served build into the release.
+        result, left_behind = self.collect_static_files(
+            collectstatic=self.django_reads_the_settings(), served_build="frontend/build/elsewhere"
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"does not name {PROJECT_ROOT / 'frontend/build/elsewhere'}", result.stderr)
+        self.assertNotIn("/srv/release", result.stdout)
+        self.assertEqual(left_behind, [])
+
+    def test_collect_run_reports_a_collectstatic_that_failed(self):
+        result, left_behind = self.collect_static_files(collectstatic="exit 7")
+
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(left_behind, [])
 
 
 class RestartScriptTests(unittest.TestCase):

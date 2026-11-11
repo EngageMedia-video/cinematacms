@@ -4,6 +4,9 @@ set -e
 # Cinemata restart script after code changes
 # Run as root
 
+# The Vite build in STATICFILES_DIRS of cms/settings.py, where django-vite reads the manifest.
+FRONTEND_BUILD=frontend/build/production/static
+
 parse_restart_args() {
   PULL_LATEST=true
   DEPLOY_REVISION=""
@@ -57,6 +60,32 @@ install_frontend_dependencies() {
     cd frontend
     npm ci --no-fund --no-audit
   )
+}
+
+# Django takes the build and the destination of collectstatic from its settings, and
+# the settings of every commit name the directories that are served. This run reads a
+# settings module that names two other directories instead.
+collect_static_files() {
+  local build=$1 collected=$2 settings status=0
+  settings=$(mktemp -d)
+  cat > "$settings/static_release_settings.py" <<'SETTINGS'
+import os
+
+from cms.settings import *
+
+served_build = os.path.join(BASE_DIR, os.environ["SERVED_FRONTEND_BUILD"])
+if served_build not in STATICFILES_DIRS:
+    raise SystemExit(f"Error: STATICFILES_DIRS in cms/settings.py does not name {served_build}.")
+build = os.environ["STATIC_RELEASE_BUILD"]
+STATIC_ROOT = os.environ["STATIC_RELEASE_COLLECTED"]
+STATICFILES_DIRS = [build if directory == served_build else directory for directory in STATICFILES_DIRS]
+DJANGO_VITE["default"]["manifest_path"] = os.path.join(build, ".vite", "manifest.json")
+SETTINGS
+  PYTHONPATH="$settings${PYTHONPATH:+:$PYTHONPATH}" DJANGO_SETTINGS_MODULE=static_release_settings \
+    SERVED_FRONTEND_BUILD="$FRONTEND_BUILD" STATIC_RELEASE_BUILD="$build" STATIC_RELEASE_COLLECTED="$collected" \
+    python manage.py collectstatic --noinput || status=$?
+  rm -rf "$settings"
+  return "$status"
 }
 
 # The Collector rereads a log from its first line after losing read access to it,
