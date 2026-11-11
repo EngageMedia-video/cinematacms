@@ -502,6 +502,16 @@ class TracingConfigurationStateTests(SimpleTestCase):
 
         self.assertEqual(self.tracing_configured(), 0)
 
+    def test_worker_whose_tracer_provider_raises_reports_tracing_unconfigured(self):
+        # Celery logs and swallows an exception from a worker_process_init receiver, so the child keeps running.
+        with (
+            patch("opentelemetry.sdk.resources.Resource.create", side_effect=AttributeError),
+            self.assertRaises(AttributeError),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
     @override_settings(
         OTEL_EXPORTER_OTLP_ENDPOINT="http://collector.internal:4318/v1/traces",
         OTEL_EXPORTER_OTLP_HEADERS="authorization=secret",
