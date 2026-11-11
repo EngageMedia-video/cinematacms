@@ -37,6 +37,14 @@ select_release() {
     echo "Deploying requested commit $DEPLOY_REVISION..."
     git fetch origin "$DEPLOY_REVISION"
     git merge --ff-only "$DEPLOY_REVISION"
+    # A fast-forward to a commit that the checkout already contains succeeds and moves nothing.
+    local checked_out
+    checked_out=$(git rev-parse HEAD)
+    if [ "$checked_out" != "$DEPLOY_REVISION" ]; then
+      echo "Error: the checkout is at $checked_out, which is later than the requested commit $DEPLOY_REVISION." >&2
+      echo "Nothing was deployed. Request $checked_out or a later commit." >&2
+      return 1
+    fi
   elif [ "$PULL_LATEST" = true ]; then
     echo "Pulling latest changes from git repository..."
     git pull --ff-only

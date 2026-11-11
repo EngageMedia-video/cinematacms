@@ -23,6 +23,15 @@ RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
 FRONTEND_ARTIFACT_TOOL = PROJECT_ROOT / "deploy" / "frontend-artifact.py"
+# A hook passes GIT_DIR and GIT_INDEX_FILE to its commands, which would point a test repository at this one.
+GIT_ENVIRONMENT = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")} | {
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+    "GIT_AUTHOR_NAME": "Deployer",
+    "GIT_AUTHOR_EMAIL": "deployer@example.org",
+    "GIT_COMMITTER_NAME": "Deployer",
+    "GIT_COMMITTER_EMAIL": "deployer@example.org",
+}
 
 
 def write_frontend_build(root, script):
@@ -1753,7 +1762,7 @@ class RestartScriptTests(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         self.test_root = Path(self.temp_dir.name)
 
-    def run_restart_functions(self, arguments, *, run_selection=False):
+    def run_restart_functions(self, arguments):
         fake_bin = self.test_root / "bin"
         fake_bin.mkdir(exist_ok=True)
         command_log = self.test_root / "commands.log"
@@ -1768,8 +1777,6 @@ class RestartScriptTests(unittest.TestCase):
             }
         )
         command = 'source "$1"; shift; parse_restart_args "$@"'
-        if run_selection:
-            command += "; select_release"
         result = subprocess.run(
             ["bash", "-c", command, "restart-test", str(RESTART_SCRIPT), *arguments],
             cwd=PROJECT_ROOT,
@@ -1780,6 +1787,48 @@ class RestartScriptTests(unittest.TestCase):
         )
         commands = command_log.read_text().splitlines() if command_log.exists() else []
         return result, commands
+
+    def git(self, directory, *arguments):
+        return subprocess.run(
+            ["git", "-C", str(directory), *arguments],
+            env=GIT_ENVIRONMENT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+    def host_clone_two_commits_behind_its_origin(self):
+        origin = self.test_root / "origin"
+        origin.mkdir()
+        self.git(origin, "init", "--quiet")
+        self.git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+
+        def commit(subject):
+            self.git(origin, "commit", "--quiet", "--allow-empty", "--message", subject)
+            return self.git(origin, "rev-parse", "HEAD")
+
+        first = commit("first")
+        host = self.test_root / "host"
+        self.git(self.test_root, "clone", "--quiet", str(origin), str(host))
+        return host, [first, commit("second"), commit("third")]
+
+    def select_release_on(self, host, revision):
+        return subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; shift; parse_restart_args "$@"; select_release; echo "restart continued"',
+                "restart-test",
+                str(RESTART_SCRIPT),
+                "--revision",
+                revision,
+            ],
+            cwd=host,
+            env=GIT_ENVIRONMENT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     def test_restart_installs_frontend_dependencies_from_lockfile(self):
         fake_bin = self.test_root / "bin"
@@ -1947,12 +1996,27 @@ class RestartScriptTests(unittest.TestCase):
         self.assertLess(rollback.index("trap - EXIT"), rollback.index("systemctl restart nginx"))
 
     def test_restart_can_deploy_an_exact_revision(self):
-        revision = "a" * 40
+        host, (_, second, _) = self.host_clone_two_commits_behind_its_origin()
 
-        result, commands = self.run_restart_functions(["--revision", revision], run_selection=True)
+        result = self.select_release_on(host, second)
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(commands, [f"git fetch origin {revision}", f"git merge --ff-only {revision}"])
+        self.assertIn("restart continued", result.stdout)
+        self.assertEqual(self.git(host, "rev-parse", "HEAD"), second)
+
+    def test_restart_refuses_a_revision_that_the_checkout_already_contains(self):
+        # `git merge --ff-only` succeeds here and moves nothing, so the deploy would report the
+        # requested commit while the server runs a later one.
+        host, (_, second, third) = self.host_clone_two_commits_behind_its_origin()
+        self.git(host, "pull", "--quiet", "--ff-only")
+
+        result = self.select_release_on(host, second)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("restart continued", result.stdout)
+        self.assertIn(second, result.stderr)
+        self.assertIn(third, result.stderr)
+        self.assertEqual(self.git(host, "rev-parse", "HEAD"), third)
 
     def test_restart_rejects_invalid_revision(self):
         result, commands = self.run_restart_functions(["--revision", "not-a-commit"])
