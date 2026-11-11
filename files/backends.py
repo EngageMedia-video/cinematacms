@@ -7,14 +7,9 @@ import re
 from collections import deque
 from subprocess import PIPE, Popen
 
+from .exceptions import VideoEncodingError
+
 logger = logging.getLogger(__name__)
-
-
-class VideoEncodingError(Exception):
-    def __init__(self, *args, **kwargs):
-        self.message = args[0]
-        super(VideoEncodingError, self).__init__(*args, **kwargs)
-
 
 RE_STDERR_SEGMENT = re.compile(r"([^\r\n]*)([\r\n])")
 # Needs the "-loglevel level+..." flag, which tags each line after its "[context @ 0x...]" prefix.
