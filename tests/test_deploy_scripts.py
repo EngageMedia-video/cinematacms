@@ -17,6 +17,8 @@ import time
 import unittest
 from pathlib import Path
 
+import yaml
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
@@ -2160,12 +2162,147 @@ class RestartScriptTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, "[]\n")
 
+    def run_deploy_step(self, *, host_has_option="0", restart_exit="0", transfer_directory=None):
+        sha = "c" * 40
+        workflow = yaml.safe_load(CI_WORKFLOW.read_text())
+        (step,) = (step for step in workflow["jobs"]["deploy-dev"]["steps"] if step["name"] == "Deploy via SSH")
+        self.assertEqual(
+            step["env"], {"DEPLOY_TARGET": "${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }}"}
+        )
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir()
+        command_log = self.test_root / "commands.log"
+        ssh = fake_bin / "ssh"
+        ssh.write_text(
+            textwrap.dedent(
+                """\
+                #!/bin/sh
+                shift
+                printf '%s\\n' "ssh $*" >> "$FAKE_COMMAND_LOG"
+                case "$*" in
+                    "grep -q -- \\"--frontend-artifact\\""*) exit "$FAKE_HOST_HAS_OPTION" ;;
+                    "mktemp -d "*) echo "$FAKE_TRANSFER_DIRECTORY" ;;
+                    *restart_script.sh*) exit "$FAKE_RESTART_EXIT" ;;
+                esac
+                """
+            )
+        )
+        scp = fake_bin / "scp"
+        scp.write_text('#!/bin/sh\nprintf \'%s\\n\' "scp $*" >> "$FAKE_COMMAND_LOG"\n')
+        for fake in (ssh, scp):
+            fake.chmod(0o755)
+        env = os.environ.copy()
+        env.update(
+            {
+                "DEPLOY_SHA": sha,
+                "DEPLOY_TARGET": "deployer@dev.example.org",
+                "RUNNER_TEMP": "/runner",
+                "FAKE_COMMAND_LOG": str(command_log),
+                "FAKE_HOST_HAS_OPTION": host_has_option,
+                "FAKE_RESTART_EXIT": restart_exit,
+                "FAKE_TRANSFER_DIRECTORY": transfer_directory or "/tmp/cinemata-frontend-artifact.Ab12Cd34",
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        result = subprocess.run(
+            ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", step["run"].replace("${{ github.sha }}", sha)],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result, command_log.read_text().splitlines()
+
+    def test_deployer_sends_the_artifact_and_restarts_with_it(self):
+        result, commands = self.run_deploy_step()
+
+        directory = "/tmp/cinemata-frontend-artifact.Ab12Cd34"
+        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            commands[1:],
+            [
+                "ssh mktemp -d /tmp/cinemata-frontend-artifact.XXXXXXXX",
+                "scp /runner/frontend-artifact/frontend-build.tar.gz /runner/frontend-artifact/frontend-build.json"
+                f" deployer@dev.example.org:{directory}/",
+                f"ssh {restart} --revision {'c' * 40} --frontend-artifact {directory}",
+                f"ssh rm -rf -- {directory}",
+            ],
+        )
+
+    def test_deployer_removes_the_transferred_artifact_after_a_failed_restart(self):
+        result, commands = self.run_deploy_step(restart_exit="1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(commands[-1], "ssh rm -rf -- /tmp/cinemata-frontend-artifact.Ab12Cd34")
+
+    def test_deployer_builds_on_a_host_whose_restart_script_predates_the_artifact(self):
+        result, commands = self.run_deploy_step(host_has_option="1")
+
+        after_the_probe = "\n".join(commands[1:])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"sudo /home/cinemata/cinematacms/restart_script.sh --revision {'c' * 40};", after_the_probe)
+        self.assertNotIn("--frontend-artifact", after_the_probe)
+        self.assertNotIn("scp ", after_the_probe)
+
+    def test_deployer_does_not_build_on_the_host_after_a_failed_connection(self):
+        result, commands = self.run_deploy_step(host_has_option="255")
+
+        self.assertEqual(result.returncode, 255)
+        self.assertEqual(len(commands), 1)
+
+    def test_deployer_rejects_an_unexpected_transfer_directory(self):
+        result, commands = self.run_deploy_step(transfer_directory="/home/cinemata/cinematacms; reboot")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(len(commands), 2)
+
+    def test_frontend_artifact_is_published_only_for_a_push_to_main(self):
+        steps = yaml.safe_load(CI_WORKFLOW.read_text())["jobs"]["frontend-build"]["steps"]
+        names = [step["name"] for step in steps]
+        package = steps[names.index("Package frontend build")]
+        upload = steps[names.index("Upload frontend build")]
+
+        self.assertLess(names.index("Build frontend"), names.index("Package frontend build"))
+        self.assertLess(names.index("Package frontend build"), names.index("Upload frontend build"))
+        self.assertNotIn("if", package)
+        self.assertIn('--commit "$GITHUB_SHA"', package["run"])
+        self.assertEqual(upload["if"], "github.event_name == 'push' && github.ref == 'refs/heads/main'")
+        self.assertEqual(upload["with"]["name"], "frontend-build-${{ github.sha }}")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+
+    def test_deployer_verifies_the_artifact_of_the_deployed_commit_before_it_connects(self):
+        steps = yaml.safe_load(CI_WORKFLOW.read_text())["jobs"]["deploy-dev"]["steps"]
+        names = [step["name"] for step in steps]
+        download = steps[names.index("Download frontend build")]
+        verify = steps[names.index("Verify frontend build")]
+
+        self.assertEqual(download["with"]["name"], "frontend-build-${{ github.sha }}")
+        self.assertIn("deploy/frontend-artifact.py unpack", verify["run"])
+        self.assertIn('--commit "$DEPLOY_SHA"', verify["run"])
+        self.assertLess(names.index("Download frontend build"), names.index("Verify frontend build"))
+        self.assertLess(names.index("Verify frontend build"), names.index("Setup SSH"))
+
+    def test_workflow_grants_no_permission_for_the_artifact(self):
+        workflow = yaml.safe_load(CI_WORKFLOW.read_text())
+        job_permissions = {name: job["permissions"] for name, job in workflow["jobs"].items() if "permissions" in job}
+        (checkout,) = (
+            step
+            for step in workflow["jobs"]["deploy-dev"]["steps"]
+            if step.get("uses", "").startswith("actions/checkout@")
+        )
+
+        self.assertEqual(workflow["permissions"], {"contents": "read"})
+        self.assertEqual(job_permissions, {"deploy-dev": {"contents": "read", "deployments": "write"}})
+        self.assertIs(checkout["with"]["persist-credentials"], False)
+
     def test_deployer_uses_the_authorized_restart_boundary(self):
         workflow = CI_WORKFLOW.read_text()
         restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
 
-        self.assertEqual(workflow.count(restart), 2)
+        self.assertEqual(workflow.count(restart), 3)
         self.assertIn(f"{restart} --revision ${{{{ github.sha }}}}", workflow)
+        self.assertIn(f'{restart} --revision "$DEPLOY_SHA" --frontend-artifact "$artifact_dir"', workflow)
         self.assertNotIn("sudo git", workflow)
         self.assertNotIn("sudo env", workflow)
         self.assertNotIn("local_settings_example.py", workflow)
