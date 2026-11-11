@@ -62,6 +62,21 @@ reset_app_ownership() {
   fi
 }
 
+restart_application_services() {
+  systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
+}
+
+# Python imports modules lazily, so a process that outlives a pip install can load
+# a new module beside an old one it imported earlier and fail.
+restart_application_services_after_interrupted_deploy() {
+  local status=$?
+  trap - EXIT
+  echo "The deploy stopped after the Python packages changed. Restarting the application services." >&2
+  systemctl daemon-reload || echo "Error: systemctl daemon-reload failed." >&2
+  restart_application_services || echo "Error: the application services did not restart. Restart them by hand." >&2
+  exit "$status"
+}
+
 main() {
 parse_restart_args "$@"
 
@@ -97,6 +112,8 @@ if [ "$NEW_SHA" != "$PREV_SHA" ]; then
     >> "$DEPLOY_LOG"
   echo "Recorded deploy in $DEPLOY_LOG (was $PREV_SHA, now $NEW_SHA)."
 fi
+
+trap restart_application_services_after_interrupted_deploy EXIT
 
 # Install any new requirements
 echo "Installing any new requirements..."
@@ -139,7 +156,8 @@ systemctl daemon-reload
 # Restart services
 echo "Restarting services..."
 systemctl enable mediacms celery_long celery_short celery_whisper celery_email celery_beat
-systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
+restart_application_services
+trap - EXIT
 systemctl restart nginx
 
 echo "Cinemata restart completed successfully!"
