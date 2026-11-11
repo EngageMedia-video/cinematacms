@@ -345,6 +345,245 @@ one maintenance operation.
 
 Use `--no-restart` to install and validate files without restarting services.
 
+## Deploy a prebuilt frontend
+
+By default, `restart_script.sh` builds the frontend on the server with `npm ci`
+and `npm run build`. On a server with little free memory, give the script a
+frontend that CI already built:
+
+```bash
+sudo /home/cinemata/cinematacms/restart_script.sh \
+  --revision <commit-sha> \
+  --frontend-artifact /absolute/path/to/artifact
+```
+
+`--frontend-artifact` requires `--revision`. The artifact directory holds two
+files, which `deploy/frontend-artifact.py pack` writes from a finished build:
+
+| File | Contents |
+| --- | --- |
+| `frontend-build.tar.gz` | Every file under `frontend/build/production/static/`, including `.vite/manifest.json`. |
+| `frontend-build.json` | `commit`, the commit the build came from, and `sha256`, the checksum of the archive. |
+
+The `Frontend Lint & Build` CI job packs every build. For a push to `main`, it
+uploads the two files as the artifact `frontend-build-<commit-sha>`. The
+`Deploy to Dev VPS` job downloads that artifact, checks it, copies it to the
+server, and passes its directory to `restart_script.sh`.
+
+The server runs the `restart_script.sh` of the release that it already has. The
+first deploy after this option arrives therefore builds the frontend on the
+server once more. The CI job reports that case with a notice.
+
+### Releases
+
+No deploy and no rollback writes into a directory that is served. Each one
+builds a new release directory and then makes that release the served one with
+one rename. This holds for an artifact, for a build from source, and for a
+rollback.
+
+```text
+/home/cinemata/cinematacms/
+├── static_releases/
+│   ├── current  -> release.Ab12Cd     the release that is served
+│   ├── previous -> release.Ef34Gh     the release that was served before it
+│   ├── release.Ab12Cd/
+│   │   ├── REVISION                   commit of the artifact, if one supplied the build
+│   │   ├── build/                     Vite build with .vite/manifest.json
+│   │   └── collected/                 output of collectstatic
+│   └── release.Ef34Gh/
+├── static_collected                   -> static_releases/current/collected
+└── frontend/build/production/static   -> ../../../static_releases/current/build
+```
+
+nginx serves `/static/` from `static_collected`, and Django reads the Vite
+manifest from `frontend/build/production/static`. Both paths are links into
+`static_releases/current`, so they change together when `current` changes. The
+nginx configuration and the settings of the running services stay as they are.
+
+With `--frontend-artifact`, the script runs neither `npm` nor Vite. It does
+these steps instead:
+
+1. Before it moves the checkout, it deletes every release that neither
+   `current` nor `previous` names. It then unpacks the artifact into a new
+   release with a new random name and checks it. The recorded commit must
+   equal `--revision`, and the archive must match the recorded checksum. The
+   archive must hold only regular files inside the build directory. Every file
+   that the manifest references must be present, and every chunk that a chunk
+   imports must be in the manifest. If a check fails, the script stops. The
+   checkout, the served frontend, and the services stay as they were. After
+   the checks pass, it writes the commit into `REVISION`.
+2. It fast-forwards the checkout to `--revision`. The checkout must then be at
+   exactly that commit. If it is already at a later commit, the script stops
+   before it installs anything, because the artifact belongs to another commit
+   than the code. This check applies to every `--revision` deploy, with or
+   without an artifact.
+3. After it installs the Python requirements and reconciles the release
+   configuration, it copies the collected files of the current release into
+   the new release. A service that is still running renders the bundle names
+   of the old manifest until it restarts, so the new release must also hold
+   the old bundles.
+4. It runs `collectstatic` from the build of the new release into the
+   `collected` directory of the new release. See
+   [How collectstatic gets its directories](#how-collectstatic-gets-its-directories).
+5. It gives the release to `www-data` and runs `sync`, so that the release is
+   on disk before a link names it.
+6. It points `previous` at the current release and then `current` at the new
+   release. From that rename on, nginx and Django use the new frontend.
+7. It runs the migrations, installs the units, and restarts the services, as it
+   does after a source build.
+
+If the script stops before step 6, also after `SIGTERM`, `SIGHUP`, `SIGKILL`,
+or a host crash, the served frontend is the complete old one. No recovery step
+exists and none is needed. The unfinished release stays on disk until the next
+deploy or rollback deletes it. A Vite build or a `collectstatic` that outlives
+its deploy writes only into that unfinished release. If it writes again after
+the release is deleted, it creates a directory that no later deploy serves or
+reuses, because each release gets a new random name. The application units
+restart as described in
+[Restart after a Python package change](#restart-after-a-python-package-change),
+so they can run the new code with the old frontend. Fix the reported failure
+and deploy again, or run `rollback.sh`.
+
+Do not run two deploys on one server at the same time. A deploy deletes the
+unfinished release of another deploy. The CI job runs one deploy at a time.
+
+The checks detect a truncated, corrupted, or mislabeled artifact. They do not
+prove who built it, because the commit and the checksum arrive beside the
+archive. An account that may run `restart_script.sh` with this option can supply
+any frontend, so protect that account as you protect the deploy key.
+
+### Build from source
+
+Without `--frontend-artifact`, the script skips the artifact in step 1. After
+step 2, it runs `npm ci` and then `npm run build` with `--outDir` set to the
+`build` directory of a new release. Steps 3 to 7 then run as they do for an
+artifact. The build still needs the memory that Vite needs, but the served
+frontend stays whole while it runs. If Vite or `collectstatic` fails, the
+script stops and the served frontend is the complete old one.
+
+A release that was built on the server has no `REVISION` file. Only a checked
+artifact shows which commit a build came from.
+
+`make quick-build` is a development command. It writes through the two links
+into the release that is served. Do not run it on a server. If you do, delete
+`static_releases/current/REVISION` first, because the release then no longer
+holds the frontend of that commit. `make frontend-clean` deletes the two links,
+and a build after it creates real directories again. The next deploy converts
+them as described in
+[First deploy with releases on an existing server](#first-deploy-with-releases-on-an-existing-server).
+
+### How collectstatic gets its directories
+
+`collectstatic` has no option for its source or its destination. Both come
+from the settings. For each run, the script writes a settings module into a
+temporary directory and names it in `DJANGO_SETTINGS_MODULE` for that one
+command. The module imports everything from `cms.settings` and then replaces
+three values with the directories of the new release: `STATIC_ROOT`, the Vite
+build in `STATICFILES_DIRS`, and the manifest path in `DJANGO_VITE`.
+
+`cms/settings.py` has no key for these directories, so the same step works for
+any commit that a rollback checks out. If `STATICFILES_DIRS` of that commit
+does not name `frontend/build/production/static`, the command stops with an
+error before it collects a file.
+
+### First deploy with releases on an existing server
+
+A server that was deployed before releases existed serves two real
+directories. The first deploy or rollback converts them before it moves the
+checkout or installs a package:
+
+1. It copies both directories into a new release, runs `sync`, and points
+   `current` at the release.
+2. It swaps `static_collected` for a link to `static_releases/current/collected`.
+3. It swaps `frontend/build/production/static` for a link to
+   `static_releases/current/build`.
+
+Each swap is one `renameat2` call with `RENAME_EXCHANGE`, which
+`deploy/exchange-paths.py` makes. The path is never absent, and the link leads
+to a copy of what the directory held, so nothing that is served changes. The
+script then deletes the directory that the swap moved aside. If the script
+stops during the conversion, the next deploy starts the conversion again from
+the paths that are still directories.
+
+The conversion needs free disk space equal to the size of both directories.
+The release that it creates has no `REVISION` file.
+
+### Swap the directories by hand
+
+The swap needs Linux 3.15 or later, glibc 2.28 or later, and a filesystem that
+supports `RENAME_EXCHANGE`, such as ext4, XFS, Btrfs, or overlayfs. Ubuntu 22.04
+has both. Every deploy and every rollback needs the two links, with or without
+an artifact. If the script reports `Error: static_collected is still a directory`,
+it stopped before it moved the checkout. The served frontend, the code, and the
+services are unchanged, and `static_releases/current` holds a copy of the
+served frontend. Swap the directories
+with two commands each. `/static/` answers with 404 in the moment between the
+two commands, so choose a quiet moment:
+
+```bash
+cd /home/cinemata/cinematacms
+sudo mv static_collected static_collected.old && \
+  sudo ln -s static_releases/current/collected static_collected
+sudo mv frontend/build/production/static frontend/build/production/static.old && \
+  sudo ln -s ../../../static_releases/current/build frontend/build/production/static
+```
+
+Run the deploy again. After it succeeds, delete `static_collected.old` and
+`frontend/build/production/static.old`.
+
+### Roll back
+
+`rollback.sh` checks out the commit before the most recent deploy and installs
+its Python requirements. It then restores the frontend of that commit in a new
+release, in one of three ways:
+
+| State of the releases | What the rollback does |
+| --- | --- |
+| `current/REVISION` names the target | Nothing. The reverted deploy stopped before it served its frontend. |
+| `previous/REVISION` names the target | It copies that release into a new one, without `npm`. |
+| No release names the target | It builds from source into a new release, as a deploy without an artifact does. |
+
+The copy takes the build, with its manifest, and `REVISION` from the previous
+release. Its `collected` directory starts with the files that are served now.
+The collected files of the previous release are then copied over them. The
+files of the previous release win, and the bundles that only the reverted
+deploy has stay in place.
+
+The services restart only after the links change. Until then they render the
+bundle names of the manifest that they read at their start, which is the
+manifest of the reverted deploy. The new release holds those bundles, so no
+request for them fails in that interval. A page that a user opened before the
+rollback also keeps working.
+
+The script then points `current` at the new release and `previous` at the
+release that it replaces, and restarts the services. If a step fails before the
+rename, the script stops and the served frontend is the complete one of the
+reverted deploy. The checkout is then at the target commit, and the application
+units restart as described in
+[Restart after a Python package change](#restart-after-a-python-package-change).
+
+A build from source runs with the checkout at the target commit. It uses the
+`frontend/node_modules` that the server has, as it did before releases existed.
+The step in
+[How collectstatic gets its directories](#how-collectstatic-gets-its-directories)
+needs nothing from the target commit, so it also works for a commit that
+predates releases.
+
+The script keeps two releases because `rollback.sh` reverts only the most
+recent deploy. A deploy or a rollback deletes every older release.
+
+### Disk space
+
+Each release holds one collected tree and one build. The server keeps two
+releases, and a third one exists while a deploy or a rollback runs. The first
+deploy with releases on an existing server needs a fourth copy for a short
+time.
+
+`collectstatic` never deletes a file, and each release starts as a copy of the
+one before it. A release therefore grows with every deploy that changes a
+bundle, as `static_collected/` did before. Check the use on the server with
+`du -sh /home/cinemata/cinematacms/static_releases/*`.
+
 ## Placeholder certificates
 
 The `.pem` files in this directory are placeholder self-signed certificates
