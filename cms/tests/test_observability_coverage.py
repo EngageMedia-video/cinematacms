@@ -145,6 +145,7 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
             "cinematacms_cache_items_total": ["family", "result"],
             "cinematacms_authentication_failures_total": ["surface", "mechanism", "reason"],
             "cinematacms_celery_worker_heartbeat_timestamp_seconds": ["service_role", "worker_ref"],
+            "cinematacms_tracing_configured": ["service_role"],
             "cinematacms_telemetry_emission_failures_total": ["signal", "component", "stage"],
             "cinematacms_telemetry_contract_violations_total": ["component", "field"],
         }

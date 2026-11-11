@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import sys
 import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -16,6 +17,8 @@ from cms.observability import (
     OperationAwareSampler,
     SafeSpanExporter,
     _credentialed_endpoint_is_secure,
+    configure_celery_worker_process,
+    configure_django_observability,
     current_actor_ref,
     inject_trace_headers,
     media_reference,
@@ -447,6 +450,87 @@ class ObservabilityConfigTests(SimpleTestCase):
         sampler = OperationAwareSampler(default_ratio=0, priority_ratio=1)
         self.assertEqual(sampler.should_sample(None, 1, "GET /about").decision, Decision.DROP)
         self.assertEqual(sampler.should_sample(None, 1, "email.delivery").decision, Decision.RECORD_AND_SAMPLE)
+
+
+@override_settings(OTEL_ENABLED=True, OTEL_SERVICE_ROLE="transcription")
+class TracingConfigurationStateTests(SimpleTestCase):
+    def setUp(self):
+        from files import metrics
+
+        metrics.TRACING_CONFIGURED.clear()
+        process_state = patch.multiple(
+            "cms.observability",
+            _tracer_configured=False,
+            _django_instrumented=False,
+            _celery_instrumented=False,
+            _redis_instrumented=False,
+            _requests_instrumented=False,
+        )
+        process_state.start()
+        self.addCleanup(process_state.stop)
+
+    def tracing_configured(self, role="transcription"):
+        from prometheus_client import REGISTRY
+
+        return REGISTRY.get_sample_value("cinematacms_tracing_configured", {"service_role": role})
+
+    def test_worker_reports_tracing_configured(self):
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch("opentelemetry.instrumentation.celery.CeleryInstrumentor.instrument"),
+            patch("opentelemetry.instrumentation.redis.RedisInstrumentor.instrument"),
+            patch("opentelemetry.instrumentation.requests.RequestsInstrumentor.instrument"),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 1)
+
+    def test_worker_that_cannot_import_celery_instrumentation_reports_tracing_unconfigured(self):
+        # A worker that outlived a pip install fails this import once it mixes two opentelemetry-api versions.
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch.dict(sys.modules, {"opentelemetry.instrumentation.celery": None}),
+            patch("cms.observability.capture_unexpected_exception"),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    def test_worker_that_cannot_import_the_tracing_sdk_reports_tracing_unconfigured(self):
+        with patch.dict(sys.modules, {"opentelemetry.sdk.trace": None}):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    @override_settings(
+        OTEL_EXPORTER_OTLP_ENDPOINT="http://collector.internal:4318/v1/traces",
+        OTEL_EXPORTER_OTLP_HEADERS="authorization=secret",
+    )
+    def test_worker_with_an_insecure_credentialed_endpoint_reports_tracing_unconfigured(self):
+        with patch("opentelemetry.trace.set_tracer_provider") as set_provider:
+            configure_celery_worker_process()
+
+        set_provider.assert_not_called()
+        self.assertEqual(self.tracing_configured(), 0)
+
+    @override_settings(OTEL_SERVICE_ROLE="web")
+    def test_web_process_that_cannot_instrument_django_reports_tracing_unconfigured(self):
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch("opentelemetry.instrumentation.django.DjangoInstrumentor.instrument", side_effect=RuntimeError),
+            patch("cms.observability.capture_unexpected_exception"),
+        ):
+            configure_django_observability()
+
+        self.assertEqual(self.tracing_configured("web"), 0)
+
+    @override_settings(OTEL_ENABLED=False)
+    def test_disabled_tracing_reports_no_state(self):
+        configure_celery_worker_process()
+        configure_django_observability()
+
+        self.assertIsNone(self.tracing_configured())
+        self.assertIsNone(self.tracing_configured("web"))
 
 
 class EndpointGroupingTests(SimpleTestCase):
