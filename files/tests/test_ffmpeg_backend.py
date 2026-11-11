@@ -61,6 +61,19 @@ class FFmpegFailureMessageTests(SimpleTestCase):
             "[mp4] [error] Could not find tag for codec h264 in stream #0, codec not currently supported in container",
         )
 
+    def test_error_under_a_parent_context_opens_the_message(self):
+        stderr = (
+            "[Parsed_scale_0 @ 0x76fcc38300] [Eval @ 0x16fde7ca0] [error] Undefined constant or missing '(' in 'foo'\n"
+            "[Parsed_scale_0 @ 0x76fcc38300] [error] Cannot parse expression for width: 'foo'\n"
+            "[fatal] Error opening output files: Invalid argument\n"
+        )
+        _, message = run_encode(stderr, returncode=234)
+
+        self.assertEqual(
+            message.splitlines()[0],
+            "[Parsed_scale_0] [Eval] [error] Undefined constant or missing '(' in 'foo'",
+        )
+
     def test_same_cause_gives_same_header_across_runs(self):
         _, first = run_encode(BANNER + PROGRESS + failure_tail("7b28c2"), returncode=234)
         _, second = run_encode(X264_OPTIONS + failure_tail("9a11f0"), returncode=234)

@@ -12,8 +12,8 @@ from .exceptions import VideoEncodingError
 logger = logging.getLogger(__name__)
 
 RE_STDERR_SEGMENT = re.compile(r"([^\r\n]*)([\r\n])")
-# Needs the "-loglevel level+..." flag, which tags each line after its "[context @ 0x...]" prefix.
-RE_ERROR_LINE = re.compile(r"^(?:\[[^\]]+\] )?\[(?:error|fatal|panic)\] ")
+# Needs the "-loglevel level+..." flag, which tags each line after its "[context @ 0x...]" prefixes.
+RE_ERROR_LINE = re.compile(r"^(?:\[[^\]]+\] )*\[(?:error|fatal|panic)\] ")
 RE_LOG_CONTEXT_ADDRESS = re.compile(r" @ 0x[0-9a-fA-F]+")
 console_encoding = locale.getdefaultlocale()[1] or "UTF-8"
 
