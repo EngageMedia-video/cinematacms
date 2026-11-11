@@ -1476,13 +1476,26 @@ def task_revoked_handler(sender=None, request=None, **kwargs):
 
 @worker_shutting_down.connect
 def worker_shutdown_handler(sender=None, **kwargs):
-    """Kill all ffmpeg processes when the worker shuts down.
+    """Kill the ffmpeg processes in this worker's session when it shuts down.
 
-    Fires once in the main process (not per-fork), preventing orphan
-    ffmpeg processes from accumulating on worker restart or deploy.
+    Fires once in the main process (not per-fork). Each worker runs in its
+    own session: systemd starts every unit with setsid(), and
+    `celery worker --detach` calls it. ffmpeg keeps that session after its
+    prefork child dies and init adopts it, so orphans are found too, while
+    other workers' encoders run in other sessions and keep running.
     """
-    logger.info("Worker shutting down, cleaning up ffmpeg processes")
-    kill_all_ffmpeg_processes()
+    worker_session = os.getsid(0)
+    candidates = subprocess.run(["pgrep", "-f", "ffmpeg"], capture_output=True, text=True).stdout.split()
+    owned = []
+    for pid in candidates:
+        try:
+            if os.getsid(int(pid)) == worker_session:
+                owned.append(pid)
+        except (ProcessLookupError, PermissionError):
+            continue
+    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
+    for pid in owned:
+        _graceful_kill(pid, label="(worker shutdown)")
 
 
 def _graceful_kill(pid, label=""):
@@ -1549,30 +1562,6 @@ def kill_ffmpeg_process(filepath):
     except Exception as e:
         logger.error(f"Error finding ffmpeg processes for {filepath}: {e}")
     return None
-
-
-def kill_all_ffmpeg_processes():
-    """Kill ALL ffmpeg processes on this worker.
-
-    Used during worker shutdown to ensure no orphan ffmpeg processes remain.
-    Sends SIGTERM first, then SIGKILL after a short timeout.
-    """
-    try:
-        result = subprocess.run(
-            ["pgrep", "-f", "ffmpeg"],
-            capture_output=True,
-        )
-        output = result.stdout.decode("utf-8").strip()
-        if not output:
-            logger.info("No ffmpeg processes found during cleanup")
-            return
-        pids = output.split("\n")
-        for pid in pids:
-            pid = pid.strip()
-            if pid:
-                _graceful_kill(pid, label="(worker shutdown)")
-    except Exception as e:
-        logger.error(f"Error during ffmpeg cleanup on worker shutdown: {e}")
 
 
 # TODO LIST
