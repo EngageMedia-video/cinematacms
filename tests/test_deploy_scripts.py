@@ -1,11 +1,16 @@
+import hashlib
+import io
 import json
 import os
 import re
+import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import textwrap
+import time
 import unittest
 from pathlib import Path
 
@@ -17,6 +22,62 @@ LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
+FRONTEND_ARTIFACT_TOOL = PROJECT_ROOT / "deploy" / "frontend-artifact.py"
+
+
+def write_frontend_build(root, script):
+    files = {
+        ".vite/manifest.json": json.dumps(
+            {
+                "src/entries/base.js": {
+                    "file": "assets/base-1a2b.js",
+                    "css": ["assets/base-3c4d.css"],
+                    "imports": ["_vendor-5e6f.js"],
+                    "dynamicImports": ["src/pages/player.js"],
+                    "isEntry": True,
+                },
+                "_vendor-5e6f.js": {"file": "assets/vendor-5e6f.js"},
+                "src/pages/player.js": {
+                    "file": "assets/player-7a8b.js",
+                    "imports": ["_vendor-5e6f.js"],
+                    "isDynamicEntry": True,
+                },
+            }
+        ),
+        "assets/base-1a2b.js": script,
+        "assets/base-3c4d.css": "body{}",
+        "assets/vendor-5e6f.js": "export {}",
+        "assets/player-7a8b.js": "export {}",
+        "lib/Inter/inter.woff2": "font",
+    }
+    write_tree(root, files)
+    return files
+
+
+def write_tree(root, files):
+    for name, content in files.items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+
+def read_tree(root):
+    return {path.relative_to(root).as_posix(): path.read_text() for path in root.rglob("*") if path.is_file()}
+
+
+def run_frontend_artifact_tool(*arguments):
+    return subprocess.run(
+        [sys.executable, str(FRONTEND_ARTIFACT_TOOL), *(str(argument) for argument in arguments)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def pack_frontend_artifact(build, commit, artifact):
+    result = run_frontend_artifact_tool("pack", "--build-dir", build, "--commit", commit, "--output-dir", artifact)
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
 
 
 class NginxConfigTests(unittest.TestCase):
@@ -1464,6 +1525,226 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("Certbot and nginx", second.stderr)
+
+
+class FrontendArtifactTests(unittest.TestCase):
+    COMMIT = "a" * 40
+    OTHER_COMMIT = "b" * 40
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        root = Path(self.temp_dir.name)
+        self.build = root / "build"
+        self.artifact = root / "artifact"
+        self.archive = self.artifact / "frontend-build.tar.gz"
+        self.metadata = self.artifact / "frontend-build.json"
+        self.target = root / "host" / "build"
+
+    def pack(self):
+        return run_frontend_artifact_tool(
+            "pack", "--build-dir", self.build, "--commit", self.COMMIT, "--output-dir", self.artifact
+        )
+
+    def unpack(self, commit=COMMIT):
+        return run_frontend_artifact_tool(
+            "unpack", "--artifact-dir", self.artifact, "--commit", commit, "--target", self.target
+        )
+
+    def write_artifact(self, members):
+        self.artifact.mkdir()
+        with tarfile.open(self.archive, "w:gz") as tar:
+            for member, content in members:
+                if isinstance(member, str):
+                    member = tarfile.TarInfo(member)
+                    member.size = len(content)
+                tar.addfile(member, io.BytesIO(content))
+        self.record_archive_checksum()
+
+    def record_archive_checksum(self):
+        sha256 = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        self.metadata.write_text(json.dumps({"commit": self.COMMIT, "sha256": sha256}))
+
+    def assert_rejected(self, result, message):
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn(message, result.stderr)
+        self.assertFalse(self.target.exists())
+        if self.target.parent.exists():
+            self.assertEqual(list(self.target.parent.iterdir()), [])
+
+    def test_unpacked_artifact_holds_the_whole_build_with_its_hidden_manifest(self):
+        files = write_frontend_build(self.build, "console.log('new')")
+
+        self.assertEqual(self.pack().returncode, 0)
+        result = self.unpack()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(".vite/manifest.json", files)
+        self.assertEqual(read_tree(self.target), files)
+
+    def test_artifact_records_its_commit_and_the_checksum_of_its_archive(self):
+        write_frontend_build(self.build, "console.log('new')")
+
+        self.assertEqual(self.pack().returncode, 0)
+
+        self.assertEqual(sorted(path.name for path in self.artifact.iterdir()), [self.metadata.name, self.archive.name])
+        self.assertEqual(
+            json.loads(self.metadata.read_text()),
+            {"commit": self.COMMIT, "sha256": hashlib.sha256(self.archive.read_bytes()).hexdigest()},
+        )
+
+    def test_pack_rejects_a_build_without_a_manifest(self):
+        write_frontend_build(self.build, "console.log('new')")
+        (self.build / ".vite/manifest.json").unlink()
+
+        result = self.pack()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("the build has no .vite/manifest.json", result.stderr)
+        self.assertFalse(self.artifact.exists())
+
+    def test_pack_rejects_a_manifest_that_references_a_missing_file(self):
+        write_frontend_build(self.build, "console.log('new')")
+        (self.build / "assets/base-3c4d.css").unlink()
+
+        result = self.pack()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("assets/base-3c4d.css", result.stderr)
+        self.assertFalse(self.artifact.exists())
+
+    def change_manifest_chunk(self, chunk_key, field, value):
+        manifest_path = self.build / ".vite/manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest[chunk_key][field] = value
+        manifest_path.write_text(json.dumps(manifest))
+
+    def test_pack_rejects_a_manifest_that_imports_a_chunk_it_does_not_list(self):
+        # django-vite follows `imports` when it renders a page and raises on a key the manifest lacks.
+        for chunk_key in ("src/entries/base.js", "_vendor-5e6f.js"):
+            for field in ("imports", "dynamicImports"):
+                with self.subTest(chunk_key=chunk_key, field=field):
+                    write_frontend_build(self.build, "console.log('new')")
+                    self.change_manifest_chunk(chunk_key, field, ["_gone.js"])
+
+                    result = self.pack()
+
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn("Error: ", result.stderr)
+                    self.assertIn("_gone.js", result.stderr)
+                    self.assertFalse(self.artifact.exists())
+
+    def test_pack_rejects_a_reference_list_that_is_not_a_list_of_names(self):
+        for field in ("css", "assets", "imports", "dynamicImports"):
+            for value in ("assets/base-1a2b.js", [None], None):
+                with self.subTest(field=field, value=value):
+                    write_frontend_build(self.build, "console.log('new')")
+                    self.change_manifest_chunk("src/entries/base.js", field, value)
+
+                    result = self.pack()
+
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn(
+                        f"Error: .vite/manifest.json chunk 'src/entries/base.js' has a {field}", result.stderr
+                    )
+                    self.assertFalse(self.artifact.exists())
+
+    def test_unpack_rejects_an_archive_whose_manifest_imports_a_chunk_it_does_not_list(self):
+        manifest = json.dumps({"src/entries/base.js": {"file": "assets/base-1a2b.js", "imports": ["_gone.js"]}})
+        self.write_artifact([(".vite/manifest.json", manifest.encode()), ("assets/base-1a2b.js", b"export {}")])
+
+        self.assert_rejected(self.unpack(), "_gone.js")
+
+    def test_unpack_rejects_an_artifact_built_from_another_commit(self):
+        write_frontend_build(self.build, "console.log('new')")
+        self.assertEqual(self.pack().returncode, 0)
+
+        self.assert_rejected(self.unpack(commit=self.OTHER_COMMIT), f"not from {self.OTHER_COMMIT}")
+
+    def test_unpack_rejects_an_archive_that_differs_from_its_recorded_checksum(self):
+        write_frontend_build(self.build, "console.log('new')")
+        self.assertEqual(self.pack().returncode, 0)
+        with open(self.archive, "ab") as archive:
+            archive.write(b"\0")
+
+        self.assert_rejected(self.unpack(), "records another")
+
+    def test_unpack_rejects_an_artifact_with_a_file_missing(self):
+        for missing in ("frontend-build.tar.gz", "frontend-build.json"):
+            with self.subTest(missing=missing):
+                shutil.rmtree(self.artifact, ignore_errors=True)
+                write_frontend_build(self.build, "console.log('new')")
+                self.assertEqual(self.pack().returncode, 0)
+                (self.artifact / missing).unlink()
+
+                self.assert_rejected(self.unpack(), f"cannot open {missing}")
+
+    def test_unpack_rejects_an_archive_delivered_as_a_symlink(self):
+        write_frontend_build(self.build, "console.log('new')")
+        self.assertEqual(self.pack().returncode, 0)
+        elsewhere = self.artifact.parent / "elsewhere.tar.gz"
+        self.archive.rename(elsewhere)
+        self.archive.symlink_to(elsewhere)
+
+        self.assert_rejected(self.unpack(), "cannot open frontend-build.tar.gz")
+
+    def test_unpack_rejects_an_archive_without_a_manifest(self):
+        self.write_artifact([("assets/base-1a2b.js", b"console.log('new')")])
+
+        self.assert_rejected(self.unpack(), "the build has no .vite/manifest.json")
+
+    def test_unpack_rejects_an_archive_whose_manifest_references_a_missing_file(self):
+        manifest = json.dumps({"src/entries/base.js": {"file": "assets/base-1a2b.js"}}).encode()
+        self.write_artifact([(".vite/manifest.json", manifest)])
+
+        self.assert_rejected(self.unpack(), "assets/base-1a2b.js")
+
+    def test_unpack_rejects_archive_members_that_leave_the_target(self):
+        link = tarfile.TarInfo("assets/link.js")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "/etc/hostname"
+        for name, member in (
+            ("parent directory", "../escaped.js"),
+            ("absolute path", "/tmp/cinemata-escaped.js"),
+            ("symlink", link),
+        ):
+            with self.subTest(name):
+                shutil.rmtree(self.artifact, ignore_errors=True)
+                self.write_artifact([(member, b"")])
+
+                self.assert_rejected(self.unpack(), "Error: ")
+                self.assertFalse((self.target.parent / "escaped.js").exists())
+
+    def test_unpack_replaces_a_target_left_by_an_interrupted_run(self):
+        files = write_frontend_build(self.build, "console.log('new')")
+        self.assertEqual(self.pack().returncode, 0)
+        (self.target / "assets").mkdir(parents=True)
+        (self.target / "assets/stale.js").write_text("stale")
+
+        result = self.unpack()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(read_tree(self.target), files)
+
+    def test_unpacked_files_are_newer_than_files_collected_before_the_deploy(self):
+        # collectstatic leaves a collected file alone when it is not older than its source, so a file
+        # that kept the build time of an earlier commit would never replace the copy served now.
+        members = []
+        for name, content in (
+            (".vite/manifest.json", json.dumps({"src/entries/base.js": {"file": "lib/video.js"}}).encode()),
+            ("lib/video.js", b"video"),
+        ):
+            member = tarfile.TarInfo(name)
+            member.size = len(content)
+            member.mtime = 0
+            members.append((member, content))
+        self.write_artifact(members)
+        collected_before_the_deploy = time.time() - 60
+
+        result = self.unpack()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertGreater((self.target / "lib/video.js").stat().st_mtime, collected_before_the_deploy)
 
 
 class RestartScriptTests(unittest.TestCase):
