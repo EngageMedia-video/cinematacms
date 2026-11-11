@@ -1,15 +1,22 @@
 import json
 import logging
 import math
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+from celery.signals import worker_process_shutdown
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
+from prometheus_client import CollectorRegistry
+from prometheus_client.multiprocess import MultiProcessCollector
 
 from cms.http_telemetry import classify_request
 from cms.observability import (
@@ -27,6 +34,8 @@ from cms.observability import (
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
 from cms.redis_telemetry import BROKER_SOCKET_TIMEOUT_SECONDS, ObservabilityRedisAdapter
 from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
 class ObservabilityConfigTests(SimpleTestCase):
@@ -541,6 +550,52 @@ class TracingConfigurationStateTests(SimpleTestCase):
 
         self.assertIsNone(self.tracing_configured())
         self.assertIsNone(self.tracing_configured("web"))
+
+
+class TracingConfiguredAcrossProcessesTests(SimpleTestCase):
+    def setUp(self):
+        self.metrics_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.metrics_dir)
+
+    def record_in_new_process(self, configured):
+        script = (
+            "import os\n"
+            "from files.metrics import TRACING_CONFIGURED\n"
+            f"TRACING_CONFIGURED.labels(service_role='transcription').set({configured})\n"
+            "print(os.getpid())\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=REPOSITORY_ROOT,
+            env={**os.environ, "PROMETHEUS_MULTIPROC_DIR": self.metrics_dir},
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,
+        )
+        return int(result.stdout)
+
+    def exported_tracing_configured(self):
+        registry = CollectorRegistry()
+        MultiProcessCollector(registry, path=self.metrics_dir)
+        return registry.get_sample_value("cinematacms_tracing_configured", {"service_role": "transcription"})
+
+    def test_a_failed_worker_child_keeps_its_role_unconfigured_until_it_exits(self):
+        failed_child = self.record_in_new_process(0)
+        self.record_in_new_process(1)
+
+        self.assertEqual(self.exported_tracing_configured(), 0, "a healthy sibling hid the failed child")
+
+        with patch.dict(os.environ, {"PROMETHEUS_MULTIPROC_DIR": self.metrics_dir}):
+            worker_process_shutdown.send(sender=None, pid=failed_child, exitcode=0)
+
+        self.assertEqual(self.exported_tracing_configured(), 1, "the exited child still counts")
+
+    def test_worker_child_exit_without_a_multiprocess_directory_is_a_no_op(self):
+        with patch.dict(os.environ):
+            os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
+            os.environ.pop("prometheus_multiproc_dir", None)
+            worker_process_shutdown.send(sender=None, pid=os.getpid(), exitcode=0)
 
 
 class EndpointGroupingTests(SimpleTestCase):
