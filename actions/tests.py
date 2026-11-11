@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import patch
@@ -6,7 +7,7 @@ from unittest.mock import patch
 from django.core.checks import Tags, run_checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Case, CharField, F, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast
@@ -252,6 +253,26 @@ class IPCleanupTests(TestCase):
     def setUpTestData(cls):
         cls.media = create_test_media(create_test_user())
 
+    def _create_expired_actions(self, count):
+        actions = MediaAction.objects.bulk_create(
+            [MediaAction(media=self.media, remote_ip=MASKED_IP) for _ in range(count)]
+        )
+        MediaAction.objects.filter(pk__in=[action.pk for action in actions]).update(
+            action_date=timezone.now() - timedelta(days=8)
+        )
+
+    @contextmanager
+    def _each_update_takes_50_seconds(self):
+        clock = [0.0]
+
+        def slow_update(execute, sql, params, many, context):
+            if sql.startswith("UPDATE"):
+                clock[0] += 50
+            return execute(sql, params, many, context)
+
+        with patch("time.monotonic", side_effect=lambda: clock[0]), connection.execute_wrapper(slow_update):
+            yield clock
+
     def test_cleanup_expires_ips_and_sanitizes_legacy_without_changing_history(self):
         now = timezone.now()
         with override_settings(MASK_IPS_FOR_ACTIONS=False):
@@ -360,6 +381,35 @@ class IPCleanupTests(TestCase):
             result = cleanup_media_action_ips()
 
         self.assertEqual(result["changed"], 3)
+
+    def test_scheduled_cleanup_of_a_backlog_stops_before_the_soft_limit_and_reports_its_work(self):
+        from actions.tasks import cleanup_media_action_ips
+
+        self._create_expired_actions(6500)
+
+        with self._each_update_takes_50_seconds() as clock:
+            first_run = cleanup_media_action_ips()
+
+        # deploy/celery_short.service gives short_tasks a 300-second soft limit.
+        self.assertLess(clock[0], 300)
+        # Five 50-second batches of 1000 start inside the four-minute budget.
+        self.assertEqual(first_run, {"outcome": "succeeded", "processed": 5000, "changed": 5000})
+        self.assertEqual(MediaAction.objects.filter(remote_ip__isnull=False).count(), 1500)
+
+        second_run = cleanup_media_action_ips()
+
+        self.assertEqual(second_run["changed"], 1500)
+        self.assertFalse(MediaAction.objects.filter(remote_ip__isnull=False).exists())
+
+    def test_cleanup_command_clears_a_backlog_that_outlasts_the_scheduled_budget(self):
+        self._create_expired_actions(6500)
+        output = StringIO()
+
+        with self._each_update_takes_50_seconds():
+            call_command("cleanup_media_action_ips", stdout=output)
+
+        self.assertFalse(MediaAction.objects.filter(remote_ip__isnull=False).exists())
+        self.assertIn("6500 expired", output.getvalue())
 
     @override_settings(MASK_IPS_FOR_ACTIONS=True)
     def test_scheduled_cleanup_leaves_recent_legacy_ips_to_the_rollout_command(self):
