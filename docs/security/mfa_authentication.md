@@ -332,13 +332,15 @@ The following `templates` were created to override default templates associated 
 
 These custom templates utilize their own CSS classes, which have been coded in using the `frontend/` folder's `css/` directory. For this implementation, implementation was done strictly through the `_extra.css` (for new classes) and `styles.scss` (any dark-mode inclusions).
 
-As for the JS-related functionality, any template file that utilizes TOTP / Recovery Code input has an inserted script tag in the template file which ensures that the frontend behavior follows best UI/UX practices. This can be refactored to be implemented within a separate React component, but wasn't implemented due to developer time purposes.
+The two-factor authentication page (`/mfa/authenticate.html`) loads its code-entry behavior from `frontend/src/features/auth/mfaCodeInput.js`, through the `src/entries/auth.js` Vite entry. The script binds to the form marked `data-mfa-code-form`. It submits the form as soon as the sixth digit is typed, pasted, or autofilled, and it sends at most one request per page load. The page text tells users about this before they type, as WCAG 3.2.2 requires. A backup code still needs the **Verify** button. Auto-submit does not change the brute-force cost, because the allauth rate limit applies to the POST itself.
+
+The reauthenticate and TOTP activation templates still have an inline script tag for their TOTP / Recovery Code input.
 
 <hr/>
 
 ### Suggested improvements
 
-- Refactoring JS functionality within certain templates
+- Moving the inline scripts of the reauthenticate and TOTP activation templates into `frontend/src/features/auth/`
 
 - Creation of additional users which may also utilize MFA
 
