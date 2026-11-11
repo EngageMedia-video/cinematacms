@@ -43,7 +43,9 @@ instrumentation are set up, and 0 when either fails, for example on an
 non-fatal: the process keeps running without spans. A deployment with tracing
 disabled writes no sample, and `beat` never configures tracing. The gauge keeps
 the most recent write across the processes of a role, so a process that
-configures tracing later hides an earlier one that failed.
+configures tracing later hides an earlier one that failed. A role that reported
+0 and then had tracing disabled keeps that 0 until the multiprocess metrics
+directory is cleared.
 `CinemataTracingUnconfigured` fires when a role reports 0 for five minutes.
 Restart that role's services and read their logs for the configuration error.
 A process that keeps running after the Python packages change can import new

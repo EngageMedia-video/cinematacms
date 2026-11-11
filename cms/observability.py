@@ -246,14 +246,22 @@ def _instrument_celery() -> bool:
     return True
 
 
+def _configure_tracing(instrument) -> None:
+    if not observability_enabled():
+        return
+    configured = False
+    try:
+        configured = _configure_tracer_provider() and instrument()
+    finally:
+        _record_tracing_configured(configured)
+
+
 def configure_django_observability() -> None:
-    if observability_enabled():
-        _record_tracing_configured(_configure_tracer_provider() and _instrument_django())
+    _configure_tracing(_instrument_django)
 
 
 def configure_celery_observability() -> None:
-    if observability_enabled():
-        _record_tracing_configured(_configure_tracer_provider() and _instrument_celery())
+    _configure_tracing(_instrument_celery)
 
 
 def configure_celery_worker_process() -> None:
