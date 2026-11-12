@@ -240,7 +240,8 @@ export function UploadMediaItem({
 								variant="body-14"
 								as="span"
 								className={cn(
-									'whitespace-nowrap',
+									// A custom message, such as sign-in instructions, is a sentence and must wrap.
+									statusText ? 'min-w-0 wrap-break-word' : 'whitespace-nowrap',
 									config.statusClassName,
 									'group-data-[upload-status=complete]:text-text-success group-data-[upload-status=failed]:text-text-danger'
 								)}

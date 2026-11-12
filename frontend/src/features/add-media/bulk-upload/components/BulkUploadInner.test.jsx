@@ -27,6 +27,8 @@ class FakeUploader {
 
 	cancelAll() {}
 
+	remove() {}
+
 	pauseUpload(id) {
 		if (!this.inProgress.delete(id)) return false;
 		this.callbacks.onStatusChange(id, 'paused', '');

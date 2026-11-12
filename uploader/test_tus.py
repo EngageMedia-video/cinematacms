@@ -21,6 +21,7 @@ from users.models import User
 CONTENT = b"0123456789"
 FINGERPRINT = "a" * 64
 TUS = {"HTTP_TUS_RESUMABLE": "1.0.0"}
+LOOKUP = {"filename": "clip.mp4", "total_size": 10, "fingerprint": FINGERPRINT}
 OFFSET_TYPE = "application/offset+octet-stream"
 
 
@@ -190,6 +191,14 @@ class ProtocolTests(TusTestCase):
                 self.assertEqual(send().status_code, status)
         self.assertFalse(UploadSession.objects.exists())
 
+    def test_creation_that_cannot_make_its_data_file_leaves_no_upload_behind(self):
+        with patch("uploader.tus.os.makedirs", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                self.create()
+
+        self.assertFalse(UploadSession.objects.exists())
+        self.assertEqual(self.client.get(self.endpoint, LOOKUP).json(), {"uploads": []})
+
     def test_file_over_the_size_limit_is_refused_at_creation(self):
         with override_settings(UPLOAD_MAX_SIZE=9):
             response = self.create()
@@ -347,6 +356,16 @@ class ResumeTests(TusTestCase):
         self.assertEqual(self.lookup().json(), {"uploads": []})
         self.assertEqual(self.session(url).status, UploadSession.Status.OPEN)
 
+    def test_draft_and_non_draft_uploads_of_one_file_are_looked_up_separately(self):
+        draft_url = self.created_url(is_draft="1")
+        plain_url = self.created_url()
+
+        draft = self.lookup(is_draft="1").json()["uploads"]
+        plain = self.lookup().json()["uploads"]
+
+        self.assertEqual([upload["url"] for upload in draft], [draft_url])
+        self.assertEqual([upload["url"] for upload in plain], [plain_url])
+
     def test_lookup_ignores_finished_and_cancelled_uploads(self):
         for status in (UploadSession.Status.COMPLETE, UploadSession.Status.CANCELLED, UploadSession.Status.FAILED):
             with self.subTest(status):
@@ -385,6 +404,30 @@ class ResumeTests(TusTestCase):
             tus.append(self.session(url), 0, BrokenStream())
 
         self.assertEqual(self.head(url)["Upload-Offset"], "4")
+
+    def test_interrupted_body_that_stored_bytes_counts_as_activity(self):
+        url = self.created_url()
+        last_hour = timezone.now() - timedelta(hours=1)
+        UploadSession.objects.update(updated_at=last_hour)
+        directory = sessions.chunks_dir(self.session(url).uuid)
+        os.utime(directory, (last_hour.timestamp(), last_hour.timestamp()))
+
+        class BrokenStream:
+            pieces = [b"0123", OSError("connection lost")]
+
+            def read(self, size):
+                piece = self.pieces.pop(0)
+                if isinstance(piece, Exception):
+                    raise piece
+                return piece
+
+        from uploader import tus
+
+        with self.assertRaises(OSError):
+            tus.append(self.session(url), 0, BrokenStream())
+
+        self.assertGreater(self.session(url).updated_at, last_hour + timedelta(minutes=59))
+        self.assertGreater(os.path.getmtime(directory), last_hour.timestamp() + 59 * 60)
 
     def test_second_writer_is_locked_out_while_a_request_appends(self):
         url = self.created_url()
@@ -475,6 +518,16 @@ class TerminationAndExpiryTests(TusTestCase):
         self.assertEqual(self.head(url).status_code, 410)
         self.assertEqual(self.patch_bytes(url, 4, CONTENT[4:]).status_code, 410)
         self.assertFalse(Media.objects.exists())
+
+    def test_delete_of_a_completed_upload_ends_the_resource_and_keeps_the_media(self):
+        url = self.created_url()
+        self.patch_bytes(url, 0, CONTENT)
+
+        response = self.client.delete(url, **TUS)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(self.head(url).status_code, 410)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
     def test_upload_untouched_for_the_retention_period_expires(self):
         url = self.created_url()

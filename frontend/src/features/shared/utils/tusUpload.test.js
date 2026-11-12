@@ -81,17 +81,27 @@ function makeFile(text = CONTENT, name = 'clip.mp4') {
 	return new File([text], name, { type: 'video/mp4', lastModified: 1700000000000 });
 }
 
-function setup({ lookup = { uploads: [] }, ...options } = {}) {
-	const server = createTusServer();
+function memoryStorage() {
+	const entries = new Map();
+	return {
+		entries,
+		getItem: (key) => entries.get(key) ?? null,
+		setItem: (key, value) => entries.set(key, value),
+		removeItem: (key) => entries.delete(key),
+	};
+}
+
+function setup({ lookup = { uploads: [] }, server = createTusServer(), storage = memoryStorage(), ...options } = {}) {
 	const events = [];
 	const statuses = [];
-	const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => lookup }));
+	const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, json: async () => lookup }));
 	const uploader = createTusUploader({
 		endpoint: ENDPOINT,
 		chunkSize: CHUNK_SIZE,
 		retryDelays: [1, 1, 1],
 		httpStack: server.httpStack,
 		fetchImpl,
+		storage,
 		getHeaders: () => ({ 'X-CSRFToken': 'token-1' }),
 		callbacks: {
 			onSubmitted: (id, name) => events.push(['submitted', id, name]),
@@ -105,7 +115,7 @@ function setup({ lookup = { uploads: [] }, ...options } = {}) {
 	const settled = (status) => vi.waitFor(() => expect(statuses.map((entry) => entry[1])).toContain(status));
 	const patches = () => server.requests.filter((request) => request.method === 'PATCH');
 	const storedText = () => [...server.uploads.values()].map((upload) => upload.text);
-	return { server, uploader, events, statuses, fetchImpl, settled, patches, storedText };
+	return { server, uploader, events, statuses, fetchImpl, settled, patches, storedText, storage };
 }
 
 describe('createTusUploader', () => {
@@ -242,6 +252,7 @@ describe('createTusUploader', () => {
 			expect(context.patches().map((request) => request.headers['Upload-Offset'])).toEqual(['10', '20']);
 			expect(context.storedText()).toEqual([CONTENT]);
 			const lookupUrl = new URL(context.fetchImpl.mock.calls[0][0], 'http://localhost');
+			expect(lookupUrl.searchParams.has('is_draft')).toBe(false);
 			expect(lookupUrl.pathname).toBe(ENDPOINT);
 			expect(Object.fromEntries(lookupUrl.searchParams)).toEqual({
 				filename: 'clip.mp4',
@@ -259,6 +270,16 @@ describe('createTusUploader', () => {
 
 			expect(context.patches()).toEqual([]);
 			expect(context.events.at(-1)).toEqual(['complete', 0, { media_url: MEDIA_URL }]);
+		});
+
+		it('looks up a draft upload as a draft, so it never resumes a non-draft upload', async () => {
+			const context = setup({ metadata: { is_draft: '1' } });
+
+			context.uploader.addFiles([makeFile()]);
+			await context.settled(UPLOAD_STATUS.COMPLETE);
+
+			const lookupUrl = new URL(context.fetchImpl.mock.calls[0][0], 'http://localhost');
+			expect(lookupUrl.searchParams.get('is_draft')).toBe('1');
 		});
 
 		it('uploads from the start when the lookup fails', async () => {
@@ -348,7 +369,146 @@ describe('createTusUploader', () => {
 		});
 	});
 
+	describe('offset check failures', () => {
+		it('keeps the same upload when the offset check hits a server error', async () => {
+			const { server, uploader, settled, storedText } = setup();
+			let failures = 0;
+			server.intercept = (request) => {
+				if (request.method === 'PATCH' && request.headers['Upload-Offset'] === '10' && failures === 0) {
+					failures = 1;
+					return { status: 503 };
+				}
+				if (request.method === 'HEAD' && failures === 1) {
+					failures = 2;
+					return { status: 502 };
+				}
+				return null;
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(failures).toBe(2);
+			expect(server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
+			expect(storedText()).toEqual([CONTENT]);
+		});
+	});
+
+	describe('lookup that needs a sign-in', () => {
+		it('waits for sign-in and repeats the lookup, so the unfinished upload is continued', async () => {
+			const context = setup();
+			context.server.uploads.set(`${ENDPOINT}upload-9/`, { length: 26, text: CONTENT.slice(0, 10) });
+			context.fetchImpl.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) });
+
+			context.uploader.addFiles([makeFile()]);
+			await context.settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			expect(context.statuses.at(-1)).toEqual([0, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE]);
+			expect(context.server.requests).toEqual([]);
+
+			context.fetchImpl.mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ uploads: [{ url: `${ENDPOINT}upload-9/`, size: 26, offset: 10 }] }),
+			});
+			context.statuses.length = 0;
+			expect(context.uploader.continueUpload(0)).toBe(true);
+			await context.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(context.server.requests.map((request) => request.method)).toEqual(['HEAD', 'PATCH', 'PATCH']);
+			expect(context.storedText()).toEqual([CONTENT]);
+		});
+	});
+
+	describe('a final response that never arrived', () => {
+		// The server completed the upload, so it no longer lists it as unfinished.
+		async function uploadWithLostFinalResponse() {
+			const first = setup();
+			first.server.intercept = (request) => {
+				// The page is gone before any retry reaches the server.
+				if (request.method === 'HEAD') return { networkError: true };
+				if (request.method !== 'PATCH' || request.headers['Upload-Offset'] !== '20') return null;
+				return request.body.text().then((text) => {
+					first.server.uploads.get(new URL(request.url, 'http://localhost').pathname).text += text;
+					return { networkError: true };
+				});
+			};
+			first.uploader.addFiles([makeFile()]);
+			await first.settled(UPLOAD_STATUS.FAILED);
+			expect(first.storedText()).toEqual([CONTENT]);
+			return first;
+		}
+
+		function reloadedPage(first) {
+			first.server.intercept = () => null;
+			first.server.requests.length = 0;
+			const storage = memoryStorage();
+			first.storage.entries.forEach((value, key) => storage.setItem(key, value));
+			return setup({ server: first.server, storage });
+		}
+
+		it('recovers the media after a reload without sending or creating anything again', async () => {
+			const first = await uploadWithLostFinalResponse();
+			const second = reloadedPage(first);
+
+			second.uploader.addFiles([makeFile()]);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(second.server.requests.map((request) => request.method)).toEqual(['HEAD']);
+			expect(second.events.at(-1)).toEqual(['complete', 0, { media_url: MEDIA_URL }]);
+			expect(second.server.uploads.size).toBe(1);
+		});
+
+		it('uploads the same file again once its completion was seen', async () => {
+			const { server, uploader, settled, storage } = setup();
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+			expect(storage.entries.size).toBe(0);
+
+			const second = setup({ server, storage });
+			second.uploader.addFiles([makeFile()]);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(server.uploads.size).toBe(2);
+		});
+
+		it('sends the file as a new upload when the remembered upload is gone', async () => {
+			const first = await uploadWithLostFinalResponse();
+			first.server.uploads.clear();
+			const second = reloadedPage(first);
+
+			second.uploader.addFiles([makeFile()]);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(second.server.requests.map((request) => request.method).slice(0, 2)).toEqual(['HEAD', 'POST']);
+			expect(second.storedText()).toEqual([CONTENT]);
+			expect(second.statuses.map((entry) => entry[1])).not.toContain(UPLOAD_STATUS.EXPIRED);
+		});
+	});
+
 	describe('pause, continue and cancel', () => {
+		it('starts one transfer when paused and continued while the lookup is pending', async () => {
+			const context = setup();
+			const lookups = [];
+			context.fetchImpl.mockImplementation(
+				() =>
+					new Promise((resolve) =>
+						lookups.push(() => resolve({ ok: true, status: 200, json: async () => ({ uploads: [] }) }))
+					)
+			);
+
+			context.uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(lookups).toHaveLength(1));
+			context.uploader.pauseUpload(0);
+			context.uploader.continueUpload(0);
+			await vi.waitFor(() => expect(lookups).toHaveLength(2));
+			lookups.forEach((answer) => answer());
+			await context.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(context.server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
+			expect(context.storedText()).toEqual([CONTENT]);
+		});
+
 		it('pauses between chunks and continues from the server offset', async () => {
 			const { server, uploader, statuses, settled, patches, storedText } = setup();
 			server.intercept = (request) => {

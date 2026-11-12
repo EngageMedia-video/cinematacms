@@ -43,3 +43,4 @@ class TusLookupForm(forms.Form):
     filename = forms.CharField(max_length=255)
     total_size = forms.IntegerField(min_value=1)
     fingerprint = forms.RegexField(regex=r"^[0-9a-f]{64}$")
+    is_draft = forms.BooleanField(required=False)

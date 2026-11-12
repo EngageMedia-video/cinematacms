@@ -4,6 +4,8 @@
 // bytes it holds (HEAD) and continues from there. Before a file is sent, the server is asked for
 // the caller's unfinished upload of the same file (name, size and a content fingerprint), so
 // selecting the file again after a reload, or after signing in again, continues that upload.
+// The browser also remembers the URL of an upload until it sees that upload end, which recovers
+// the media of an upload whose final response was lost.
 
 // The package's default entry is its Node build, which cannot read a browser File.
 import { DetailedError, Upload } from 'tus-js-client/lib.esm/browser/index.js';
@@ -30,6 +32,7 @@ export const SIGN_IN_MESSAGE = 'Your session ended. Sign in again in another tab
 export const EXPIRED_MESSAGE = 'This upload expired. Retry to send the file again.';
 
 const MEDIA_URL_HEADER = 'X-Media-Url';
+const PENDING_UPLOAD_PREFIX = 'cinemata-upload:';
 const FINGERPRINT_SAMPLE_BYTES = 1024 * 1024;
 
 class SignInRequired extends Error {}
@@ -54,6 +57,14 @@ export async function fileFingerprint(file) {
 		offset += part.length;
 	}
 	return toHex(await subtle.digest('SHA-256', bytes));
+}
+
+function browserStorage() {
+	try {
+		return globalThis.localStorage ?? null;
+	} catch {
+		return null;
+	}
 }
 
 function newUploadId() {
@@ -92,10 +103,37 @@ export function createTusUploader({
 	chunkSize = UPLOAD_CHUNK_SIZE,
 	retryDelays = RETRY_DELAYS_MS,
 	fetchImpl = (...args) => globalThis.fetch(...args),
+	storage = browserStorage(),
 	httpStack,
 }) {
 	const items = new Map();
 	let nextId = 0;
+
+	// The URL of an upload whose completion this browser has not seen. If the response to the
+	// last byte is lost and the page reloads, the server no longer lists the upload as
+	// unfinished; asking this URL returns the media it created, so the file is not sent, and
+	// the media not created, a second time. The entry is dropped once the upload is seen to end.
+	const pendingKey = (item) =>
+		`${PENDING_UPLOAD_PREFIX}${endpoint}:${metadata.is_draft ? 'draft' : 'final'}:${item.fingerprint}`;
+
+	function pendingUrl(item) {
+		if (!item.fingerprint) return null;
+		try {
+			return storage?.getItem(pendingKey(item)) || null;
+		} catch {
+			return null;
+		}
+	}
+
+	function setPendingUrl(item, url) {
+		if (!item.fingerprint) return;
+		try {
+			if (url) storage?.setItem(pendingKey(item), url);
+			else storage?.removeItem(pendingKey(item));
+		} catch {
+			// Without the entry a lost final response is not recovered; the upload itself is unaffected.
+		}
+	}
 
 	const notify = (name, ...args) => callbacks[name]?.(...args);
 
@@ -128,17 +166,26 @@ export function createTusUploader({
 			filename: item.file.name,
 			total_size: String(item.file.size),
 			fingerprint: item.fingerprint,
+			// A draft (bulk) upload and a non-draft (single) upload of one file are different uploads.
+			...(metadata.is_draft ? { is_draft: metadata.is_draft } : {}),
 		});
+		let response;
 		try {
-			const response = await fetchImpl(`${endpoint}?${query}`, {
+			response = await fetchImpl(`${endpoint}?${query}`, {
 				credentials: 'same-origin',
 				headers: { Accept: 'application/json' },
 			});
-			if (!response.ok) return null;
+		} catch {
+			// Without an answer the file uploads from the start.
+			return null;
+		}
+		// Starting a new upload now would abandon the bytes the server holds for this file.
+		if (response.status === 401) throw new SignInRequired();
+		if (!response.ok) return null;
+		try {
 			const found = (await response.json())?.uploads?.[0];
 			return found?.url ? new URL(found.url, globalThis.location?.href).toString() : null;
 		} catch {
-			// Without an answer the file uploads from the start.
 			return null;
 		}
 	}
@@ -149,7 +196,7 @@ export function createTusUploader({
 			uploadUrl,
 			chunkSize,
 			retryDelays: [...retryDelays],
-			// The server finds an unfinished upload by fingerprint, so nothing is kept in the browser.
+			// The engine does its own lookup and bookkeeping (findUploadUrl, pendingUrl).
 			storeFingerprintForResuming: false,
 			metadata: {
 				...metadata,
@@ -166,11 +213,16 @@ export function createTusUploader({
 				const mediaUrl = response.getHeader(MEDIA_URL_HEADER);
 				if (mediaUrl) item.mediaUrl = mediaUrl;
 				if (status === 401) throw new SignInRequired();
-				// tus-js-client answers a refused HEAD by silently creating a new upload, which would
-				// send the whole file again and could create a second media.
-				if (request.getMethod() === 'HEAD' && status >= 400 && status < 500 && status !== 423) {
-					throw new UploadGone();
+				// tus-js-client answers any failed HEAD except 423 by silently creating a new upload,
+				// which would send the whole file again and could create a second media.
+				if (request.getMethod() === 'HEAD' && status >= 400 && status !== 423) {
+					if (status < 500) throw new UploadGone();
+					// Thrown, a server error goes through the retries and keeps the upload URL.
+					throw new Error(`Offset check failed with status ${status}.`);
 				}
+			},
+			onUploadUrlAvailable() {
+				setPendingUrl(item, item.upload?.url);
 			},
 			onShouldRetry(error) {
 				if (error.causingError instanceof SignInRequired || error.causingError instanceof UploadGone) {
@@ -184,6 +236,7 @@ export function createTusUploader({
 				notify('onProgress', item.id, item.file.name, sentBytes, totalBytes);
 			},
 			onSuccess() {
+				setPendingUrl(item, null);
 				setStatus(item, UPLOAD_STATUS.COMPLETE);
 				notify('onComplete', item.id, item.file.name, { media_url: item.mediaUrl || '' });
 			},
@@ -192,6 +245,15 @@ export function createTusUploader({
 				if (cause instanceof SignInRequired) {
 					setStatus(item, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE);
 				} else if (cause instanceof UploadGone) {
+					setPendingUrl(item, null);
+					if (item.recalled) {
+						// Only this browser remembered the upload and the server no longer has it,
+						// so nothing can be continued or duplicated: send the file as a new upload.
+						item.recalled = false;
+						item.upload = buildUpload(item, null);
+						item.upload.start();
+						return;
+					}
 					item.upload = null;
 					setStatus(item, UPLOAD_STATUS.EXPIRED, EXPIRED_MESSAGE);
 				} else {
@@ -204,16 +266,33 @@ export function createTusUploader({
 	}
 
 	async function begin(item) {
+		// Cancelling, pausing, or beginning again while the fingerprint and the lookup run makes
+		// this start stale, so a file never ends up with two transfers.
+		const token = {};
+		item.startToken = token;
+		const stale = () =>
+			items.get(item.id) !== item || item.startToken !== token || item.status !== UPLOAD_STATUS.UPLOADING;
+
 		item.fingerprint = item.fingerprint ?? (await fileFingerprint(item.file).catch(() => null));
-		const uploadUrl = await findUploadUrl(item);
-		// Cancelled or paused while the fingerprint and the lookup were running.
-		if (items.get(item.id) !== item || item.status !== UPLOAD_STATUS.UPLOADING) return;
-		item.upload = buildUpload(item, uploadUrl);
+		let uploadUrl;
+		try {
+			uploadUrl = await findUploadUrl(item);
+		} catch {
+			// The lookup needs a sign-in; Continue repeats it, so the unfinished upload is still found.
+			if (!stale()) setStatus(item, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE);
+			return;
+		}
+		if (stale()) return;
+		const remembered = uploadUrl ? null : pendingUrl(item);
+		item.recalled = Boolean(remembered);
+		item.upload = buildUpload(item, uploadUrl ?? remembered);
 		item.upload.start();
 	}
 
 	function discard(item) {
 		items.delete(item.id);
+		item.startToken = null;
+		if (item.status !== UPLOAD_STATUS.COMPLETE) setPendingUrl(item, null);
 		if (item.upload && item.status !== UPLOAD_STATUS.COMPLETE) {
 			// Terminating deletes the bytes the server holds for the unfinished upload.
 			item.upload.abort(true).catch(() => {});
@@ -237,6 +316,7 @@ export function createTusUploader({
 		pauseUpload(id) {
 			const item = items.get(id);
 			if (item?.status !== UPLOAD_STATUS.UPLOADING) return false;
+			item.startToken = null;
 			item.upload?.abort();
 			setStatus(item, UPLOAD_STATUS.PAUSED);
 			return true;

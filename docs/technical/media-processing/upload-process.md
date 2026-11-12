@@ -43,7 +43,9 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
     retries.
   - nginx buffers each request (`uwsgi_request_buffering on`), so an interrupted `PATCH` stores
     nothing. The browser therefore sends 8 MiB per `PATCH` (`UPLOAD_CHUNK_SIZE`).
-- `DELETE` cancels an upload and deletes its bytes. Later requests get `410`.
+- `DELETE` cancels an upload and deletes its bytes. Later requests get `410`. For a completed upload it
+  ends the upload resource only; the media stays.
+- If the data file cannot be created, creation fails and leaves no upload row behind.
 - A request without `Tus-Resumable: 1.0.0` gets `412`. `X-HTTP-Method-Override` is honoured on `POST`.
 
 #### Sign-in, ownership and limits
@@ -75,14 +77,20 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   sending, the engine asks `GET /fu/tus/?filename=…&total_size=…&fingerprint=…` for the caller's
   unfinished upload of the same file. The fingerprint is a SHA-256 of the file's size, modification
   time, and first and last MiB. On a match the upload continues from the server's offset; a different
-  file, account or target never matches.
-- **Sign-in recovery:** on `401` the upload waits in the *awaiting sign-in* state without using
-  retries. After the user signs in again (for example in another tab), **Continue** resumes the same
+  file, account or target never matches. A draft (bulk) upload and a non-draft (single) upload of one
+  file are separate uploads: the lookup sends `is_draft` and matches only the same mode.
+- **Lost final response:** the browser keeps the upload's URL in `localStorage` until it sees the upload
+  end. If the response to the last byte is lost and the page reloads, the completed upload is no longer
+  unfinished, so the lookup finds nothing; the engine then asks the remembered URL, and its `HEAD`
+  returns the media that was created. Nothing is sent or created twice. If that URL is gone, the file
+  is sent as a new upload.
+- **Sign-in recovery:** on `401`, from the lookup or from any tus request, the upload waits in the
+  *awaiting sign-in* state without using retries. After the user signs in again (for example in another tab), **Continue** resumes the same
   upload. The CSRF token is read before every request, so the token of the new session is used.
 - **Expiry:** an upload untouched for `ORPHANED_UPLOAD_CLEANUP_HOURS` (24 by default) expires. Its
   bytes are deleted and later requests get `410`. `Upload-Expires` tells the browser when. The
   browser never starts a replacement upload on its own: it shows the upload as expired, and **Retry**
-  sends the file again. The daily `cleanup_orphaned_uploads` task deletes expired sessions.
+  sends the file again. A server error on the offset check is retried against the same upload. The daily `cleanup_orphaned_uploads` task deletes expired sessions.
 - **Cancellation:** cancelling an unfinished upload sends `DELETE`.
 
 | Endpoint | Method | Purpose |

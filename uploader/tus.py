@@ -10,6 +10,7 @@ import base64
 import binascii
 import fcntl
 import os
+import shutil
 import uuid
 
 from django.conf import settings
@@ -86,9 +87,15 @@ def create(user, target_media, *, length, filename, fingerprint="", is_draft=Fal
         fingerprint=sessions.clean_fingerprint(fingerprint),
         is_draft=is_draft,
     )
-    os.makedirs(sessions.chunks_dir(session.uuid), exist_ok=True)
-    with open(sessions.data_path(session.uuid), "xb"):
-        pass
+    try:
+        os.makedirs(sessions.chunks_dir(session.uuid), exist_ok=True)
+        with open(sessions.data_path(session.uuid), "xb"):
+            pass
+    except OSError:
+        # A row without its data file would be found by every later lookup and accept no bytes.
+        shutil.rmtree(sessions.chunks_dir(session.uuid), ignore_errors=True)
+        session.delete()
+        raise
     return session
 
 
@@ -118,8 +125,12 @@ def offset(session):
         return 0
 
 
-def find_resumable(user, target_media, filename, total_size, fingerprint):
-    """The caller's unfinished tus upload of this exact file, or None."""
+def find_resumable(user, target_media, filename, total_size, fingerprint, is_draft=False):
+    """The caller's unfinished tus upload of this exact file, or None.
+
+    A draft upload and a non-draft upload of one file are different uploads: resuming one
+    for the other would create the media in the wrong mode.
+    """
     fingerprint = sessions.clean_fingerprint(fingerprint)
     if not fingerprint:
         return None
@@ -132,6 +143,7 @@ def find_resumable(user, target_media, filename, total_size, fingerprint):
             filename=clean_filename(filename),
             total_size=total_size,
             fingerprint=fingerprint,
+            is_draft=is_draft,
         )
         .order_by("-updated_at")
         .first()
@@ -181,7 +193,13 @@ def append(session, claimed_offset, stream):
         finally:
             data.flush()
             os.fsync(data.fileno())
+            if written:
+                # Also after an interrupted body: its bytes stay, so the upload must not expire as idle.
+                _record_activity(session)
+    return current + written
+
+
+def _record_activity(session):
     UploadSession.objects.filter(pk=session.pk).update(updated_at=timezone.now())
     # The cleanup task ages chunk directories by modification time, which an append does not change.
     os.utime(sessions.chunks_dir(session.uuid))
-    return current + written

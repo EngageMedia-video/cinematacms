@@ -174,8 +174,12 @@ class TusUploadView(TusView):
         return response
 
     def delete(self, request, *args, **kwargs):
-        tus.get(request.user, self.target_media, kwargs["upload_id"])
+        session = tus.get(request.user, self.target_media, kwargs["upload_id"])
         sessions.cancel(request.user, self.target_media, kwargs["upload_id"])
+        # Termination ends the upload resource, not the media a completed upload created.
+        UploadSession.objects.filter(pk=session.pk, status=UploadSession.Status.COMPLETE).update(
+            status=UploadSession.Status.CANCELLED
+        )
         return HttpResponse(status=204)
 
     def _complete(self, session):

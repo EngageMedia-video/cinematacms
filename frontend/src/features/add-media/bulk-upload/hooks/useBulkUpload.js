@@ -113,7 +113,23 @@ export function useBulkUpload() {
 		});
 
 		uploaderRef.current = uploader;
+
+		// The engine counts every file it holds against the item limit. A row can leave the
+		// store without the engine hearing of it (a deleted media, a partial submit, a reset),
+		// so release the engine's file whenever its row is gone.
+		const releaseRemovedRows = (state) => {
+			const rowIds = new Set(state.files.map((file) => file.id));
+			for (const id of [...filesByIdRef.current.keys()]) {
+				if (!rowIds.has(id)) {
+					filesByIdRef.current.delete(id);
+					uploader.remove(id);
+				}
+			}
+		};
+		const stopReleasing = useBulkUploadStore.subscribe(releaseRemovedRows);
+
 		return () => {
+			stopReleasing();
 			disposing = true;
 			uploaderRef.current?.cancelAll();
 			uploaderRef.current = null;
@@ -180,8 +196,8 @@ export function useBulkUpload() {
 	const reupload = useCallback(
 		(id) => {
 			const file = filesByIdRef.current.get(id);
+			// Removing the row releases the engine's file, so the replacement fits the item limit.
 			removeFile(id);
-			filesByIdRef.current.delete(id);
 			if (file && uploaderRef.current) {
 				uploaderRef.current.addFiles([file]);
 			}
