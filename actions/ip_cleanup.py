@@ -1,3 +1,4 @@
+import time
 from datetime import timedelta
 from typing import NamedTuple
 
@@ -15,14 +16,20 @@ class LegacyIPCleanup(NamedTuple):
     invalid: int
 
 
-def expire_action_ips(*, batch_size=1000, dry_run=False):
-    """Clear IP fields older than the retention window; served by the partial action_date index."""
+def expire_action_ips(*, batch_size=1000, dry_run=False, time_budget_seconds=None):
+    """Clear IP fields older than the retention window; served by the partial action_date index.
+
+    With a time budget, no batch starts after the budget ends and the next run clears the rest.
+    """
     expired = MediaAction.objects.filter(action_date__lte=timezone.now() - IP_RETENTION, remote_ip__isnull=False)
     if dry_run:
         return expired.count()
+    deadline = None if time_budget_seconds is None else time.monotonic() + time_budget_seconds
     count = 0
     # Unordered batches: ordering by pk would let the planner walk the primary key instead of the index.
-    while expired_pks := list(expired.values_list("pk", flat=True)[:batch_size]):
+    while (deadline is None or time.monotonic() < deadline) and (
+        expired_pks := list(expired.values_list("pk", flat=True)[:batch_size])
+    ):
         count += MediaAction.objects.filter(pk__in=expired_pks).update(remote_ip=None)
     return count
 

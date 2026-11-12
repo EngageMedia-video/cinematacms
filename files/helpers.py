@@ -676,6 +676,9 @@ def get_base_ffmpeg_command(
     base_cmd = [
         settings.FFMPEG_COMMAND,
         "-y",
+        # FFmpegBackend.encode finds the error lines by their level tag.
+        "-loglevel",
+        "level+info",
         # Before -i this bounds the decoder only. The encoder ignores it and
         # opens one thread per core, so it needs its own limit after the input.
         "-threads",
