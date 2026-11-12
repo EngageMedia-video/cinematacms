@@ -1,4 +1,11 @@
-import { EXPIRED_MESSAGE, SIGN_IN_MESSAGE, UPLOAD_STATUS, createTusUploader, fileFingerprint } from './tusUpload';
+import {
+	EXPIRED_MESSAGE,
+	SIGN_IN_MESSAGE,
+	UNKNOWN_RESULT_MESSAGE,
+	UPLOAD_STATUS,
+	createTusUploader,
+	fileFingerprint,
+} from './tusUpload';
 
 const ENDPOINT = '/fu/tus/';
 const CONTENT = 'abcdefghijklmnopqrstuvwxyz'; // 26 bytes, sent in chunks of 10, 10 and 6
@@ -483,17 +490,23 @@ describe('createTusUploader', () => {
 			expect(server.uploads.size).toBe(2);
 		});
 
-		it('sends the file as a new upload when the remembered upload is gone', async () => {
+		it('waits for the user when the remembered upload is gone, then sends the file on retry', async () => {
 			const first = await uploadWithLostFinalResponse();
+			// The server removed the completed upload; its media may exist.
 			first.server.uploads.clear();
 			const second = reloadedPage(first);
 
 			second.uploader.addFiles([makeFile()]);
-			await second.settled(UPLOAD_STATUS.COMPLETE);
+			await second.settled(UPLOAD_STATUS.EXPIRED);
 
+			expect(second.statuses.at(-1)).toEqual([0, UPLOAD_STATUS.EXPIRED, UNKNOWN_RESULT_MESSAGE]);
+			expect(second.server.requests.map((request) => request.method)).toEqual(['HEAD']);
+			expect(second.storage.entries.size).toBe(0);
+
+			expect(second.uploader.retry(0)).toBe(true);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
 			expect(second.server.requests.map((request) => request.method).slice(0, 2)).toEqual(['HEAD', 'POST']);
 			expect(second.storedText()).toEqual([CONTENT]);
-			expect(second.statuses.map((entry) => entry[1])).not.toContain(UPLOAD_STATUS.EXPIRED);
 		});
 	});
 

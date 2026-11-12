@@ -30,6 +30,8 @@ export const UPLOAD_STATUS = Object.freeze({
 
 export const SIGN_IN_MESSAGE = 'Your session ended. Sign in again in another tab, then continue this upload.';
 export const EXPIRED_MESSAGE = 'This upload expired. Retry to send the file again.';
+export const UNKNOWN_RESULT_MESSAGE =
+	'This file may already be uploaded. Check your media, then retry only if it is missing.';
 
 const MEDIA_URL_HEADER = 'X-Media-Url';
 const PENDING_UPLOAD_PREFIX = 'cinemata-upload:';
@@ -247,16 +249,11 @@ export function createTusUploader({
 					setStatus(item, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE);
 				} else if (cause instanceof UploadGone) {
 					setPendingUrl(item, null);
-					if (item.recalled) {
-						// Only this browser remembered the upload and the server no longer has it,
-						// so nothing can be continued or duplicated: send the file as a new upload.
-						item.recalled = false;
-						item.upload = buildUpload(item, null);
-						item.upload.start();
-						return;
-					}
 					item.upload = null;
-					setStatus(item, UPLOAD_STATUS.EXPIRED, EXPIRED_MESSAGE);
+					// A remembered upload the server no longer has may have created its media before
+					// it was removed. Sending the file again is the user's decision, through Retry.
+					setStatus(item, UPLOAD_STATUS.EXPIRED, item.recalled ? UNKNOWN_RESULT_MESSAGE : EXPIRED_MESSAGE);
+					item.recalled = false;
 				} else {
 					const message = serverMessage(error) || 'Upload failed.';
 					setStatus(item, UPLOAD_STATUS.FAILED, message);
