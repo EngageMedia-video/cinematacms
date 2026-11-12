@@ -89,29 +89,30 @@ if ! git cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then
   exit 1
 fi
 
-CURRENT_SHA=$(git rev-parse HEAD)
-
-if [ "$CURRENT_SHA" = "$TARGET_SHA" ]; then
-  echo -e "${YELLOW}HEAD is already at $TARGET_SHA. Nothing to roll back.${NC}"
-  exit 0
-fi
-
-# Sanity guard: the deploy log says the last forward deploy left HEAD at
-# $DEPLOYED_SHA. If HEAD is somewhere else now, someone moved it out of
-# band (manual git checkout, ad-hoc pull, an earlier rollback that wasn't
-# logged) and the "previous deploy" recorded in the log may no longer be
-# the right rollback target. Refuse to act and let the operator decide.
-if [ "$CURRENT_SHA" != "$DEPLOYED_SHA" ]; then
-  echo -e "${RED}Repository state has shifted since the last logged deploy.${NC}" >&2
-  echo -e "${RED}  HEAD now:        $CURRENT_SHA${NC}" >&2
-  echo -e "${RED}  Last deployed:   $DEPLOYED_SHA  (per $DEPLOY_LOG)${NC}" >&2
-  echo -e "${RED}  Rollback target: $TARGET_SHA${NC}" >&2
-  echo -e "${YELLOW}Refusing to roll back from a HEAD the deploy log does not know about.${NC}" >&2
-  echo -e "${YELLOW}If you intended to roll back from the last deploy, run:${NC}" >&2
-  echo -e "${YELLOW}  git fetch --all && git checkout $DEPLOYED_SHA${NC}" >&2
-  echo -e "${YELLOW}then re-run this script. Otherwise check out the desired target manually.${NC}" >&2
-  exit 1
-fi
+case "$(rollback_progress "$TARGET_SHA" "$DEPLOYED_SHA")" in
+  complete)
+    echo -e "${YELLOW}HEAD is already at $TARGET_SHA and its frontend is served. Nothing to roll back.${NC}"
+    exit 0
+    ;;
+  interrupted)
+    echo -e "${YELLOW}A rollback to $TARGET_SHA stopped after its checkout. Resuming it.${NC}"
+    ;;
+  diverged)
+    # The deploy log says the last forward deploy left HEAD at $DEPLOYED_SHA.
+    # HEAD moved out of band (manual git checkout, ad-hoc pull, an earlier
+    # rollback that wasn't logged), so the "previous deploy" recorded in the
+    # log may no longer be the right rollback target. Let the operator decide.
+    echo -e "${RED}Repository state has shifted since the last logged deploy.${NC}" >&2
+    echo -e "${RED}  HEAD now:        $(git rev-parse HEAD)${NC}" >&2
+    echo -e "${RED}  Last deployed:   $DEPLOYED_SHA  (per $DEPLOY_LOG)${NC}" >&2
+    echo -e "${RED}  Rollback target: $TARGET_SHA${NC}" >&2
+    echo -e "${YELLOW}Refusing to roll back from a HEAD the deploy log does not know about.${NC}" >&2
+    echo -e "${YELLOW}If you intended to roll back from the last deploy, run:${NC}" >&2
+    echo -e "${YELLOW}  git fetch --all && git checkout $DEPLOYED_SHA${NC}" >&2
+    echo -e "${YELLOW}then re-run this script. Otherwise check out the desired target manually.${NC}" >&2
+    exit 1
+    ;;
+esac
 
 echo -e "${YELLOW}Most recent deploy log entry:${NC}"
 echo "  Timestamp:  $LOG_TS"
@@ -119,11 +120,11 @@ echo "  Branch:     $DEPLOYED_BRANCH"
 echo "  Was:        $TARGET_SHA"
 echo "  Deployed:   $DEPLOYED_SHA"
 echo
-echo -e "${YELLOW}Commits that will be reverted (${TARGET_SHA}..HEAD):${NC}"
-git log --oneline "${TARGET_SHA}..HEAD" || true
+echo -e "${YELLOW}Commits that will be reverted (${TARGET_SHA}..${DEPLOYED_SHA}):${NC}"
+git log --oneline "${TARGET_SHA}..${DEPLOYED_SHA}" || true
 echo
 
-MIGRATION_DIFF=$(git diff --name-only "${TARGET_SHA}" HEAD -- '*/migrations/*.py' || true)
+MIGRATION_DIFF=$(git diff --name-only "${TARGET_SHA}" "${DEPLOYED_SHA}" -- '*/migrations/*.py' || true)
 DRIFT_APPS=""
 if [ -n "$MIGRATION_DIFF" ]; then
   DRIFT_APPS=$(printf '%s\n' "$MIGRATION_DIFF" | awk -F/ '{print $1}' | sort -u | tr '\n' ' ')
@@ -151,22 +152,21 @@ case "$ans" in
     ;;
 esac
 
-trap restart_application_services_after_interrupted_deploy EXIT
-
-PRE_ROLLBACK_SHA=$(git rev-parse HEAD)
+# This step can fail, and it changes nothing that is served, so it runs before the
+# checkout moves. It also needs deploy/exchange-paths.py of the deployed commit.
+adopt_served_frontend
 
 echo -e "${YELLOW}Checking out $TARGET_SHA (detached HEAD)...${NC}"
 git checkout --detach "$TARGET_SHA"
 
-echo -e "${YELLOW}Reinstalling Python requirements...${NC}"
-pip install -r requirements.txt
+trap restart_application_services_after_interrupted_deploy EXIT
 
-echo -e "${YELLOW}Rebuilding frontend...${NC}"
-if ! make quick-build; then
-  echo -e "${RED}Frontend build failed at rolled-back commit.${NC}" >&2
-  echo -e "${RED}You are now on detached HEAD $TARGET_SHA with a partial deploy.${NC}" >&2
-  exit 1
-fi
+echo -e "${YELLOW}Reinstalling Python requirements...${NC}"
+install_python_requirements
+
+echo -e "${YELLOW}Restoring the frontend of $TARGET_SHA...${NC}"
+# Not a condition: `set -e` must stop a step that fails before the release is served.
+roll_back_static_release "$TARGET_SHA"
 
 echo -e "${YELLOW}Updating ownership...${NC}"
 # The Collector rereads a log from its first line after losing read access to it,
@@ -189,7 +189,7 @@ systemctl restart nginx
 # Audit entry so a subsequent rollback (or the next forward deploy) can
 # trace the chain. Field 4 is "rollback" instead of a branch name.
 printf '%s\t%s\t%s\t%s\n' \
-  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PRE_ROLLBACK_SHA" "$TARGET_SHA" "rollback" \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DEPLOYED_SHA" "$TARGET_SHA" "rollback" \
   >> "$DEPLOY_LOG"
 
 echo

@@ -176,18 +176,21 @@ def _configure_tracer_provider() -> bool:
     return True
 
 
+# Each instrument() call passes raise_exception_on_conflict=True. Without it, an
+# instrumentor that finds an unsupported dependency version logs and skips itself,
+# and the process would report tracing as configured.
 def _configure_dependency_instrumentation() -> None:
     global _redis_instrumented, _requests_instrumented
 
     if not _redis_instrumented:
         from opentelemetry.instrumentation.redis import RedisInstrumentor
 
-        RedisInstrumentor().instrument()
+        RedisInstrumentor().instrument(raise_exception_on_conflict=True)
         _redis_instrumented = True
     if not _requests_instrumented:
         from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
-        RequestsInstrumentor().instrument()
+        RequestsInstrumentor().instrument(raise_exception_on_conflict=True)
         _requests_instrumented = True
 
 
@@ -219,7 +222,7 @@ def _instrument_django() -> bool:
         if not _django_instrumented:
             from opentelemetry.instrumentation.django import DjangoInstrumentor
 
-            DjangoInstrumentor().instrument(request_hook=sanitize_django_request_span)
+            DjangoInstrumentor().instrument(request_hook=sanitize_django_request_span, raise_exception_on_conflict=True)
             _django_instrumented = True
         _configure_dependency_instrumentation()
     except Exception as error:
@@ -236,7 +239,7 @@ def _instrument_celery() -> bool:
         if not _celery_instrumented:
             from opentelemetry.instrumentation.celery import CeleryInstrumentor
 
-            CeleryInstrumentor().instrument()
+            CeleryInstrumentor().instrument(raise_exception_on_conflict=True)
             _celery_instrumented = True
         _configure_dependency_instrumentation()
     except Exception as error:
