@@ -89,12 +89,14 @@ def _kill_group_quietly(pgid):
 class WorkerShutdownCleanupTests(SimpleTestCase):
     def setUp(self):
         # An executable named ffmpeg stands in for the encoder, so the test
-        # needs no ffmpeg binary.
+        # needs no ffmpeg binary. It is the Python interpreter, not sleep:
+        # multi-call coreutils (uutils on Ubuntu 26.04) choose the tool from
+        # the invoked name and exit at once when it is "ffmpeg".
         bin_dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, bin_dir)
         encoder = os.path.join(bin_dir, "ffmpeg")
-        os.symlink(shutil.which("sleep"), encoder)
-        self.encoder_stand_in = [encoder, "120"]
+        os.symlink(os.path.realpath(sys.executable), encoder)
+        self.encoder_stand_in = [encoder, "-c", "import time; time.sleep(120)"]
 
     def test_shutdown_stops_own_encoders_and_spares_other_processes(self):
         other_worker_encoder = subprocess.Popen(
@@ -129,4 +131,7 @@ class WorkerShutdownCleanupTests(SimpleTestCase):
             _wait_until_gone(result["orphan_pid"]),
             "worker's encoder orphaned to init survived its shutdown",
         )
-        self.assertIsNone(other_worker_encoder.poll(), "another worker's encoder was killed")
+        self.assertIsNone(
+            other_worker_encoder.poll(),
+            f"another worker's encoder stopped with status {other_worker_encoder.returncode}",
+        )
