@@ -157,11 +157,10 @@ path, query string, address, cookie, or email. nginx answers some upload errors
 ### Upload correlation: `upload_ref`
 
 `upload_ref` joins an nginx upload line to the application events of the same
-upload, and through them to `actor_ref` and `trace_id`. It is Fine Uploader's
-per-file `qquuid`, a random version-4 UUID that the browser already sends in the
-chunk body. The upload pages also send it as the `X-Upload-Id` header on every
-chunk and on the chunks-done request, because nginx does not parse the body and
-can log a header. It carries no personal data and grants no access; it only
+upload, and through them to `actor_ref` and `trace_id`. It is a random
+version-4 UUID that the browser creates for each selected file. The upload pages
+send it as the `X-Upload-Id` header on every request of that upload (creation,
+offset check, and each `PATCH`), because nginx can log a header. It carries no personal data and grants no access; it only
 attributes log lines. `config/observability/coverage.json` (`log_correlation`)
 holds the one definition: header, pattern, maximum length (36), and the events
 that carry it. `scripts/validate_observability_coverage.py` checks it, and it is
