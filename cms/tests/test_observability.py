@@ -1,14 +1,22 @@
 import json
 import logging
 import math
+import os
+import shutil
+import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+from celery.signals import worker_process_shutdown
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
+from prometheus_client import CollectorRegistry
+from prometheus_client.multiprocess import MultiProcessCollector
 
 from cms.http_telemetry import classify_request
 from cms.observability import (
@@ -16,6 +24,8 @@ from cms.observability import (
     OperationAwareSampler,
     SafeSpanExporter,
     _credentialed_endpoint_is_secure,
+    configure_celery_worker_process,
+    configure_django_observability,
     current_actor_ref,
     inject_trace_headers,
     media_reference,
@@ -24,6 +34,8 @@ from cms.observability import (
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
 from cms.redis_telemetry import BROKER_SOCKET_TIMEOUT_SECONDS, ObservabilityRedisAdapter
 from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
 class ObservabilityConfigTests(SimpleTestCase):
@@ -447,6 +459,147 @@ class ObservabilityConfigTests(SimpleTestCase):
         sampler = OperationAwareSampler(default_ratio=0, priority_ratio=1)
         self.assertEqual(sampler.should_sample(None, 1, "GET /about").decision, Decision.DROP)
         self.assertEqual(sampler.should_sample(None, 1, "email.delivery").decision, Decision.RECORD_AND_SAMPLE)
+
+
+@override_settings(OTEL_ENABLED=True, OTEL_SERVICE_ROLE="transcription")
+class TracingConfigurationStateTests(SimpleTestCase):
+    def setUp(self):
+        from files import metrics
+
+        metrics.TRACING_CONFIGURED.clear()
+        process_state = patch.multiple(
+            "cms.observability",
+            _tracer_configured=False,
+            _django_instrumented=False,
+            _celery_instrumented=False,
+            _redis_instrumented=False,
+            _requests_instrumented=False,
+        )
+        process_state.start()
+        self.addCleanup(process_state.stop)
+
+    def tracing_configured(self, role="transcription"):
+        from prometheus_client import REGISTRY
+
+        return REGISTRY.get_sample_value("cinematacms_tracing_configured", {"service_role": role})
+
+    def test_worker_reports_tracing_configured(self):
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch("opentelemetry.instrumentation.celery.CeleryInstrumentor.instrument"),
+            patch("opentelemetry.instrumentation.redis.RedisInstrumentor.instrument"),
+            patch("opentelemetry.instrumentation.requests.RequestsInstrumentor.instrument"),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 1)
+
+    def test_worker_that_cannot_import_celery_instrumentation_reports_tracing_unconfigured(self):
+        # A worker that outlived a pip install fails this import once it mixes two opentelemetry-api versions.
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch.dict(sys.modules, {"opentelemetry.instrumentation.celery": None}),
+            patch("cms.observability.capture_unexpected_exception"),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    def test_worker_that_cannot_import_the_tracing_sdk_reports_tracing_unconfigured(self):
+        with patch.dict(sys.modules, {"opentelemetry.sdk.trace": None}):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    def test_worker_whose_tracer_provider_raises_reports_tracing_unconfigured(self):
+        # Celery logs and swallows an exception from a worker_process_init receiver, so the child keeps running.
+        with (
+            patch("opentelemetry.sdk.resources.Resource.create", side_effect=AttributeError),
+            self.assertRaises(AttributeError),
+        ):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    @override_settings(
+        OTEL_EXPORTER_OTLP_ENDPOINT="http://collector.internal:4318/v1/traces",
+        OTEL_EXPORTER_OTLP_HEADERS="authorization=secret",
+    )
+    def test_worker_with_an_insecure_credentialed_endpoint_reports_tracing_unconfigured(self):
+        with patch("opentelemetry.trace.set_tracer_provider") as set_provider:
+            configure_celery_worker_process()
+
+        set_provider.assert_not_called()
+        self.assertEqual(self.tracing_configured(), 0)
+
+    @override_settings(OTEL_SERVICE_ROLE="web")
+    def test_web_process_that_cannot_instrument_django_reports_tracing_unconfigured(self):
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch("opentelemetry.instrumentation.django.DjangoInstrumentor.instrument", side_effect=RuntimeError),
+            patch("cms.observability.capture_unexpected_exception"),
+        ):
+            configure_django_observability()
+
+        self.assertEqual(self.tracing_configured("web"), 0)
+
+    @override_settings(OTEL_ENABLED=False)
+    def test_disabled_tracing_reports_no_state(self):
+        configure_celery_worker_process()
+        configure_django_observability()
+
+        self.assertIsNone(self.tracing_configured())
+        self.assertIsNone(self.tracing_configured("web"))
+
+
+class TracingConfiguredAcrossProcessesTests(SimpleTestCase):
+    def setUp(self):
+        self.metrics_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.metrics_dir)
+
+    def record_in_new_process(self, configured):
+        script = (
+            "import os\n"
+            "from files.metrics import TRACING_CONFIGURED\n"
+            f"TRACING_CONFIGURED.labels(service_role='transcription').set({configured})\n"
+            "print(os.getpid())\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=REPOSITORY_ROOT,
+            env={**os.environ, "PROMETHEUS_MULTIPROC_DIR": self.metrics_dir},
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,
+        )
+        return int(result.stdout)
+
+    def exported_tracing_configured(self):
+        registry = CollectorRegistry()
+        MultiProcessCollector(registry, path=self.metrics_dir)
+        return registry.get_sample_value("cinematacms_tracing_configured", {"service_role": "transcription"})
+
+    def test_a_failed_worker_child_keeps_its_role_unconfigured_until_it_exits(self):
+        failed_child = self.record_in_new_process(0)
+        self.record_in_new_process(1)
+
+        self.assertEqual(self.exported_tracing_configured(), 0, "a healthy sibling hid the failed child")
+
+        with patch.dict(os.environ, {"PROMETHEUS_MULTIPROC_DIR": self.metrics_dir}):
+            worker_process_shutdown.send(sender=None, pid=failed_child, exitcode=0)
+
+        self.assertEqual(self.exported_tracing_configured(), 1, "the exited child still counts")
+
+    def test_worker_child_exit_without_a_multiprocess_directory_is_a_no_op(self):
+        with patch.dict(os.environ):
+            os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
+            os.environ.pop("prometheus_multiproc_dir", None)
+            responses = worker_process_shutdown.send(sender=None, pid=os.getpid(), exitcode=0)
+
+        # Celery's Signal.send logs and returns a receiver's exception instead of raising it.
+        failures = [response for _, response in responses if isinstance(response, Exception)]
+        self.assertEqual(failures, [])
 
 
 class EndpointGroupingTests(SimpleTestCase):

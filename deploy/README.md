@@ -37,6 +37,32 @@ The CI deploy job performs these steps in this order. This ordering also makes
 the first deployment safe when the currently running `restart_script.sh` comes
 from a release that predates `app.env`.
 
+### Restart after a Python package change
+
+A running process imports modules on first use. A process that keeps running
+after the Python packages change can load a new module beside an old one and
+fail. A Celery worker in that state can lose its tracing, which
+`CinemataTracingUnconfigured` reports (see the
+[observability contract](../docs/technical/observability-contract.md#traces-and-logs)).
+
+`restart_script.sh` and `rollback.sh` restart the six application units
+(`mediacms`, `celery_long`, `celery_short`, `celery_whisper`, `celery_email`,
+and `celery_beat`) once `pip install -r requirements.txt` starts. They restart
+the units even when a later step fails or the script receives `SIGTERM` or
+`SIGHUP`, and still exit with the failure status. The restart does not run
+after `SIGKILL` or a host crash.
+
+After a failed frontend build or migration, the units therefore run the new
+code with the previous static files or a partly migrated database. Fix the
+failure and run `restart_script.sh` again, or run `rollback.sh`.
+
+If you change the Python packages by hand, restart all six units before you do
+anything else:
+
+```bash
+sudo systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
+```
+
 ## Install a new server
 
 Run the interactive installer:

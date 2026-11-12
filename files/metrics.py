@@ -69,6 +69,12 @@ CELERY_WORKER_HEARTBEAT_TIMESTAMP = Gauge(
     ["service_role", "worker_ref"],
     multiprocess_mode="mostrecent",
 )
+TRACING_CONFIGURED = Gauge(
+    "cinematacms_tracing_configured",
+    "1 when every live process of a service role configured tracing, 0 when any of them failed",
+    ["service_role"],
+    multiprocess_mode="livemin",
+)
 CELERY_BEAT_FRESHNESS_TIMESTAMP = Gauge(
     "cinematacms_celery_beat_freshness_timestamp_seconds",
     "Unix timestamp when Celery beat initialized",
