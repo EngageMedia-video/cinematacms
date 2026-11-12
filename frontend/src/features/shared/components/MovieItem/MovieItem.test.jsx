@@ -309,6 +309,41 @@ describe('MovieItem hover preview', () => {
 		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
 	});
 
+	it('plays on keyboard focus after a touch press that moved no focus', () => {
+		const { container } = render(
+			<VerticalMovieItem
+				imageSrc={samplePoster}
+				previewSrc={previewSrc}
+				title="Arrival"
+				subtitle="Denis Villeneuve"
+				subtitleLink="/profiles/denis/"
+				metadata={['Indonesia']}
+				link="/media/arrival/"
+			/>
+		);
+		const article = screen.getByRole('article');
+
+		fireEvent.pointerDown(screen.getByText('Indonesia'), { pointerType: 'touch' });
+		fireEvent.pointerOut(article, { pointerType: 'touch', relatedTarget: document.body });
+		act(() => screen.getByRole('link', { name: 'Arrival' }).focus());
+
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('plays on keyboard focus after a touch press on a link turns into a scroll', () => {
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		fireEvent.pointerDown(link, { pointerType: 'touch' });
+		fireEvent.pointerCancel(link, { pointerType: 'touch' });
+		fireEvent.pointerOut(screen.getByRole('article'), { pointerType: 'touch', relatedTarget: document.body });
+		act(() => link.focus());
+
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
 	it('hides a replacement preview source until that source loads', async () => {
 		const user = userEvent.setup();
 		const nextSrc = 'https://example.com/media/encoded/preview.gif?v=4';

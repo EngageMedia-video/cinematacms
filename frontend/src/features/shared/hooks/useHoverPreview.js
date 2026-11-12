@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 
 const PREVIEW_BLOCKED_QUERY = '(prefers-reduced-motion: reduce), (hover: none)';
+const FOCUSABLE_SELECTOR = 'a[href], button, input, select, textarea, [tabindex]';
 
 function isPreviewBlocked() {
 	return typeof window !== 'undefined' && Boolean(window.matchMedia?.(PREVIEW_BLOCKED_QUERY).matches);
@@ -47,8 +48,14 @@ export function useHoverPreview(previewSrc) {
 		}
 	}
 
-	function onPointerDown() {
-		pressedRef.current = true;
+	function onPointerDown(event) {
+		// Only a press on something focusable moves focus into the tile.
+		pressedRef.current = Boolean(event.target.closest?.(FOCUSABLE_SELECTOR));
+	}
+
+	function onPointerCancel() {
+		// The browser took over the gesture, usually to scroll, so no focus follows.
+		pressedRef.current = false;
 	}
 
 	function onFocus() {
@@ -70,7 +77,7 @@ export function useHoverPreview(previewSrc) {
 	}
 
 	return {
-		containerProps: { onPointerEnter, onPointerLeave, onPointerDown, onFocus, onBlur },
+		containerProps: { onPointerEnter, onPointerLeave, onPointerDown, onPointerCancel, onFocus, onBlur },
 		previewProps:
 			enabled && (hovered || focused)
 				? {
