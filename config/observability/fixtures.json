@@ -44,6 +44,10 @@
     {"condition":"telemetry_loss","state":"healthy","values":{"value":0}},
     {"condition":"telemetry_loss","state":"degraded","values":{"value":1}},
     {"condition":"telemetry_loss","state":"unknown","values":{}},
-    {"condition":"telemetry_loss","state":"recovered","values":{"value":0}}
+    {"condition":"telemetry_loss","state":"recovered","values":{"value":0}},
+    {"condition":"tracing_unconfigured","state":"healthy","values":{"value":0}},
+    {"condition":"tracing_unconfigured","state":"degraded","values":{"value":1}},
+    {"condition":"tracing_unconfigured","state":"unknown","values":{}},
+    {"condition":"tracing_unconfigured","state":"recovered","values":{"value":0}}
   ]
 }

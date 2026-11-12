@@ -62,6 +62,9 @@ cd "$CINEMATA_HOME"
 # shellcheck disable=SC1091
 source "${CINEMATA_HOME}/bin/activate"
 cd "$REPO_DIR"
+# Loaded before the checkout below replaces the file on disk.
+# shellcheck source=restart_script.sh
+source "$REPO_DIR/restart_script.sh"
 
 if [ ! -s "$DEPLOY_LOG" ]; then
   echo -e "${RED}No deploy log at $DEPLOY_LOG (or empty). Cannot rollback.${NC}" >&2
@@ -148,6 +151,8 @@ case "$ans" in
     ;;
 esac
 
+trap restart_application_services_after_interrupted_deploy EXIT
+
 PRE_ROLLBACK_SHA=$(git rev-parse HEAD)
 
 echo -e "${YELLOW}Checking out $TARGET_SHA (detached HEAD)...${NC}"
@@ -177,7 +182,8 @@ echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload
 
 echo -e "${YELLOW}Restarting services...${NC}"
-systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
+restart_application_services
+trap - EXIT
 systemctl restart nginx
 
 # Audit entry so a subsequent rollback (or the next forward deploy) can

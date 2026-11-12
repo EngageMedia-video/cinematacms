@@ -1592,19 +1592,78 @@ class RestartScriptTests(unittest.TestCase):
         self.assertNotIn("chgrp -R", script)
 
     def test_rollback_restarts_every_unit_a_deploy_restarts(self):
-        def restarted_application_units(script_path):
-            script = script_path.read_text()
-            return {
-                unit
-                for line in re.findall(r"^systemctl restart (.+)$", script, re.MULTILINE)
-                for unit in line.split()
-                if unit != "nginx"
-            }
+        rollback = (PROJECT_ROOT / "rollback.sh").read_text()
 
-        deployed_units = restarted_application_units(RESTART_SCRIPT)
+        self.assertIn('source "$REPO_DIR/restart_script.sh"', rollback)
+        self.assertLess(rollback.index('source "$REPO_DIR/restart_script.sh"'), rollback.index("git checkout"))
+        self.assertIn("\nrestart_application_services\n", rollback)
+        self.assertNotRegex(rollback, r"(?m)^\s*systemctl restart (?!nginx$)")
 
-        self.assertIn("celery_email", deployed_units)
-        self.assertEqual(restarted_application_units(PROJECT_ROOT / "rollback.sh"), deployed_units)
+    def run_with_service_restart_armed(self, command):
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "commands.log"
+        systemctl = fake_bin / "systemctl"
+        systemctl.write_text('#!/bin/sh\nprintf \'%s\\n\' "systemctl $*" >> "$FAKE_COMMAND_LOG"\n')
+        systemctl.chmod(systemctl.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update({"FAKE_COMMAND_LOG": str(command_log), "PATH": f"{fake_bin}:{env['PATH']}"})
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f'source "$1"; trap restart_application_services_after_interrupted_deploy EXIT; {command}',
+                "restart-test",
+                str(RESTART_SCRIPT),
+            ],
+            cwd=self.test_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        commands = command_log.read_text().splitlines() if command_log.exists() else []
+        return result, commands
+
+    def test_deploy_that_stops_after_packages_change_restarts_every_application_unit(self):
+        # A process that keeps running mixes the modules it already imported with the new packages on disk.
+        units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
+        expected = ["systemctl daemon-reload", f"systemctl restart {units}"]
+
+        signalled_during_a_step = "sh -c 'kill -{} $PPID; sleep 1'"
+        for command, status in (
+            ("exit 7", 7),
+            ("false", 1),
+            (signalled_during_a_step.format("TERM"), -15),
+            (signalled_during_a_step.format("HUP"), -1),
+        ):
+            with self.subTest(command=command):
+                (self.test_root / "commands.log").unlink(missing_ok=True)
+
+                result, commands = self.run_with_service_restart_armed(command)
+
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(commands, expected)
+
+    def test_deploy_restarts_services_once_packages_may_have_changed(self):
+        script = RESTART_SCRIPT.read_text()
+        main = script[script.index("main() {") :]
+        arm = "trap restart_application_services_after_interrupted_deploy EXIT\n"
+
+        self.assertLess(main.index("\nselect_release\n"), main.index(arm))
+        self.assertLess(main.index(arm), main.index("pip install -r requirements.txt"))
+        self.assertLess(main.index("\nrestart_application_services\n"), main.index("trap - EXIT"))
+        self.assertLess(main.index("trap - EXIT"), main.index("systemctl restart nginx"))
+        self.assertNotIn("systemctl restart mediacms", main)
+
+    def test_rollback_restarts_services_once_packages_may_have_changed(self):
+        rollback = (PROJECT_ROOT / "rollback.sh").read_text()
+        arm = "trap restart_application_services_after_interrupted_deploy EXIT\n"
+
+        self.assertLess(rollback.index('read -r -p "Proceed with rollback'), rollback.index(arm))
+        self.assertLess(rollback.index(arm), rollback.index("pip install -r requirements.txt"))
+        self.assertLess(rollback.index("\nrestart_application_services\n"), rollback.index("trap - EXIT"))
+        self.assertLess(rollback.index("trap - EXIT"), rollback.index("systemctl restart nginx"))
 
     def test_restart_can_deploy_an_exact_revision(self):
         revision = "a" * 40

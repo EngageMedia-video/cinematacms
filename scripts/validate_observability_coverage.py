@@ -103,6 +103,7 @@ REQUIRED_METRIC_LABELS = {
     "cinematacms_celery_tasks_total": ("task_family", "queue", "event", "outcome"),
     "cinematacms_celery_task_duration_seconds": ("task_family", "queue", "outcome"),
     "cinematacms_celery_worker_heartbeat_timestamp_seconds": ("service_role", "worker_ref"),
+    "cinematacms_tracing_configured": ("service_role",),
     "cinematacms_celery_queue_depth": ("queue",),
     "cinematacms_domain_outcomes_total": ("operation", "outcome", "reason_code"),
     "cinematacms_media_encoding_profile_total": (

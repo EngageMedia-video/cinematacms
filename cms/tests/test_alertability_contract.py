@@ -22,6 +22,7 @@ class AlertabilityContractTests(SimpleTestCase):
             "http_failures",
             "http_latency",
             "telemetry_loss",
+            "tracing_unconfigured",
         }
         self.assertEqual(names, required)
         forbidden = {"media_id", "user_id", "task_id", "trace_id", "delivery_id", "recipient_ref", "filename", "url"}
