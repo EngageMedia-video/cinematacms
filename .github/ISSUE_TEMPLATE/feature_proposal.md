@@ -7,7 +7,7 @@ assignees: ''
 ---
 
 <!--
-Gate 1: the full proposal must be written in this issue by the end of week 1 of iteration N-2.
+Proposal deadline: the full proposal must be written in this issue by the end of week 1 of iteration N-2.
 The artifact link is for internal reference only. Everything a reader needs must be in this issue.
 After creating the issue: add it to the Milestone 3 project, set Iteration to the target iteration N,
 set Epic, set Status to Backlog, and set Proposal to Needed (In review once the proposal is complete).
@@ -41,5 +41,5 @@ Backend, data, third parties.
 
 ---
 
-**Design (filled in at Gate 2, by the end of week 2 of iteration N-1)**
+**Design (filled in by the design deadline, end of week 2 of iteration N-1)**
 Figma link:
