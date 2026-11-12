@@ -123,7 +123,7 @@ function ActionButton({ action, callbacks }) {
 				size="xs"
 				icon={<Icon name={action.iconName} decorative className={textColorClassName} />}
 				iconContainerClassName={actionClassName}
-				className={cn('hover:bg-bg-primary-hover/40 p-0', actionClassName)}
+				className={cn('hover:bg-bg-primary-hover/5', actionClassName)}
 				textClassName={textColorClassName}
 				aria-label={action.label}
 				onClick={onClicked}
@@ -250,7 +250,7 @@ export function UploadMediaItem({
 							</Text>
 						</div>
 
-						<div className="flex flex-col items-start sm:flex-row sm:flex-wrap sm:items-center">
+						<div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center">
 							{actions.map((action) => (
 								<ActionButton key={action.key} action={action} callbacks={callbacks} />
 							))}
