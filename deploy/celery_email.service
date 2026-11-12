@@ -11,7 +11,8 @@ Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=CELERY_QUEUE="email_tasks"
 Environment=CELERY_BIN="/home/cinemata/bin/celery"
 Environment=CELERY_APP="cms"
-Environment=CELERYD_OPTS="--concurrency=4 --prefetch-multiplier=1"
+Environment=CELERYD_OPTS="--prefetch-multiplier=1"
+Environment=CINEMATA_CELERY_EMAIL_CONCURRENCY=4
 Environment=CELERYD_PID_FILE="/home/cinemata/cinematacms/pids/%n.pid"
 Environment=CELERYD_LOG_FILE="/home/cinemata/cinematacms/logs/%N.log"
 Environment=CELERYD_LOG_LEVEL="INFO"
@@ -22,7 +23,7 @@ WorkingDirectory=/home/cinemata/cinematacms
 Restart=always
 RestartSec=10
 
-ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker -n email@%H --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
+ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker -n email@%H --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} --concurrency=${CINEMATA_CELERY_EMAIL_CONCURRENCY} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
 ExecStop=/bin/kill -s TERM $MAINPID
 ExecReload=/bin/kill -s HUP $MAINPID
 

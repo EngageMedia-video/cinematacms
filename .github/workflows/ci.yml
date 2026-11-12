@@ -106,6 +106,24 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # upload-artifact skips hidden paths by default, which would drop
+      # .vite/manifest.json. The archive carries the whole build as one file.
+      - name: Package frontend build
+        run: |
+          python3 deploy/frontend-artifact.py pack \
+            --build-dir frontend/build/production/static \
+            --commit "$GITHUB_SHA" \
+            --output-dir "$RUNNER_TEMP/frontend-artifact"
+
+      - name: Upload frontend build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: ${{ runner.temp }}/frontend-artifact/
+          if-no-files-found: error
+          retention-days: 30
+
   backend-migrations:
     name: Backend — Migrations Check
     runs-on: ubuntu-latest
@@ -305,6 +323,26 @@ jobs:
               description: 'Deployment started',
             });
 
+      - name: Checkout the artifact tool
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy/frontend-artifact.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: ${{ runner.temp }}/frontend-artifact
+
+      - name: Verify frontend build
+        run: |
+          python3 deploy/frontend-artifact.py unpack \
+            --artifact-dir "$RUNNER_TEMP/frontend-artifact" \
+            --commit "$DEPLOY_SHA" \
+            --target "$RUNNER_TEMP/frontend-build-verified"
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -316,14 +354,43 @@ jobs:
           echo "${{ secrets.DEPLOY_DEV_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
+      # The host runs the restart script of the release it already has. A host
+      # whose script predates --frontend-artifact builds the frontend itself
+      # once more, and takes the artifact from the next deploy on.
       - name: Deploy via SSH
+        env:
+          DEPLOY_TARGET: ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }}
         run: |
-          ssh ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }} \
-            'if grep -q -- "--revision" /home/cinemata/cinematacms/restart_script.sh; then
-               sudo /home/cinemata/cinematacms/restart_script.sh --revision ${{ github.sha }};
-             else
-               sudo /home/cinemata/cinematacms/restart_script.sh;
-             fi'
+          host_takes_artifact=0
+          ssh "$DEPLOY_TARGET" 'grep -q -- "--frontend-artifact" /home/cinemata/cinematacms/restart_script.sh' \
+            || host_takes_artifact=$?
+          # grep exits 1 when the option is absent. Any other failure, such as a
+          # dropped connection, must not fall back to building on the host.
+          if [ "$host_takes_artifact" -gt 1 ]; then
+            exit "$host_takes_artifact"
+          fi
+          if [ "$host_takes_artifact" -eq 0 ]; then
+            artifact_dir="$(ssh "$DEPLOY_TARGET" 'mktemp -d /tmp/cinemata-frontend-artifact.XXXXXXXX')"
+            if ! [[ "$artifact_dir" =~ ^/tmp/cinemata-frontend-artifact\.[A-Za-z0-9]{8}$ ]]; then
+              echo "::error::The host returned an unexpected transfer directory."
+              exit 1
+            fi
+            trap 'ssh "$DEPLOY_TARGET" "rm -rf -- $artifact_dir"' EXIT
+            scp \
+              "$RUNNER_TEMP/frontend-artifact/frontend-build.tar.gz" \
+              "$RUNNER_TEMP/frontend-artifact/frontend-build.json" \
+              "$DEPLOY_TARGET:$artifact_dir/"
+            ssh "$DEPLOY_TARGET" \
+              sudo /home/cinemata/cinematacms/restart_script.sh --revision "$DEPLOY_SHA" --frontend-artifact "$artifact_dir"
+          else
+            echo "::notice::The host restart script predates --frontend-artifact, so this deploy builds the frontend on the host."
+            ssh "$DEPLOY_TARGET" \
+              'if grep -q -- "--revision" /home/cinemata/cinematacms/restart_script.sh; then
+                 sudo /home/cinemata/cinematacms/restart_script.sh --revision ${{ github.sha }};
+               else
+                 sudo /home/cinemata/cinematacms/restart_script.sh;
+               fi'
+          fi
 
       - name: Set deployment success
         if: success()

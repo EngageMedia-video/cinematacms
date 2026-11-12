@@ -180,6 +180,11 @@ Django templates use `django-vite` template tags to load Vite assets:
 2. Build main frontend application (`npm run build` → `vite build`)
 3. Django `collectstatic` collects everything to `static_collected/`
 
+CI packs the output of step 2 as a deployable artifact, so a server can skip
+steps 1 and 2. On a server that `restart_script.sh` deploys, `static_collected`
+and `frontend/build/production/static` are links into a release directory. See
+[Deploy a prebuilt frontend](../../deploy/README.md#deploy-a-prebuilt-frontend).
+
 ### Build Process Sequence Diagram
 
 ```mermaid

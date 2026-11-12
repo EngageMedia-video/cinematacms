@@ -31,7 +31,8 @@ files/views___2.py
 pids/beatcelery_beat.service.pid
 pids/celery_long.service.pid
 pids/celery_short.service.pid
-static_collected/*
+/static_collected
+/static_releases/
 
 pids/
 
