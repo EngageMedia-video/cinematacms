@@ -321,6 +321,28 @@ describe('HeroSection', () => {
 		]);
 	});
 
+	it('does not preload the thumbnail when the hero displays a different poster', async () => {
+		const thumbnailUrl = 'https://example.com/unused-preload-thumb.jpg';
+		const posterUrl = 'https://example.com/displayed-poster.jpg';
+
+		renderHero(
+			[
+				{
+					...SAMPLE_MEDIA,
+					thumbnail_url: thumbnailUrl,
+					hero_playback: { ...SAMPLE_MEDIA.hero_playback, poster_url: posterUrl },
+				},
+			],
+			<HeroSection.Player />
+		);
+
+		expect(await screen.findByRole('img', { name: 'Video poster' })).toHaveAttribute('src', posterUrl);
+		const preloadedHrefs = Array.from(document.querySelectorAll('link[rel="preload"]'), (link) =>
+			link.getAttribute('href')
+		);
+		expect(preloadedHrefs).not.toContain(thumbnailUrl);
+	});
+
 	it('gives hero analytics the media state and title so public hero plays are named', async () => {
 		renderHero(
 			[
