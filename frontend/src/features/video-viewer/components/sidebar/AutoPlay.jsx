@@ -61,6 +61,7 @@ export function AutoPlay() {
 			<HorizontalMovieItem
 				title={media.title}
 				imageSrc={media.thumbnail_url}
+				previewSrc={media.preview_url || ''}
 				link={media.url}
 				duration={getMediaDurationLabel(media)}
 				subtitle={getAuthorName(media)}

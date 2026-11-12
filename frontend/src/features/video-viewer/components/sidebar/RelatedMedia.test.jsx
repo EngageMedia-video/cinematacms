@@ -67,8 +67,8 @@ vi.mock('../../../../static/js/pages/MediaPage/store.js', () => ({
 }));
 
 vi.mock('../../../shared/components/MovieItem/MovieItem', () => ({
-	HorizontalMovieItem: ({ title, badge, badgeColor }) => (
-		<article>
+	HorizontalMovieItem: ({ title, badge, badgeColor, previewSrc }) => (
+		<article data-preview-src={previewSrc}>
 			{title}
 			{badge ? (
 				<span data-testid="badge" data-badge-color={badgeColor}>
@@ -170,5 +170,21 @@ describe('RelatedMedia', () => {
 		expect(badges).toHaveLength(1);
 		expect(badges[0]).toHaveTextContent('Documentary');
 		expect(badges[0]).toHaveAttribute('data-badge-color', 'bg/secondary');
+	});
+
+	it('gives each related card its own preview URL, or an empty one when it has none', () => {
+		storeMocks.state.mediaData = {
+			related_media: [
+				{ ...makeRelatedMedia(1)[0], preview_url: '/media/encoded/first.gif?v=1' },
+				{ friendly_token: 'media-2', title: 'Media 2', url: '/media/2', thumbnail_url: '/thumb-2.jpg' },
+			],
+		};
+
+		render(<RelatedMedia />);
+
+		expect(screen.getAllByRole('article').map((card) => card.getAttribute('data-preview-src'))).toEqual([
+			'/media/encoded/first.gif?v=1',
+			'',
+		]);
 	});
 });
