@@ -2,7 +2,7 @@
 name: Feature Proposal
 about: For the Cinemata team. Propose a feature for a target iteration by week 1 of iteration N-2.
 title: '[PROPOSAL] '
-labels: enhancement, proposal:needed
+labels: enhancement
 assignees: ''
 ---
 
@@ -10,7 +10,7 @@ assignees: ''
 Gate 1: the full proposal must be written in this issue by the end of week 1 of iteration N-2.
 The artifact link is for internal reference only. Everything a reader needs must be in this issue.
 After creating the issue: add it to the Milestone 3 project, set Iteration to the target iteration N,
-set Epic, and set Status to Backlog.
+set Epic, set Status to Backlog, and set Proposal to Needed (In review once the proposal is complete).
 -->
 
 **Target iteration**
