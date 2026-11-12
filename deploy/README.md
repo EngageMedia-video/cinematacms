@@ -49,8 +49,9 @@ fail. A Celery worker in that state can lose its tracing, which
 (`mediacms`, `celery_long`, `celery_short`, `celery_whisper`, `celery_email`,
 and `celery_beat`) once `pip install -r requirements.txt` starts. They restart
 the units even when a later step fails or the script receives `SIGTERM` or
-`SIGHUP`, and still exit with the failure status. The restart does not run
-after `SIGKILL` or a host crash.
+`SIGHUP`, and still exit with the failure status. A signal can reach the
+script but not `pip`, so the restart waits until `pip` exits. The restart does
+not run after `SIGKILL` or a host crash.
 
 After a failed frontend build or migration, the units therefore run the new
 code with the previous static files or a partly migrated database. Fix the
@@ -561,6 +562,15 @@ rename, the script stops and the served frontend is the complete one of the
 reverted deploy. The checkout is then at the target commit, and the application
 units restart as described in
 [Restart after a Python package change](#restart-after-a-python-package-change).
+Fix the reported failure and run `rollback.sh` again. It finds the checkout at
+the target commit with another frontend served, and it resumes from the package
+installation. When the target's frontend is already served, it reports that
+nothing is left to roll back. A release built from source has no `REVISION`,
+so with such a release served the script cannot tell that it finished, and it
+runs the remaining steps again. Each of them is safe to repeat.
+
+A checkout that Git refuses, for example over local changes, stops the script
+before any package changes, so no unit restarts.
 
 A build from source runs with the checkout at the target commit. It uses the
 `frontend/node_modules` that the server has, as it did before releases existed.

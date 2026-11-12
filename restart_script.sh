@@ -254,6 +254,23 @@ republish_previous_static_release() {
   prune_static_releases
 }
 
+# How far rollback.sh got towards $1, from the checkout and the served frontend.
+# A rollback that stopped after its checkout leaves HEAD at the target while the
+# frontend of the deploy is still served, so HEAD alone does not show that it finished.
+rollback_progress() {
+  local target=$1 deployed=$2 head
+  head=$(git rev-parse HEAD)
+  if [ "$head" = "$deployed" ]; then
+    echo pending
+  elif [ "$head" != "$target" ]; then
+    echo diverged
+  elif [ "$(release_revision current)" = "$target" ]; then
+    echo complete
+  else
+    echo interrupted
+  fi
+}
+
 # rollback.sh runs this after it checked out the commit and installed its packages.
 roll_back_static_release() {
   local revision=$1
@@ -290,11 +307,19 @@ restart_application_services() {
   systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
 }
 
+# Bash runs the EXIT trap at once when a signal reaches only this shell, while a
+# foreground pip keeps writing packages. A background pip is a job the trap can wait for.
+install_python_requirements() {
+  pip install -r requirements.txt &
+  wait "$!"
+}
+
 # Python imports modules lazily, so a process that outlives a pip install can load
 # a new module beside an old one it imported earlier and fail.
 restart_application_services_after_interrupted_deploy() {
   local status=$?
   trap - EXIT
+  wait
   echo "The deploy stopped after the Python packages changed. Restarting the application services." >&2
   systemctl daemon-reload || echo "Error: systemctl daemon-reload failed." >&2
   restart_application_services || echo "Error: the application services did not restart. Restart them by hand." >&2
@@ -349,7 +374,7 @@ trap restart_application_services_after_interrupted_deploy EXIT
 
 # Install any new requirements
 echo "Installing any new requirements..."
-pip install -r requirements.txt
+install_python_requirements
 
 # Reconcile the single runtime environment before Django or systemd reads it.
 deploy/apply-release-config.sh --no-restart

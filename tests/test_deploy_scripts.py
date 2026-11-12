@@ -2262,13 +2262,35 @@ class RestartScriptTests(unittest.TestCase):
                 self.assertEqual(result.returncode, status, result.stderr)
                 self.assertEqual(commands, expected)
 
+    def test_signal_to_the_deploy_shell_restarts_services_after_the_installer_finishes(self):
+        # A signal can reach the deploy shell alone, for example its own kill, while pip keeps writing packages.
+        pip = self.test_root / "bin" / "pip"
+        pip.parent.mkdir(exist_ok=True)
+        pip.write_text(
+            '#!/bin/sh\nkill -"$FAKE_SIGNAL" "$PPID"\nsleep 1\nprintf \'%s\\n\' "pip finished" >> "$FAKE_COMMAND_LOG"\n'
+        )
+        pip.chmod(pip.stat().st_mode | stat.S_IXUSR)
+        units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
+
+        for signal_name, status in (("TERM", -15), ("HUP", -1)):
+            with self.subTest(signal=signal_name):
+                (self.test_root / "commands.log").unlink(missing_ok=True)
+                os.environ["FAKE_SIGNAL"] = signal_name
+                self.addCleanup(os.environ.pop, "FAKE_SIGNAL", None)
+
+                result, commands = self.run_with_service_restart_armed("install_python_requirements")
+
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(commands, ["pip finished", "systemctl daemon-reload", f"systemctl restart {units}"])
+
     def test_deploy_restarts_services_once_packages_may_have_changed(self):
         script = RESTART_SCRIPT.read_text()
         main = script[script.index("main() {") :]
         arm = "trap restart_application_services_after_interrupted_deploy EXIT\n"
 
         self.assertLess(main.index("\nselect_release\n"), main.index(arm))
-        self.assertLess(main.index(arm), main.index("pip install -r requirements.txt"))
+        self.assertLess(main.index(arm), main.index("\ninstall_python_requirements\n"))
+        self.assertNotIn("pip install", main)
         self.assertLess(main.index("\nrestart_application_services\n"), main.index("trap - EXIT"))
         self.assertLess(main.index("trap - EXIT"), main.index("systemctl restart nginx"))
         self.assertNotIn("systemctl restart mediacms", main)
@@ -2277,10 +2299,56 @@ class RestartScriptTests(unittest.TestCase):
         rollback = (PROJECT_ROOT / "rollback.sh").read_text()
         arm = "trap restart_application_services_after_interrupted_deploy EXIT\n"
 
-        self.assertLess(rollback.index('read -r -p "Proceed with rollback'), rollback.index(arm))
-        self.assertLess(rollback.index(arm), rollback.index("pip install -r requirements.txt"))
+        # A refused checkout changes no package, so it restarts nothing.
+        self.assertLess(rollback.index('\ngit checkout --detach "$TARGET_SHA"\n'), rollback.index(arm))
+        self.assertLess(rollback.index(arm), rollback.index("\ninstall_python_requirements\n"))
+        self.assertNotIn("pip install", rollback)
         self.assertLess(rollback.index("\nrestart_application_services\n"), rollback.index("trap - EXIT"))
         self.assertLess(rollback.index("trap - EXIT"), rollback.index("systemctl restart nginx"))
+
+    def rollback_progress_on(self, host, *, head, served, target, deployed):
+        self.git(host, "checkout", "--quiet", "--detach", head)
+        release = host / "static_releases" / "release.test"
+        release.mkdir(parents=True, exist_ok=True)
+        (release / "REVISION").write_text(f"{served}\n")
+        current = host / "static_releases" / "current"
+        current.unlink(missing_ok=True)
+        current.symlink_to("release.test")
+        return subprocess.run(
+            ["bash", "-c", 'source "$1"; shift; rollback_progress "$@"', "rollback-test", str(RESTART_SCRIPT)]
+            + [target, deployed],
+            cwd=host,
+            env=GIT_ENVIRONMENT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_rollback_progress_from_the_checkout_and_the_served_frontend(self):
+        host, (target, deployed, elsewhere) = self.host_clone_two_commits_behind_its_origin()
+        self.git(host, "fetch", "--quiet", "origin", deployed, elsewhere)
+
+        for head, served, progress in (
+            (deployed, deployed, "pending"),
+            # The checkout moved, then the frontend restore stopped, for example on a failed build.
+            (target, deployed, "interrupted"),
+            (target, target, "complete"),
+            (elsewhere, deployed, "diverged"),
+        ):
+            with self.subTest(progress=progress):
+                result = self.rollback_progress_on(host, head=head, served=served, target=target, deployed=deployed)
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), progress)
+
+    def test_rollback_resumes_an_interrupted_rollback(self):
+        rollback = (PROJECT_ROOT / "rollback.sh").read_text()
+        decision = rollback[rollback.index('case "$(rollback_progress') :]
+        decision = decision[: decision.index("esac")]
+
+        self.assertRegex(decision, r"complete\)[^;]*exit 0")
+        self.assertRegex(decision, r"diverged\)[^;]*exit 1")
+        self.assertNotRegex(decision, r"interrupted\)[^;]*exit")
 
     def test_restart_can_deploy_an_exact_revision(self):
         host, (_, second, _) = self.host_clone_two_commits_behind_its_origin()
@@ -3559,7 +3627,7 @@ class StaticReleaseTests(unittest.TestCase):
         restore = '\nroll_back_static_release "$TARGET_SHA"\n'
 
         self.assertLess(rollback.index("\nadopt_served_frontend\n"), rollback.index("\ngit checkout "))
-        self.assertLess(rollback.index("pip install -r requirements.txt"), rollback.index(restore))
+        self.assertLess(rollback.index("\ninstall_python_requirements\n"), rollback.index(restore))
         self.assertLess(rollback.index(restore), rollback.index("\nrestart_application_services\n"))
         self.assertNotIn("make quick-build", rollback)
 
