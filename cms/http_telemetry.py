@@ -233,6 +233,28 @@ _OWNED_ROUTE_RULES = (
         url_name="update_session",
         namespace="uploader",
     ),
+    _rule("fu/tus/", "upload_transfer", "upload_transfer", url_name="tus", namespace="uploader"),
+    _rule(
+        "fu/tus/<uuid:upload_id>/",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="tus_upload",
+        namespace="uploader",
+    ),
+    _rule(
+        "fu/^tus/update/(?P<friendly_token>[\\w-]+)/$",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="tus_update",
+        namespace="uploader",
+    ),
+    _rule(
+        "fu/^tus/update/(?P<friendly_token>[\\w-]+)/(?P<upload_id>[0-9a-f-]{36})/$",
+        "upload_transfer",
+        "upload_transfer",
+        url_name="tus_update_upload",
+        namespace="uploader",
+    ),
     _rule(
         "fu/^upload/cancel/(?P<friendly_token>[\\w-]+)/$",
         "upload_transfer",

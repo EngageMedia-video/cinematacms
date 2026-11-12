@@ -150,41 +150,16 @@ class FineUploaderView(ChunkedUploadView):
             self.log_upload_event("cinematacms.upload.started")
 
     def finish(self, assembly):
-        # create media!
         # The bulk-upload flow sends `is_draft=1`: each freshly uploaded file
         # is created as a private draft so it stays out of the admin review
         # queue (and the public site) until the user explicitly submits/shares
         # — at which point bulk_submit clears the flag. The single-upload flow
         # does not send the param, so it is not a draft.
         is_draft = str(self.request.POST.get("is_draft", "")).lower() in ("1", "true", "yes")
-        media_file = os.path.join(settings.MEDIA_ROOT, assembly.real_path)
-        with open(media_file, "rb") as f:
-            myfile = File(f)
-            new = Media(
-                media_file=myfile,
-                user=self.request.user,
-                is_draft=is_draft,
-                is_reviewed=is_trusted_uploader(self.request.user),
-            )
-            # Every upload stays private until its details are saved: the details
-            # form or bulk submit sets the chosen state, and an upload whose form
-            # is never saved waits for orphan cleanup unseen. Inserting it private
-            # also covers media_init, which runs in post_save right after the insert.
-            new.save(force_insert=True, initial_state="private")
-        rm_file(media_file)
-        shutil.rmtree(os.path.join(settings.MEDIA_ROOT, assembly.upload_dir))
-        self.log_upload_event("cinematacms.upload.finished")
-        return new.get_absolute_url()
+        return create_media_from_upload(self.request, assembly, is_draft=is_draft)
 
     def log_upload_event(self, event_name):
-        logger.info(
-            event_name,
-            extra={
-                "route_group": UPLOAD_ROUTE_GROUP,
-                "operation": UPLOAD_ROUTE_GROUP,
-                "upload_ref": upload_reference(self.request),
-            },
-        )
+        log_upload_event(self.request, event_name)
 
 
 class MediaFileUpdateView(ChunkedUploadView):
@@ -194,67 +169,105 @@ class MediaFileUpdateView(ChunkedUploadView):
     """
 
     def finish(self, assembly):
-        # Get the uploaded file path
-        media_file = os.path.join(settings.MEDIA_ROOT, assembly.real_path)
-        upload_file_path = os.path.join(settings.MEDIA_ROOT, assembly.upload_dir)
+        return stage_replacement_file(self.request, self.target_media, assembly, self.upload.filename)
 
-        # Get file size
-        file_size = 0
-        try:
-            if os.path.exists(media_file):
-                file_size = os.path.getsize(media_file)
-        except Exception as e:
-            logger.error(
-                f"Failed to get file size for uploaded file {media_file} for media {self.target_media.friendly_token}: {e}",
-                exc_info=True,
-            )
-            capture_unexpected_exception(e)
 
-        # DEFER PERSISTENCE: Do NOT save media_file yet
-        # Instead, store the temporary file path in session
-        # Only ONE file replacement is allowed at a time
+def log_upload_event(request, event_name):
+    logger.info(
+        event_name,
+        extra={
+            "route_group": UPLOAD_ROUTE_GROUP,
+            "operation": UPLOAD_ROUTE_GROUP,
+            "upload_ref": upload_reference(request),
+        },
+    )
 
-        session_key = f"media_file_updated_{self.target_media.friendly_token}"
-        session_data = self.request.session.get(session_key, {})
 
-        # Clean up any previous pending upload if user uploads again before submitting
-        if session_data.get("temp_file_path"):
-            old_temp = session_data["temp_file_path"]
-            old_upload_path = session_data.get("upload_file_path")
+def create_media_from_upload(request, assembly, *, is_draft):
+    """Create the caller's media from an uploaded file and return its URL."""
+    media_file = os.path.join(settings.MEDIA_ROOT, assembly.real_path)
+    with open(media_file, "rb") as f:
+        myfile = File(f)
+        new = Media(
+            media_file=myfile,
+            user=request.user,
+            is_draft=is_draft,
+            is_reviewed=is_trusted_uploader(request.user),
+        )
+        # Every upload stays private until its details are saved: the details
+        # form or bulk submit sets the chosen state, and an upload whose form
+        # is never saved waits for orphan cleanup unseen. Inserting it private
+        # also covers media_init, which runs in post_save right after the insert.
+        new.save(force_insert=True, initial_state="private")
+    rm_file(media_file)
+    shutil.rmtree(os.path.join(settings.MEDIA_ROOT, assembly.upload_dir))
+    log_upload_event(request, "cinematacms.upload.finished")
+    return new.get_absolute_url()
 
-            # Use centralized cleanup helper with directory traversal protection
-            cleanup_temp_upload_files(
-                temp_file_path=old_temp,
-                upload_file_path=old_upload_path,
-                media_friendly_token=self.target_media.friendly_token,
-                logger=logger,
-            )
 
-        # If this is the first upload for this session, store the original media_file path
-        if not session_data.get("original_file_path"):
-            original_file_path = None
-            if self.target_media.media_file:
-                try:
-                    original_file_path = self.target_media.media_file.path
-                except Exception as e:
-                    logger.error(
-                        f"Failed to get original media file path for media {self.target_media.friendly_token}: {e}",
-                        exc_info=True,
-                    )
-                    capture_unexpected_exception(e)
-            session_data["original_file_path"] = original_file_path
+def stage_replacement_file(request, target_media, assembly, filename):
+    """Keep an uploaded replacement file in the session until the edit form is saved."""
+    # Get the uploaded file path
+    media_file = os.path.join(settings.MEDIA_ROOT, assembly.real_path)
+    upload_file_path = os.path.join(settings.MEDIA_ROOT, assembly.upload_dir)
 
-        # Store the new upload info
-        session_data["updated"] = True
-        session_data["temp_file_path"] = media_file
-        session_data["upload_file_path"] = upload_file_path
-        session_data["timestamp"] = datetime.now().isoformat()
-        session_data["size"] = file_size
-        session_data["filename"] = self.upload.filename
+    # Get file size
+    file_size = 0
+    try:
+        if os.path.exists(media_file):
+            file_size = os.path.getsize(media_file)
+    except Exception as e:
+        logger.error(
+            f"Failed to get file size for uploaded file {media_file} for media {target_media.friendly_token}: {e}",
+            exc_info=True,
+        )
+        capture_unexpected_exception(e)
 
-        self.request.session[session_key] = session_data
+    # DEFER PERSISTENCE: Do NOT save media_file yet
+    # Instead, store the temporary file path in session
+    # Only ONE file replacement is allowed at a time
 
-        return self.target_media.get_absolute_url()
+    session_key = f"media_file_updated_{target_media.friendly_token}"
+    session_data = request.session.get(session_key, {})
+
+    # Clean up any previous pending upload if user uploads again before submitting
+    if session_data.get("temp_file_path"):
+        old_temp = session_data["temp_file_path"]
+        old_upload_path = session_data.get("upload_file_path")
+
+        # Use centralized cleanup helper with directory traversal protection
+        cleanup_temp_upload_files(
+            temp_file_path=old_temp,
+            upload_file_path=old_upload_path,
+            media_friendly_token=target_media.friendly_token,
+            logger=logger,
+        )
+
+    # If this is the first upload for this session, store the original media_file path
+    if not session_data.get("original_file_path"):
+        original_file_path = None
+        if target_media.media_file:
+            try:
+                original_file_path = target_media.media_file.path
+            except Exception as e:
+                logger.error(
+                    f"Failed to get original media file path for media {target_media.friendly_token}: {e}",
+                    exc_info=True,
+                )
+                capture_unexpected_exception(e)
+        session_data["original_file_path"] = original_file_path
+
+    # Store the new upload info
+    session_data["updated"] = True
+    session_data["temp_file_path"] = media_file
+    session_data["upload_file_path"] = upload_file_path
+    session_data["timestamp"] = datetime.now().isoformat()
+    session_data["size"] = file_size
+    session_data["filename"] = filename
+
+    request.session[session_key] = session_data
+
+    return target_media.get_absolute_url()
 
 
 class UploadSessionLookupView(UploadTargetMixin, generic.View):

@@ -1,7 +1,8 @@
-"""Server-side state for chunked uploads.
+"""Server-side state for resumable uploads.
 
-A chunked upload is an ``UploadSession`` row plus one file per accepted chunk in
-CHUNKS_DIR/<uuid>/. The row binds the upload to one account, one target, and one
+An upload is an ``UploadSession`` row plus its bytes in CHUNKS_DIR/<uuid>/: one file
+per accepted chunk for Fine Uploader, or one append-only ``data`` file for tus (see
+``uploader.tus``). The row binds the upload to one account, one target, and one
 file identity (name, size, part layout, client fingerprint). Every chunk,
 resume lookup, cancellation, and completion is checked against it, so a retry or
 a resumed upload can only extend the upload it belongs to.
@@ -65,6 +66,33 @@ def chunks_dir(upload_uuid):
     return os.path.join(settings.MEDIA_ROOT, settings.CHUNKS_DIR, str(upload_uuid))
 
 
+def data_path(upload_uuid):
+    """The append-only file that holds a tus upload's bytes."""
+    return os.path.join(chunks_dir(upload_uuid), "data")
+
+
+def _is_tus(session):
+    return session.protocol == UploadSession.Protocol.TUS
+
+
+def _assembled_path(session):
+    return os.path.join(settings.MEDIA_ROOT, settings.UPLOAD_DIR, str(session.uuid), session.filename)
+
+
+def _size_or_none(path):
+    try:
+        return os.path.getsize(path)
+    except OSError:
+        return None
+
+
+def _fully_received(session):
+    if _is_tus(session):
+        # An assembly that died after moving the data file left the whole upload at its assembled path.
+        return session.total_size in (_size_or_none(data_path(session.uuid)), _size_or_none(_assembled_path(session)))
+    return len(accepted_parts(session)) == session.total_parts
+
+
 def _expected_part_size(total_size, part_size, part_index):
     return min(part_size, total_size - part_index * part_size)
 
@@ -83,7 +111,7 @@ def accepted_parts(session):
     return parts
 
 
-def _is_stale(session, now):
+def is_stale(session, now):
     return session.updated_at < now - retention()
 
 
@@ -146,7 +174,7 @@ def _session_identity(session):
     return (session.filename, session.total_size, session.part_size, session.total_parts, session.fingerprint)
 
 
-def _get_owned(user, target_media, upload_uuid):
+def get_owned(user, target_media, upload_uuid):
     """Return the caller's session for this target, or None. Other accounts' sessions look absent."""
     try:
         session = UploadSession.objects.get(uuid=upload_uuid)
@@ -157,7 +185,7 @@ def _get_owned(user, target_media, upload_uuid):
     return session
 
 
-def _expire(session):
+def expire(session):
     UploadSession.objects.filter(pk=session.pk).update(status=UploadSession.Status.EXPIRED)
     shutil.rmtree(chunks_dir(session.uuid), ignore_errors=True)
 
@@ -188,8 +216,8 @@ def accept_chunk(user, target_media, chunk):
             return session
         if session.status in (UploadSession.Status.CANCELLED, UploadSession.Status.EXPIRED):
             raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
-        if _is_stale(session, now):
-            _expire(session)
+        if is_stale(session, now):
+            expire(session)
             raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
 
     directory = chunks_dir(session.uuid)
@@ -229,15 +257,15 @@ def find_resumable(user, target_media, filename, total_size, part_size, fingerpr
     )
     if session is None:
         return None
-    if _is_stale(session, timezone.now()):
-        _expire(session)
+    if is_stale(session, timezone.now()):
+        expire(session)
         return None
     return session, accepted_parts(session)
 
 
 def cancel(user, target_media, upload_uuid):
     """Discard the caller's unfinished upload. Returns the session, or None when the caller has none."""
-    session = _get_owned(user, target_media, upload_uuid)
+    session = get_owned(user, target_media, upload_uuid)
     if session is None:
         return None
     # Conditional, so a completion that claims the upload first is never cancelled under it.
@@ -265,6 +293,11 @@ def _combine(session):
     real_path = os.path.join(upload_dir, session.filename)
     absolute_dir = os.path.join(settings.MEDIA_ROOT, upload_dir)
     os.makedirs(absolute_dir, exist_ok=True)
+    if _is_tus(session):
+        # The data file already is the whole upload, so it only has to move.
+        if _size_or_none(data_path(session.uuid)) is not None:
+            os.replace(data_path(session.uuid), _assembled_path(session))
+        return Assembly(real_path=real_path, upload_dir=upload_dir)
     source_dir = chunks_dir(session.uuid)
     descriptor, temp_path = tempfile.mkstemp(dir=absolute_dir, prefix=".assembling-")
     try:
@@ -289,7 +322,7 @@ def complete(user, target_media, upload_uuid, finish):
     """
     if not is_valid_uuid_format(upload_uuid or ""):
         raise UploadRejected(400, "Invalid upload identifier.")
-    session = _get_owned(user, target_media, upload_uuid)
+    session = get_owned(user, target_media, upload_uuid)
     if session is None:
         raise UploadRejected(404, "Upload not found.")
 
@@ -297,10 +330,10 @@ def complete(user, target_media, upload_uuid, finish):
     if session.status == UploadSession.Status.COMPLETE:
         return {"success": True, "media_url": session.result_url}
     _reject_finished(session)
-    if session.status == UploadSession.Status.OPEN and _is_stale(session, now):
-        _expire(session)
+    if session.status == UploadSession.Status.OPEN and is_stale(session, now):
+        expire(session)
         raise UploadRejected(410, EXPIRED_MESSAGE, reset=True)
-    if len(accepted_parts(session)) != session.total_parts:
+    if not _fully_received(session):
         # Retrying sends the whole file again under the same session.
         raise UploadRejected(400, "Some parts of this upload are missing.", prevent_retry=False, reset=True)
 
