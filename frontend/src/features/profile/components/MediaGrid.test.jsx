@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MediaGrid } from './MediaGrid';
 
 function mediaItem(overrides) {
@@ -51,5 +52,24 @@ describe('MediaGrid details needed', () => {
 		const card = screen.getByRole('article');
 		expect(within(card).queryByText('Details needed')).not.toBeInTheDocument();
 		expect(within(card).getAllByRole('link')[0]).toHaveAttribute('href', '/view?m=abc123');
+	});
+});
+
+describe('MediaGrid hover preview', () => {
+	it.each([
+		{
+			name: 'plays the preview of a film that has one',
+			previewUrl: '/media/encoded/preview.gif?v=1',
+			expected: '/media/encoded/preview.gif?v=1',
+		},
+		{ name: 'keeps the thumbnail of a film without a preview', previewUrl: undefined, expected: null },
+	])('$name on hover', async ({ previewUrl, expected }) => {
+		const user = userEvent.setup();
+		render(<MediaGrid items={[mediaItem({ preview_url: previewUrl })]} />);
+		const card = screen.getByRole('article');
+
+		await user.hover(card);
+
+		expect(card.querySelector('img[data-movie-item-preview]')?.getAttribute('src') ?? null).toBe(expected);
 	});
 });

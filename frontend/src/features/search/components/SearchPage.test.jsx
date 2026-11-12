@@ -68,6 +68,24 @@ describe('SearchPage', () => {
 		expect(searchUrl).toContain('community_impact=saves');
 	});
 
+	it("plays a result's animated preview on hover", async () => {
+		const user = userEvent.setup();
+		const previewUrl = '/media/encoded/preview.gif?v=1';
+		globalThis.fetch.mockImplementation(async (url) =>
+			url.startsWith('/api/v1/search')
+				? jsonResponse({ count: 1, results: [{ ...searchResult, preview_url: previewUrl }] })
+				: jsonResponse([])
+		);
+		const { container } = render(<SearchPage />);
+
+		const card = (await screen.findByText('Philippines Film')).closest('article');
+		expect(container.querySelector('img[data-movie-item-preview]')).toBeNull();
+
+		await user.hover(card);
+
+		expect(card.querySelector('img[data-movie-item-preview]')).toHaveAttribute('src', previewUrl);
+	});
+
 	it('ranks a text query by relevance until the visitor picks a sort order', async () => {
 		window.history.pushState(null, '', '/search?q=the+train');
 

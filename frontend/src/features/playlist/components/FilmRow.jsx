@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../shared/components';
+import { useHoverPreview } from '../../shared/hooks/useHoverPreview';
+import { cn } from '../../shared/utils/classNames';
 import { formatDuration } from '../../shared/utils/formatDuration';
 import { addPlaylistParam, formatCount, getMediaCountry, getMediaDescription } from '../utils/playlist';
 
@@ -143,6 +145,7 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 	const description = getMediaDescription(media);
 	const duration = formatDuration(media?.duration);
 	const metadata = [country, formatCount(media?.views || 0, 'view')].filter(Boolean).join(' · ');
+	const { containerProps, previewProps } = useHoverPreview(media?.preview_url || '');
 
 	return (
 		<li
@@ -153,7 +156,8 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 				<RowOrderCell index={index} isOwner={isOwner} title={title} />
 			</div>
 
-			<div className="col-start-1 flex min-w-0 gap-3 @2xl:contents">
+			{/* Only the film's own links start the preview, not the synopsis, menu or drag handle. */}
+			<div className="col-start-1 flex min-w-0 gap-3 @2xl:contents" {...containerProps}>
 				<a
 					href={mediaUrl}
 					className="relative block aspect-video w-[152px] shrink-0 overflow-hidden rounded-ds-6 bg-bg-skeleton no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus min-[420px]:w-[171px] @2xl:w-[180px] @4xl:w-[220px]"
@@ -174,6 +178,22 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 							No thumbnail
 						</span>
 					)}
+					{previewProps ? (
+						<img
+							src={previewProps.src}
+							alt=""
+							width="344"
+							height="194"
+							decoding="async"
+							className={cn(
+								'absolute inset-0 h-full w-full object-cover',
+								previewProps.loaded ? 'opacity-100' : 'opacity-0'
+							)}
+							onLoad={previewProps.onLoad}
+							onError={previewProps.onError}
+							data-film-row-preview
+						/>
+					) : null}
 					{duration ? (
 						<span className="absolute right-1 bottom-1 rounded-ds-2 bg-bg-overlay-dark/80 px-1 py-0.5 text-text-on-chrome body-body-12-medium">
 							{duration}

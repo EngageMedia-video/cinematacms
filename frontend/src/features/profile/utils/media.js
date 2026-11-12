@@ -32,6 +32,7 @@ export function getMovieItemProps(item, { hideAuthor = false } = {}) {
 		...getVisibilityIndicator(item.state),
 		title: item.title,
 		imageSrc: item.thumbnail_url,
+		previewSrc: item.preview_url || '',
 		link: item.url,
 		duration: getMediaDurationLabel(item),
 		subtitle: hideAuthor ? '' : item.author_name || item.user || '',
