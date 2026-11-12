@@ -36,8 +36,10 @@
 
         {# Import map — must appear before any <script type="module"> so the browser #}
         {# can resolve the bare "video.js" specifier used in Vite's externalized chunks. #}
+        {# Vite does not hash the shim; versioned_static changes its URL with its content #}
+        {# so a CDN cannot keep serving an old shim after a deploy. #}
         <script nonce="{{ request.csp_nonce }}" type="importmap">
-        { "imports": { "video.js": "{% static 'lib/videojs-esm-shim.js' %}" } }
+        { "imports": { "video.js": "{% versioned_static 'lib/videojs-esm-shim.js' %}" } }
         </script>
 
         {% if VITE_DEV_MODE %}

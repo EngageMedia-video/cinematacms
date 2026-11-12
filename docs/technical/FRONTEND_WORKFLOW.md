@@ -306,6 +306,15 @@ DJANGO_VITE = {
 }
 ```
 
+Vite hashes only the files it builds. When a template references another static
+file whose content can change at the same path, such as
+`static/lib/videojs-esm-shim.js`, use `{% versioned_static %}` from
+`custom_tags` instead of `{% static %}`. The tag appends `?v=` and a content
+hash, so a changed file gets a new URL that the CDN has not cached. Each web
+worker computes the hash once, so restart the workers after the file changes.
+A vendored library whose path carries its version, such as
+`static/lib/video-js/7.20.2/`, does not need it.
+
 ### Dev Mode
 
 Set `VITE_DEV_MODE=True` in your environment to enable HMR:
