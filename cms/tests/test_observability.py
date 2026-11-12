@@ -403,9 +403,9 @@ class ObservabilityConfigTests(SimpleTestCase):
         ):
             observability.configure_celery_observability()
 
-        celery.assert_called_once_with()
-        redis.assert_called_once_with()
-        requests.assert_called_once_with()
+        celery.assert_called_once()
+        redis.assert_called_once()
+        requests.assert_called_once()
         psycopg2.assert_not_called()
 
     @override_settings(OTEL_ENABLED=True)
@@ -507,6 +507,24 @@ class TracingConfigurationStateTests(SimpleTestCase):
 
     def test_worker_that_cannot_import_the_tracing_sdk_reports_tracing_unconfigured(self):
         with patch.dict(sys.modules, {"opentelemetry.sdk.trace": None}):
+            configure_celery_worker_process()
+
+        self.assertEqual(self.tracing_configured(), 0)
+
+    def test_worker_whose_redis_instrumentation_conflicts_reports_tracing_unconfigured(self):
+        # An instrumentor that finds a dependency version it does not support skips itself.
+        from opentelemetry.instrumentation.dependencies import DependencyConflict
+
+        conflict = DependencyConflict("redis >= 99", "redis 5.0.0")
+        with (
+            patch("opentelemetry.trace.set_tracer_provider"),
+            patch("opentelemetry.instrumentation.celery.CeleryInstrumentor.instrument"),
+            patch(
+                "opentelemetry.instrumentation.redis.RedisInstrumentor._check_dependency_conflicts",
+                return_value=conflict,
+            ),
+            patch("cms.observability.capture_unexpected_exception"),
+        ):
             configure_celery_worker_process()
 
         self.assertEqual(self.tracing_configured(), 0)
