@@ -2,7 +2,7 @@
 name: Feature Proposal
 about: For the Cinemata team. Propose a feature for a target iteration by week 1 of iteration N-2.
 title: '[PROPOSAL] '
-labels: enhancement
+labels: enhancement, proposal:needed
 assignees: ''
 ---
 
