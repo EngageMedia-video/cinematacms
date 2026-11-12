@@ -193,6 +193,9 @@ describe('MovieItem hover preview', () => {
 
 		await user.unhover(article);
 		expect(getPreview(container)).toBeNull();
+
+		await user.hover(article);
+		expect(getPreview(container)).toHaveClass('opacity-0');
 	});
 
 	it('plays the preview while a tile link has keyboard focus', async () => {
@@ -226,6 +229,105 @@ describe('MovieItem hover preview', () => {
 		await user.tab();
 		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'After' }));
 		expect(getPreview(container)).toBeNull();
+
+		await user.tab({ shift: true });
+		expect(getPreview(container)).toHaveClass('opacity-0');
+	});
+
+	it('keeps playing while keyboard focus stays in the tile after the pointer leaves', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		await user.tab();
+		const preview = getPreview(container);
+		fireEvent.load(preview);
+
+		await user.hover(article);
+		await user.unhover(article);
+
+		expect(getPreview(container)).toBe(preview);
+		expect(preview).toHaveClass('opacity-100');
+	});
+
+	it('keeps playing while the pointer stays on the tile after focus leaves', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<>
+				<VerticalMovieItem
+					imageSrc={samplePoster}
+					previewSrc={previewSrc}
+					title="Arrival"
+					link="/media/arrival/"
+				/>
+				<a href="/after/">After</a>
+			</>
+		);
+
+		await user.hover(screen.getByRole('article'));
+		await user.tab();
+		await user.tab();
+
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'After' }));
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('stops when the pointer leaves a tile it focused by pressing a link', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		await user.hover(link);
+		await user.pointer({ keys: '[MouseLeft>]', target: link });
+		expect(document.activeElement).toBe(link);
+
+		await user.unhover(screen.getByRole('article'));
+
+		expect(getPreview(container)).toBeNull();
+	});
+
+	it('ignores the focus that follows a touch tap, then plays on later keyboard focus', () => {
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		// Browser order for a tap: the pointer leaves before the link receives focus.
+		fireEvent.pointerOver(link, { pointerType: 'touch' });
+		fireEvent.pointerDown(link, { pointerType: 'touch' });
+		fireEvent.pointerOut(article, { pointerType: 'touch', relatedTarget: document.body });
+		act(() => link.focus());
+		expect(getPreview(container)).toBeNull();
+
+		act(() => link.blur());
+		act(() => link.focus());
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('hides a replacement preview source until that source loads', async () => {
+		const user = userEvent.setup();
+		const nextSrc = 'https://example.com/media/encoded/preview.gif?v=4';
+		const { container, rerender } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		await user.hover(screen.getByRole('article'));
+		fireEvent.load(getPreview(container));
+		expect(getPreview(container)).toHaveClass('opacity-100');
+
+		rerender(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={nextSrc} title="Arrival" link="/media/arrival/" />
+		);
+		expect(getPreview(container)).toHaveAttribute('src', nextSrc);
+		expect(getPreview(container)).toHaveClass('opacity-0');
+
+		fireEvent.load(getPreview(container));
+		expect(getPreview(container)).toHaveClass('opacity-100');
 	});
 
 	it('keeps the static thumbnail and stops requesting the preview after it fails to load', async () => {
