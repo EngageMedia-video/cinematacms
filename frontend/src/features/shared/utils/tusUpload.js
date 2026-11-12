@@ -113,8 +113,9 @@ export function createTusUploader({
 	// last byte is lost and the page reloads, the server no longer lists the upload as
 	// unfinished; asking this URL returns the media it created, so the file is not sent, and
 	// the media not created, a second time. The entry is dropped once the upload is seen to end.
+	// The key names the same file the server lookup does, so a renamed copy is a different upload.
 	const pendingKey = (item) =>
-		`${PENDING_UPLOAD_PREFIX}${endpoint}:${metadata.is_draft ? 'draft' : 'final'}:${item.fingerprint}`;
+		`${PENDING_UPLOAD_PREFIX}${endpoint}:${metadata.is_draft ? 'draft' : 'final'}:${item.fingerprint}:${item.file.name}`;
 
 	function pendingUrl(item) {
 		if (!item.fingerprint) return null;

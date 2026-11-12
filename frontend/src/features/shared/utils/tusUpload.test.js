@@ -459,6 +459,17 @@ describe('createTusUploader', () => {
 			expect(second.server.uploads.size).toBe(1);
 		});
 
+		it('uploads a renamed copy as a new file instead of taking the first upload', async () => {
+			const first = await uploadWithLostFinalResponse();
+			const second = reloadedPage(first);
+
+			second.uploader.addFiles([makeFile(CONTENT, 'renamed.mp4')]);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(second.server.requests[0].method).toBe('POST');
+			expect(second.storedText()).toEqual([CONTENT, CONTENT]);
+		});
+
 		it('uploads the same file again once its completion was seen', async () => {
 			const { server, uploader, settled, storage } = setup();
 			uploader.addFiles([makeFile()]);
