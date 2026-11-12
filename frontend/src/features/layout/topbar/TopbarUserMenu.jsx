@@ -61,12 +61,11 @@ function MenuItem({ item }) {
 	const hover = signOut
 		? 'hover:bg-cinemata-sunset-horizon-500/10 hover:text-cinemata-sunset-horizon-500'
 		: 'hover:bg-black/[0.04] dark:hover:bg-white/[0.04]';
-	const iconClass = signOut ? 'text-cinemata-sunset-horizon-300' : 'text-text-strong';
 
 	return (
 		<a href={item.link || '#'} className={cn(base, hover)}>
 			{item.icon ? (
-				<i aria-hidden="true" className={cn('material-icons shrink-0', iconClass)} style={{ fontSize: 20 }}>
+				<i aria-hidden="true" className="material-icons shrink-0" style={{ fontSize: 20 }}>
 					{item.icon}
 				</i>
 			) : (

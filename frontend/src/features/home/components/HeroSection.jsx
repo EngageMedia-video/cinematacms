@@ -1,16 +1,4 @@
-import {
-	Component,
-	Suspense,
-	createContext,
-	lazy,
-	use,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
-import { preload } from 'react-dom';
+import { Component, Suspense, createContext, lazy, use, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
 import { normalizeMediaList, getMediaDurationLabel } from '../utils/mediaList';
@@ -330,12 +318,6 @@ export function HeroSection({ children }) {
 	const listMedia = items[0] ?? null;
 	const { data: detailData, isError: isHeroDetailError, refetch: retryHeroDetail } = useHeroMediaDetail(listMedia);
 	const media = mergeHeroDetail(listMedia, detailData);
-
-	useEffect(() => {
-		if (media?.thumbnail_url) {
-			preload(media.thumbnail_url, { as: 'image' });
-		}
-	}, [media?.thumbnail_url]);
 
 	const value = useMemo(
 		() => ({ media, isDesktopLayout, desktopMetrics, isHeroDetailError, retryHeroDetail }),
