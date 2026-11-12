@@ -196,6 +196,23 @@ class MFATestCase(TestCase):
         # Should be successfully logged in
         self.assertTrue(response.wsgi_request.user.is_authenticated)
 
+    def _get_mfa_authenticate_page(self):
+        TOTP.activate(self.superuser, generate_totp_secret())
+        self.client.post(reverse("account_login"), {"login": self.superuser.username, "password": "superpassword123"})
+        return self.client.get(reverse("mfa_authenticate"))
+
+    def test_mfa_authenticate_form_opts_into_the_code_input_script(self):
+        """The bundled script (frontend/src/features/auth/mfaCodeInput.js) binds only to a marked form."""
+        response = self._get_mfa_authenticate_page()
+
+        self.assertContains(response, "data-mfa-code-form")
+
+    def test_mfa_authenticate_page_says_the_code_is_sent_on_the_last_digit(self):
+        """WCAG 3.2.2 allows submitting on input only when users are told before they type."""
+        response = self._get_mfa_authenticate_page()
+
+        self.assertContains(response, "It is verified as soon as you enter the last digit.")
+
     # def test_invalid_totp_code(self):
     #   """Test login with invalid TOTP code"""
     #   # Set up MFA
