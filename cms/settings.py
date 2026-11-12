@@ -33,7 +33,7 @@ CORS_ALLOW_HEADERS = default_headers + (
     "cache-control",  # Add Cache-Control
     "content-type",  # Add Content-Type (important for application/json etc.)
     "range",  # Add Range
-    "x-upload-id",  # Fine Uploader's per-file id, logged by nginx and the app
+    "x-upload-id",  # the browser's per-upload id, logged by nginx and the app
     "dnt",  # Generally not needed as DNT is safelisted
     "user-agent",  # Generally not needed as User-Agent is safelisted
 )
@@ -638,7 +638,8 @@ ADMINS_NOTIFICATIONS = {
 
 MAX_CHARS_FOR_COMMENT = 10000  # so that it doesn't end up huge
 
-# this is for fineuploader - media uploads
+# media uploads: the tus endpoints (uploader/tus.py) and the Fine Uploader endpoints
+# kept for pages loaded before the tus release
 UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
 # Hours after which orphaned upload files/chunks are considered stale and removed
@@ -650,11 +651,11 @@ ORPHANED_DRAFT_CLEANUP_HOURS = 168
 ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = env_int("UPLOAD_MAX_SIZE", 800 * 1024 * 1000 * 5)
-# bytes per chunk of a chunked upload; must match UPLOAD_PART_SIZE in
-# frontend/src/features/shared/utils/resumableUpload.js
+# bytes per chunk of a Fine Uploader chunked upload, which browsers that loaded the
+# page before the tus release still send
 UPLOAD_PART_SIZE = 2_000_000
 
-# Default file count for the single-upload page's FineUploader. NOTE: this value
+# Default file count for the single-upload page. NOTE: this value
 # is overridden per-user in files/context_processors.py (advanced users -> 10,
 # everyone else -> 1), so the 100 here is only a ceiling/fallback. The dedicated
 # bulk-upload flow (issue #524) uses its own per-role limits instead — see

@@ -6,8 +6,7 @@ import { createContext, useContext } from 'react';
  * fill in the rest. Shared via context.
  */
 export const BULK_UPLOAD_CONFIG_DEFAULTS = {
-	uploadEndpoint: '/fu/upload/',
-	chunksDoneParam: 'done',
+	uploadEndpoint: '/fu/tus/',
 	optionsEndpoint: '/api/v1/my_uploads/upload_options',
 	singleUploadUrl: '/upload',
 	postSubmitUrl: '/',

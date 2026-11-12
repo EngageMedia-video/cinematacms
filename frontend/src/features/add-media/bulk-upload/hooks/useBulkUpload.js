@@ -2,16 +2,14 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../../shared/utils/api';
-import { createResumableUploader } from '../../../shared/utils/resumableUpload';
-import { sendUploadIdHeader } from '../../../shared/utils/uploadId';
+import { UPLOAD_STATUS as TRANSFER_STATUS, createTusUploader } from '../../../shared/utils/tusUpload';
 
 /**
- * Drives N concurrent chunked uploads through the bundled FineUploader engine
- * (the same engine the Django backend was built for) and mirrors each file's
- * progress/status into the Zustand store. Retries and resume follow the shared
- * upload contract (shared/utils/resumableUpload): transient chunk failures retry
- * automatically, and after a page reload, selecting the same file again resumes
- * from the parts the server already holds.
+ * Drives N concurrent tus uploads and mirrors each file's progress/status into
+ * the Zustand store. Retries and resume follow the shared upload engine
+ * (shared/utils/tusUpload): transient failures retry automatically, and after a
+ * page reload, selecting the same file again resumes from the bytes the server
+ * already holds.
  */
 export function useBulkUpload() {
 	const config = useBulkUploadConfig();
@@ -25,38 +23,20 @@ export function useBulkUpload() {
 	const setLastError = useBulkUploadStore((state) => state.setLastError);
 
 	useEffect(() => {
-		const qq = typeof window !== 'undefined' ? window.qq : undefined;
-		if (!qq || !qq.FineUploaderBasic) {
-			console.warn('FineUploader library is not loaded; bulk upload is disabled.');
-			return undefined;
-		}
-
-		let uploader;
 		let disposing = false;
-		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() ?? '' };
-		uploader = createResumableUploader(qq.FineUploaderBasic, {
-			autoUpload: true,
-			request: {
-				endpoint: config.uploadEndpoint,
-				customHeaders: uploadHeaders,
-				// Mark every bulk upload as a private draft on creation; the server
-				// keeps it out of the admin review queue until the user submits.
-				params: { is_draft: 1 },
-			},
-			chunking: {
-				enabled: true,
-				concurrent: { enabled: true },
-				success: { endpoint: `${config.uploadEndpoint}?${config.chunksDoneParam}` },
-			},
+		const uploader = createTusUploader({
+			endpoint: config.uploadEndpoint,
+			getHeaders: () => ({ 'X-CSRFToken': getCSRFToken() ?? '' }),
+			// Mark every bulk upload as a private draft on creation; the server
+			// keeps it out of the admin review queue until the user submits.
+			metadata: { is_draft: '1' },
 			validation: {
 				itemLimit: config.maxFiles,
 				sizeLimit: config.maxSizeBytes || undefined,
 				allowedExtensions: config.allowedExtensions || [],
-				acceptFiles: 'video/*',
 			},
 			callbacks: {
 				onSubmitted(id, name) {
-					sendUploadIdHeader(uploader, id, uploadHeaders);
 					window.CinemataAnalytics?.uploadEvent('start', id);
 					filesByIdRef.current.set(id, uploader.getFile(id));
 					addFile({ id, name, sizeBytes: uploader.getSize(id) });
@@ -64,8 +44,8 @@ export function useBulkUpload() {
 				},
 				onProgress(id, name, uploadedBytes, totalBytes) {
 					const progress = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
-					// Once all bytes are sent the uploader is combining chunks server-side;
-					// show "Processing..." (like single-upload) instead of a full progress bar
+					// Once all bytes are sent the server is creating the media; show
+					// "Processing..." (like single-upload) instead of a full progress bar
 					// until onComplete fires.
 					updateFile(id, {
 						progress,
@@ -73,7 +53,7 @@ export function useBulkUpload() {
 					});
 				},
 				onComplete(id, name, response) {
-					if (response && response.success && response.media_url) {
+					if (response?.media_url) {
 						window.CinemataAnalytics?.uploadEvent('complete', id);
 						const friendlyToken = parseFriendlyToken(response.media_url);
 						updateFile(id, {
@@ -101,10 +81,7 @@ export function useBulkUpload() {
 						}
 					} else {
 						window.CinemataAnalytics?.uploadEvent('error', id);
-						updateFile(id, {
-							uploadStatus: UPLOAD_STATUS.FAILED,
-							error: (response && response.error) || 'Upload failed.',
-						});
+						updateFile(id, { uploadStatus: UPLOAD_STATUS.FAILED, error: 'Upload failed.' });
 					}
 				},
 				onError(id, name, errorReason) {
@@ -121,10 +98,15 @@ export function useBulkUpload() {
 					filesByIdRef.current.delete(id);
 					return true;
 				},
-				onStatusChange(id, oldStatus, newStatus) {
-					if (newStatus === 'paused') {
+				onStatusChange(id, status, message) {
+					if (status === TRANSFER_STATUS.PAUSED) {
 						if (!pausingBeforeLeaveRef.current) window.CinemataAnalytics?.uploadEvent('pause', id);
-						updateFile(id, { uploadStatus: UPLOAD_STATUS.PAUSED });
+						updateFile(id, { uploadStatus: UPLOAD_STATUS.PAUSED, error: null });
+					} else if (status === TRANSFER_STATUS.AWAITING_SIGN_IN) {
+						// Signing in again and pressing Continue resumes from the server's offset.
+						updateFile(id, { uploadStatus: UPLOAD_STATUS.PAUSED, error: message });
+					} else if (status === TRANSFER_STATUS.EXPIRED) {
+						updateFile(id, { uploadStatus: UPLOAD_STATUS.FAILED, error: message });
 					}
 				},
 			},
@@ -149,9 +131,8 @@ export function useBulkUpload() {
 		uploaderRef.current?.pauseUpload(id);
 	}, []);
 
-	// Leaving stops the transfers anyway. Pausing them first keeps Fine Uploader's own
-	// beforeunload prompt from asking again, and they can continue if the page stays.
-	// The user did not pause them, so no pause event is tracked.
+	// Leaving stops the transfers anyway. Pausing them first lets them continue if the
+	// page stays. The user did not pause them, so no pause event is tracked.
 	const pauseBeforeLeave = useCallback(() => {
 		pausingBeforeLeaveRef.current = true;
 		useBulkUploadStore
@@ -165,7 +146,7 @@ export function useBulkUpload() {
 		(id) => {
 			if (uploaderRef.current?.continueUpload(id)) {
 				window.CinemataAnalytics?.uploadEvent('resume', id);
-				updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING });
+				updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, error: null });
 			}
 		},
 		[updateFile]
@@ -173,10 +154,9 @@ export function useBulkUpload() {
 
 	const cancel = useCallback(
 		(id) => {
-			// Abort the in-flight/queued upload, then drop the row unconditionally.
-			// The FineUploader method is `cancel(id)` (not `cancelUpload`); guard it
-			// so a throw can't stop us from clearing the row (removeFile is idempotent
-			// and onCancel may not fire for a paused item).
+			// Abort the in-flight/queued upload, then drop the row unconditionally;
+			// guard it so a throw can't stop us from clearing the row (removeFile is
+			// idempotent).
 			try {
 				uploaderRef.current?.cancel(id);
 			} catch {
@@ -190,7 +170,8 @@ export function useBulkUpload() {
 
 	const retry = useCallback(
 		(id) => {
-			updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, progress: 0, error: null });
+			// The retry continues from the bytes the server holds, so the progress stays.
+			updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, error: null });
 			if (uploaderRef.current?.retry(id)) window.CinemataAnalytics?.uploadEvent('retry', id);
 		},
 		[updateFile]

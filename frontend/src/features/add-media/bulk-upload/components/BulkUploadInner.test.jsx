@@ -2,18 +2,19 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import BulkUploadPage from './BulkUploadPage';
 import useBulkUploadStore from '../useBulkUploadStore';
 
-let uploaderListeners;
+const tus = vi.hoisted(() => ({ create: null }));
+vi.mock('../../../shared/utils/tusUpload', async (importOriginal) => ({
+	...(await importOriginal()),
+	createTusUploader: (options) => tus.create(options),
+}));
+
 let uploader;
 
-// Like Fine Uploader 5.13.0, it adds its own beforeunload prompt while a file is in progress.
 class FakeUploader {
 	constructor({ callbacks }) {
 		this.callbacks = callbacks;
 		this.inProgress = new Set();
 		uploader = this;
-		window.addEventListener('beforeunload', (event) => this.inProgress.size > 0 && event.preventDefault(), {
-			signal: uploaderListeners.signal,
-		});
 	}
 
 	getFile() {
@@ -24,17 +25,11 @@ class FakeUploader {
 		return 5;
 	}
 
-	getUuid(id) {
-		return `00000000-0000-4000-8000-00000000000${id}`;
-	}
-
-	setCustomHeaders() {}
-
 	cancelAll() {}
 
 	pauseUpload(id) {
 		if (!this.inProgress.delete(id)) return false;
-		this.callbacks.onStatusChange(id, 'uploading', 'paused');
+		this.callbacks.onStatusChange(id, 'paused', '');
 		return true;
 	}
 
@@ -45,7 +40,7 @@ class FakeUploader {
 
 	finish(id, name) {
 		this.inProgress.delete(id);
-		this.callbacks.onComplete(id, name, { success: true, media_url: `/view?m=token${id}` });
+		this.callbacks.onComplete(id, name, { media_url: `/view?m=token${id}` });
 	}
 }
 
@@ -61,8 +56,7 @@ function renderBulkUpload() {
 
 describe('BulkUploadInner leave warning', () => {
 	beforeEach(() => {
-		uploaderListeners = new AbortController();
-		window.qq = { FineUploaderBasic: FakeUploader };
+		tus.create = (options) => new FakeUploader(options);
 		vi.stubGlobal(
 			'fetch',
 			vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }))
@@ -70,10 +64,9 @@ describe('BulkUploadInner leave warning', () => {
 	});
 
 	afterEach(() => {
-		uploaderListeners.abort();
 		useBulkUploadStore.getState().reset();
 		document.querySelectorAll('body > a').forEach((link) => link.remove());
-		delete window.qq;
+		tus.create = null;
 		delete window.CinemataAnalytics;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();

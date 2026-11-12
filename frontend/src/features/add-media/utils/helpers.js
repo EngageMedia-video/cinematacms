@@ -39,39 +39,6 @@ export function getCSRFToken() {
 	return cookieVal;
 }
 
-export function getUploadStatus(status) {
-	const qqStatus = window.qq && window.qq.status;
-
-	if (!qqStatus) {
-		return 'uploading';
-	}
-
-	switch (status) {
-		case qqStatus.UPLOAD_SUCCESSFUL:
-			return 'complete';
-		case qqStatus.UPLOAD_FAILED:
-		case qqStatus.REJECTED:
-			return 'failed';
-		case qqStatus.PAUSED:
-			return 'paused';
-		default:
-			return 'uploading';
-	}
-}
-
-export function getStatusLabel(status) {
-	switch (status) {
-		case 'complete':
-			return 'Complete';
-		case 'failed':
-			return 'Upload failed';
-		case 'paused':
-			return 'Paused';
-		default:
-			return 'Uploading';
-	}
-}
-
 export function getUploadedMediaDetails(response, fileName) {
 	const viewUrl = response && response.media_url ? response.media_url : '';
 	const editUrl = viewUrl ? viewUrl.replace('/view?', '/edit?') : '';
@@ -98,23 +65,4 @@ export function getUploadedMediaDetails(response, fileName) {
 		thumbnailTime: response?.thumbnail_time ?? '',
 		viewUrl,
 	};
-}
-
-export function updateUploadItemStatus(id, status, statusText) {
-	const listEl = document.querySelector('.qq-file-id-' + id);
-	const itemEl = listEl ? listEl.querySelector('.upload-media-item') : null;
-
-	if (!itemEl) {
-		return;
-	}
-
-	itemEl.setAttribute('data-upload-status', status);
-
-	if (statusText) {
-		const statusEl = itemEl.querySelector('.qq-upload-status-text-selector');
-
-		if (statusEl) {
-			statusEl.textContent = statusText;
-		}
-	}
 }

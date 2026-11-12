@@ -40,6 +40,12 @@ vi.mock('../../static/js/mediacms/config.js', () => ({
 	config: () => ({ api: { media: '/api/v1/media' } }),
 }));
 
+const tus = vi.hoisted(() => ({ create: null }));
+vi.mock('../shared/utils/tusUpload', async (importOriginal) => ({
+	...(await importOriginal()),
+	createTusUploader: (options) => tus.create(options),
+}));
+
 import { AddMediaPage } from './AddMediaPage';
 import useBulkUploadStore from './bulk-upload/useBulkUploadStore';
 
@@ -53,28 +59,20 @@ describe('AddMediaPage multi-file single upload guard', () => {
 				canAdd: true,
 				canPublishDirectly: false,
 				csrfToken: 'csrf-token',
-				uploadCompleteEndpoint: '/fu/upload/complete/',
-				uploadEndpoint: '/fu/upload/',
+				uploadEndpoint: '/fu/tus/',
 				uploadMaxFilesNumber: 1,
 				uploadMaxSize: 1000000,
 			},
 		};
 
 		addFiles = vi.fn();
-		window.qq = {
-			FineUploader: vi.fn(function FineUploaderMock() {
-				this.addFiles = addFiles;
-				this.cancel = vi.fn();
-				this.reset = vi.fn();
-			}),
-			status: {},
-		};
+		tus.create = () => ({ addFiles, cancel: vi.fn(), remove: vi.fn(), reset: vi.fn() });
 	});
 
 	afterEach(() => {
 		vi.restoreAllMocks();
 		delete window.MediaCMS;
-		delete window.qq;
+		tus.create = null;
 	});
 
 	function dropMultipleFiles() {
@@ -149,26 +147,19 @@ describe('AddMediaPage bulk upload viewport gate', () => {
 			addMediaPage: {
 				allowedExtensions: ['mp4'],
 				canAdd: true,
-				uploadEndpoint: '/fu/upload/',
+				uploadEndpoint: '/fu/tus/',
 				uploadMaxFilesNumber: 1,
 				uploadMaxSize: 1000000,
 			},
 		};
-		window.qq = {
-			FineUploader: vi.fn(function FineUploaderMock() {
-				this.addFiles = vi.fn();
-				this.cancel = vi.fn();
-				this.reset = vi.fn();
-			}),
-			status: {},
-		};
+		tus.create = () => ({ addFiles: vi.fn(), cancel: vi.fn(), remove: vi.fn(), reset: vi.fn() });
 	});
 
 	afterEach(() => {
 		vi.restoreAllMocks();
 		delete window.matchMedia;
 		delete window.MediaCMS;
-		delete window.qq;
+		tus.create = null;
 	});
 
 	it('watches the viewport below the 1024px desktop breakpoint', () => {
@@ -212,29 +203,31 @@ describe('AddMediaPage bulk upload viewport gate', () => {
 
 describe('AddMediaPage leaving the page', () => {
 	let uploaderOptions;
-	let uploaderInstance;
+	let uploader;
 
 	beforeEach(() => {
 		window.MediaCMS = {
 			addMediaPage: {
 				allowedExtensions: ['mp4'],
 				canAdd: true,
-				uploadEndpoint: '/fu/upload/',
+				uploadEndpoint: '/fu/tus/',
 				uploadMaxFilesNumber: 1,
 				uploadMaxSize: 1000000,
 			},
 		};
-		window.qq = {
-			FineUploader: vi.fn(function FineUploaderMock(options) {
-				uploaderOptions = options;
-				uploaderInstance = this;
-				this.addFiles = vi.fn();
-				this.cancel = vi.fn();
-				this.reset = vi.fn();
-				this.getUuid = (id) => `00000000-0000-4000-8000-00000000000${id}`;
-				this.setCustomHeaders = vi.fn();
-			}),
-			status: {},
+		tus.create = (options) => {
+			uploaderOptions = options;
+			uploader = {
+				addFiles: vi.fn(),
+				cancel: vi.fn((id) => options.callbacks.onCancel(id)),
+				remove: vi.fn(),
+				reset: vi.fn(),
+				pauseUpload: vi.fn(() => true),
+				continueUpload: vi.fn(() => true),
+				retry: vi.fn(() => true),
+				getSize: () => 2048,
+			};
+			return uploader;
 		};
 		vi.stubGlobal(
 			'fetch',
@@ -247,33 +240,112 @@ describe('AddMediaPage leaving the page', () => {
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 		delete window.MediaCMS;
-		delete window.qq;
-	});
-
-	it('sends the file uuid as X-Upload-Id, with the CSRF header, on every request of that upload', () => {
-		render(<AddMediaPage />);
-
-		act(() => uploaderOptions.callbacks.onSubmitted(0));
-
-		expect(uploaderInstance.setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
-			{ ...uploaderOptions.request.customHeaders, 'X-Upload-Id': '00000000-0000-4000-8000-000000000000' },
-			0
-		);
-		expect(uploaderOptions.request.customHeaders).toHaveProperty('X-CSRFToken');
+		tus.create = null;
 	});
 
 	// Hiding the page also happens on reload, on closing an old tab and on a tab discard,
 	// so it never means the user discarded the upload.
 	it('keeps completed single and bulk uploads when the page is hidden', () => {
 		render(<AddMediaPage />);
-		act(() =>
-			uploaderOptions.callbacks.onComplete(0, 'river.mp4', { success: true, media_url: '/view?m=single123' })
-		);
+		act(() => uploaderOptions.callbacks.onComplete(0, 'river.mp4', { media_url: '/view?m=single123' }));
 		act(() => useBulkUploadStore.setState({ files: [{ id: 'bulk-1', friendlyToken: 'bulk456' }] }));
 
 		window.dispatchEvent(new Event('pagehide'));
 
 		const requestedUrls = fetch.mock.calls.map(([url]) => url);
 		expect(requestedUrls.filter((url) => url.includes('/abandon'))).toEqual([]);
+	});
+
+	describe('single upload list', () => {
+		function startUpload() {
+			render(<AddMediaPage />);
+			act(() => uploaderOptions.callbacks.onSubmitted(0, 'river.mp4'));
+		}
+
+		function listItem() {
+			return screen.getByText('river.mp4').closest('[data-upload-status]');
+		}
+
+		it('shows a selected file as uploading with its progress', () => {
+			startUpload();
+			act(() => uploaderOptions.callbacks.onProgress(0, 'river.mp4', 512, 2048));
+
+			expect(listItem()).toHaveAttribute('data-upload-status', 'uploading');
+			expect(screen.getByText('25% (2 KB)')).toBeInTheDocument();
+		});
+
+		it('shows processing once every byte is sent, and complete when the media exists', () => {
+			startUpload();
+			act(() => uploaderOptions.callbacks.onProgress(0, 'river.mp4', 2048, 2048));
+			expect(listItem()).toHaveAttribute('data-upload-status', 'processing');
+
+			act(() => uploaderOptions.callbacks.onStatusChange(0, 'complete', ''));
+			act(() => uploaderOptions.callbacks.onComplete(0, 'river.mp4', { media_url: '/view?m=single123' }));
+
+			expect(listItem()).toHaveAttribute('data-upload-status', 'complete');
+		});
+
+		it('asks the user to sign in again and continues the same upload', async () => {
+			const user = userEvent.setup();
+			startUpload();
+
+			act(() => uploaderOptions.callbacks.onStatusChange(0, 'awaiting-sign-in', 'Sign in again to continue.'));
+
+			expect(listItem()).toHaveAttribute('data-upload-status', 'paused');
+			expect(screen.getByText('Sign in again to continue.')).toBeInTheDocument();
+
+			await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+			expect(uploader.continueUpload).toHaveBeenCalledExactlyOnceWith(0);
+		});
+
+		it('shows an expired upload as failed with its message and retries it', async () => {
+			const user = userEvent.setup();
+			startUpload();
+
+			act(() => uploaderOptions.callbacks.onStatusChange(0, 'expired', 'This upload expired.'));
+
+			expect(listItem()).toHaveAttribute('data-upload-status', 'failed');
+			expect(screen.getByText('This upload expired.')).toBeInTheDocument();
+
+			await user.click(screen.getByRole('button', { name: 'Retry' }));
+
+			expect(uploader.retry).toHaveBeenCalledExactlyOnceWith(0);
+		});
+
+		it('pauses a running upload', async () => {
+			const user = userEvent.setup();
+			startUpload();
+
+			await user.click(screen.getByRole('button', { name: 'Pause' }));
+
+			expect(uploader.pauseUpload).toHaveBeenCalledExactlyOnceWith(0);
+		});
+
+		it('removes a cancelled upload and offers the dropzone again', async () => {
+			const user = userEvent.setup();
+			startUpload();
+
+			await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+			expect(uploader.cancel).toHaveBeenCalledExactlyOnceWith(0);
+			expect(screen.queryByText('river.mp4')).not.toBeInTheDocument();
+		});
+
+		it('explains why a selected file was refused', async () => {
+			const user = userEvent.setup();
+			render(<AddMediaPage />);
+
+			act(() => uploaderOptions.callbacks.onError(null, 'notes.txt', 'notes.txt has an invalid extension.'));
+
+			const notice = await screen.findByRole('dialog', { name: 'Upload notice' });
+			expect(notice).toHaveTextContent('notes.txt has an invalid extension.');
+
+			await user.click(screen.getByRole('button', { name: 'Close' }));
+
+			await waitFor(() =>
+				expect(screen.queryByRole('dialog', { name: 'Upload notice' })).not.toBeInTheDocument()
+			);
+		});
 	});
 });

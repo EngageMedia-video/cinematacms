@@ -725,7 +725,6 @@ def upload_media(request):
     # Bulk-upload config consumed by the Bulk Upload tab (sibling of single):
     # per-role batch limit and trusted-user gating.
     context["max_bulk_files"] = max_bulk_upload_files(request.user)
-    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
     context["is_trusted_user"] = is_trusted_uploader(request.user)
     context["default_media_status"] = get_default_state(request.user)
 
@@ -835,13 +834,12 @@ def _edit_media_page_config(request, form, media, licenses_dict, video_extension
 
     selected_license = _field_value(form, "custom_license")
     no_license = bool(_field_value(form, "no_license")) or selected_license in ("", "None", "none")
-    update_url = reverse("uploader:update", kwargs={"friendly_token": media.friendly_token})
+    update_url = reverse("uploader:tus_update", kwargs={"friendly_token": media.friendly_token})
 
     return {
         "csrfToken": get_token(request),
         "editUrl": request.get_full_path(),
         "uploadEndpoint": update_url,
-        "uploadCompleteEndpoint": f"{update_url}?{settings.CHUNKS_DONE_PARAM_NAME}",
         "uploadCancelEndpoint": reverse("uploader:cancel", kwargs={"friendly_token": media.friendly_token}),
         "uploadMaxSize": settings.UPLOAD_MAX_SIZE,
         "allowedExtensions": video_extensions,
