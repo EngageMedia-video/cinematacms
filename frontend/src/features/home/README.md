@@ -56,6 +56,11 @@ HomePage (QueryClientProvider)
                 └── MediaTile       → VerticalMovieItem
 ```
 
+`MediaTile` passes the media API `preview_url` to `VerticalMovieItem` as `previewSrc`. Hovering or focusing a tile
+mounts the animated preview over the thumbnail and shows it once it loads, so carousels never preload it. The tile
+keeps the static thumbnail when `preview_url` is empty, the preview fails to load, the visitor prefers reduced motion,
+the device matches `(hover: none)`, or the pointer is touch.
+
 Playlist and curator rows use the carousel body. Recent videos intentionally uses `SectionRow.Grid` to match the
 legacy latest-video block rather than the horizontal playlist carousel.
 

@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 
 const samplePoster =
@@ -139,5 +141,163 @@ describe('MovieItem', () => {
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).not.toHaveClass('min-h-8');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('touch-manipulation');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' }).closest('a[aria-label]')).toBeNull();
+	});
+});
+
+describe('MovieItem hover preview', () => {
+	const previewSrc = 'https://example.com/media/encoded/preview.gif?v=3';
+	const originalMatchMedia = window.matchMedia;
+
+	function mockMatchMedia(matchingQuery = '') {
+		window.matchMedia = vi.fn((query) => ({
+			matches: Boolean(matchingQuery) && query.includes(matchingQuery),
+			media: query,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		}));
+	}
+
+	function getPreview(container) {
+		return container.querySelector('img[data-movie-item-preview]');
+	}
+
+	beforeEach(() => {
+		mockMatchMedia();
+	});
+
+	afterEach(() => {
+		window.matchMedia = originalMatchMedia;
+	});
+
+	it.each([
+		['vertical', VerticalMovieItem],
+		['horizontal', HorizontalMovieItem],
+	])('loads the %s preview only on hover and removes it on leave', async (_layout, MovieItem) => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<MovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		expect(getPreview(container)).toBeNull();
+
+		await user.hover(article);
+		const preview = getPreview(container);
+		expect(preview).toHaveAttribute('src', previewSrc);
+		expect(preview).toHaveAttribute('alt', '');
+		expect(preview).toHaveClass('opacity-0');
+
+		fireEvent.load(preview);
+		expect(preview).toHaveClass('opacity-100');
+		expect(screen.getByRole('img', { name: 'Movie artwork' })).toHaveAttribute('src', samplePoster);
+
+		await user.unhover(article);
+		expect(getPreview(container)).toBeNull();
+	});
+
+	it('plays the preview while a tile link has keyboard focus', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<>
+				<VerticalMovieItem
+					imageSrc={samplePoster}
+					previewSrc={previewSrc}
+					title="Arrival"
+					subtitle="Denis Villeneuve"
+					subtitleLink="/profiles/denis/"
+					link="/media/arrival/"
+				/>
+				<a href="/after/">After</a>
+			</>
+		);
+
+		await user.tab();
+		const preview = getPreview(container);
+		expect(preview).toHaveAttribute('src', previewSrc);
+		fireEvent.load(preview);
+
+		await user.tab();
+		await user.tab();
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'Denis Villeneuve' }));
+		// Moving focus between links inside the tile must not restart the preview.
+		expect(getPreview(container)).toBe(preview);
+		expect(preview).toHaveClass('opacity-100');
+
+		await user.tab();
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'After' }));
+		expect(getPreview(container)).toBeNull();
+	});
+
+	it('keeps the static thumbnail and stops requesting the preview after it fails to load', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		await user.hover(article);
+		fireEvent.error(getPreview(container));
+		expect(getPreview(container)).toBeNull();
+
+		await user.unhover(article);
+		await user.hover(article);
+		expect(getPreview(container)).toBeNull();
+		expect(screen.getByRole('img', { name: 'Movie artwork' })).toHaveAttribute('src', samplePoster);
+	});
+
+	it.each([
+		{
+			name: 'plays on a mouse pointer',
+			previewUrl: previewSrc,
+			matchingQuery: '',
+			pointerType: 'mouse',
+			plays: true,
+		},
+		{ name: 'skips without a preview URL', previewUrl: '', matchingQuery: '', pointerType: 'mouse', plays: false },
+		{
+			name: 'skips under reduced motion',
+			previewUrl: previewSrc,
+			matchingQuery: 'prefers-reduced-motion: reduce',
+			pointerType: 'mouse',
+			plays: false,
+		},
+		{
+			name: 'skips on a hover-less device',
+			previewUrl: previewSrc,
+			matchingQuery: 'hover: none',
+			pointerType: 'mouse',
+			plays: false,
+		},
+		{
+			name: 'skips a touch pointer',
+			previewUrl: previewSrc,
+			matchingQuery: '',
+			pointerType: 'touch',
+			plays: false,
+		},
+	])('$name', ({ previewUrl, matchingQuery, pointerType, plays }) => {
+		mockMatchMedia(matchingQuery);
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewUrl} title="Arrival" link="/media/arrival/" />
+		);
+
+		fireEvent.pointerOver(screen.getByRole('article'), { pointerType });
+
+		expect(Boolean(getPreview(container))).toBe(plays);
+	});
+
+	it.each([
+		{ name: 'plays on focus', matchingQuery: '', plays: true },
+		{ name: 'skips focus under reduced motion', matchingQuery: 'prefers-reduced-motion: reduce', plays: false },
+		{ name: 'skips focus on a hover-less device', matchingQuery: 'hover: none', plays: false },
+	])('$name', ({ matchingQuery, plays }) => {
+		mockMatchMedia(matchingQuery);
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		act(() => screen.getByRole('link', { name: 'Open Arrival' }).focus());
+
+		expect(Boolean(getPreview(container))).toBe(plays);
 	});
 });
