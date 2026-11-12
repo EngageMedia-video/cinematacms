@@ -35,7 +35,7 @@ Which page visits or completed visitor actions should count? If none, explain wh
 Describe the flow step by step and paste screenshots of the prototype or mockup from the artifact.
 
 **Dependencies**
-Backend, data, third parties, other teams.
+Backend, data, third parties.
 
 **Open questions and risks**
 
