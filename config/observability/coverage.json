@@ -50,6 +50,7 @@
         "error_tracking_diagnostic",
         "home",
         "robots",
+        "sitemap",
         "upload_page",
         "manage_uploads",
         "film_impact_page",
@@ -1145,6 +1146,24 @@
         "operation": "robots"
       },
       {
+        "id": "pages.sitemap_index",
+        "route": "/sitemap.xml",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "sitemap"
+      },
+      {
+        "id": "pages.sitemap",
+        "route": "/sitemap-<section>.xml",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "sitemap"
+      },
+      {
         "id": "analytics.segment_event",
         "route": "/analytics/segment-event",
         "methods": [
@@ -1557,6 +1576,7 @@
           "error_tracking_diagnostic",
           "home",
           "robots",
+          "sitemap",
           "upload_page",
           "manage_uploads",
           "film_impact_page",

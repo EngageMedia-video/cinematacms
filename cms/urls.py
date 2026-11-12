@@ -8,10 +8,11 @@ import os
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import HttpResponse, JsonResponse
-from django.urls import include, path
+from django.urls import include, path, reverse
 from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
@@ -23,6 +24,7 @@ from cms.health import live as health_live
 from cms.health import ready as health_ready
 from cms.playback_analytics import record_playback
 from cms.request_utils import get_client_ip
+from files import sitemaps
 from files.metrics import refresh_runtime_metrics
 from users import views as user_views
 
@@ -236,7 +238,12 @@ def metrics_view(request):
 
 
 def robots_txt(request):
-    return HttpResponse("User-agent: *\nDisallow:\n", content_type="text/plain; charset=utf-8")
+    # Built like the sitemap's own URLs: the configured Site domain and the request scheme.
+    sitemap_url = f"{request.scheme}://{get_current_site(request).domain}{reverse('sitemap_index')}"
+    return HttpResponse(
+        f"User-agent: *\nDisallow:\n\nSitemap: {sitemap_url}\n",
+        content_type="text/plain; charset=utf-8",
+    )
 
 
 urlpatterns = [
@@ -246,6 +253,8 @@ urlpatterns = [
     path("analytics/segment-event", record_segment_event, name="record_segment_event"),
     path("analytics/segments", segment_report, name="segment_report"),
     path("robots.txt", robots_txt),
+    path("sitemap.xml", sitemaps.sitemap_index, name="sitemap_index"),
+    path("sitemap-<section>.xml", sitemaps.sitemap_section, name="sitemap_section"),
     path("metrics", metrics_view),
     path("internal/observability/references", observability_reference_lookup),
     path("internal/observability/error-probe", error_tracking_diagnostic),

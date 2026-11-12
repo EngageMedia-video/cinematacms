@@ -669,6 +669,16 @@ def featured_media(request):
     return render(request, "cms/featured-media.html", context)
 
 
+def _category_page(request):
+    """Return the category when the search URL selects only that category, else None."""
+    if len(request.GET) != 1:
+        return None
+    parameter, values = next(iter(request.GET.lists()))
+    if parameter not in ("c", "category") or len(values) != 1:
+        return None
+    return Category.objects.filter(title=values[0]).first()
+
+
 def search(request):
     try:
         RSS_URL = f"/rss{request.environ['REQUEST_URI']}"
@@ -676,6 +686,8 @@ def search(request):
         RSS_URL = "/rss"
     context = {}
     context["RSS_URL"] = RSS_URL
+    context["category"] = _category_page(request)
+    context["robots_noindex"] = context["category"] is None
     return render(request, "cms/search.html", context)
 
 

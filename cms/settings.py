@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.sitemaps",
     "django_prometheus",
     "rest_framework",
     "rest_framework.authtoken",

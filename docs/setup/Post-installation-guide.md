@@ -32,6 +32,31 @@ For a video to appear publicly:
 2. Ensure the video is reviewed (is_reviewed = true)
 These settings are required even for featured videos.
 
+## Step 5: Check the Sitemap for Search Engines
+
+`/robots.txt` points crawlers at the sitemap index, `/sitemap.xml`. The index
+links one sitemap for each kind of page:
+
+- `/sitemap-media.xml` lists the films that are public, reviewed, and encoded
+  successfully.
+- `/sitemap-playlists.xml` lists the playlists that hold at least one of those
+  films.
+- `/sitemap-categories.xml` lists the categories that hold at least one of those
+  films.
+
+Private, unlisted, and restricted films never appear. Search-result pages tell
+crawlers not to index them. A category page, `/search?c=<category>`, names its
+canonical URL and stays indexable.
+
+The sitemap and `/robots.txt` build absolute URLs from the domain of the Django
+Site that `SITE_ID` selects, with the scheme of the request. `install.sh` sets
+that domain to the portal hostname. If `/sitemap.xml` lists `example.com` or
+another host, set the domain:
+
+```bash
+python manage.py update_site_name --domain <portal-hostname>
+```
+
 ## Troubleshooting
 
 ### No Videos Appear After Upload
@@ -59,3 +84,4 @@ Check the encoding status:
  3. At least one video marked as featured, reviewed, and public
  4. No critical errors in encoding logs
  5. Homepage loads correctly with featured content visible
+ 6. `/sitemap.xml` lists sitemap URLs on the portal hostname
