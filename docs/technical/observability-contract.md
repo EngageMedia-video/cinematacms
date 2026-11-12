@@ -36,6 +36,34 @@ The row's runtime tiles read `celery_task_runtime_bucket` from the exporter, whi
 
 The web process configures Django tracing during WSGI startup. A Celery child configures tracing from `worker_process_init`, after the fork. Set `OTEL_SERVICE_ROLE` to `web`, `long-task`, `short-task`, `transcription`, `email`, or `beat`. All roles use the `CinemataCMS` service namespace by default.
 
+Each process that configures tracing sets `cinematacms_tracing_configured` for
+its `service_role`. The value is 1 when the tracer provider and the
+instrumentation are set up, and 0 when either fails, for example on an
+`ImportError` or a credentialed endpoint without HTTPS. The failure stays
+non-fatal: the process keeps running without spans. A deployment with tracing
+disabled writes no sample, and `beat` never configures tracing. The gauge
+exports the lowest value among the live processes of a role, so one process
+that failed keeps its role at 0 while healthy siblings report 1.
+
+A process stops counting when its file leaves `PROMETHEUS_MULTIPROC_DIR`. A
+Celery child removes its own live gauge files from `worker_process_shutdown`
+when it exits, including when its service stops. A uWSGI worker keys its files
+by worker id, so the worker that replaces it overwrites its value. Some exits
+leave a stale 0 behind:
+
+- A Celery child killed before its exit hook runs, for example by `SIGKILL`,
+  the out-of-memory killer, or the systemd stop timeout.
+- A uWSGI worker whose role then has tracing disabled or runs fewer workers,
+  because nothing writes that worker id again.
+
+Delete the stale process's `gauge_livemin_<pid>.db` file, where `<pid>` is the
+Celery child's process id or the uWSGI worker id, or clear the directory while
+the application units are stopped.
+`CinemataTracingUnconfigured` fires when a role reports 0 for five minutes.
+Restart that role's services and read their logs for the configuration error.
+A process that keeps running after the Python packages change can import new
+modules beside old ones and fail this way.
+
 `OTEL_TRACES_SAMPLER_ARG` sets the ordinary trace ratio. `OTEL_PRIORITY_TRACES_SAMPLER_ARG` sets the ratio for Celery, media, transcription, HLS, and email spans. Parent sampling decisions propagate across queued work.
 
 The deployment mode controls who owns the Collector. `local` installs the

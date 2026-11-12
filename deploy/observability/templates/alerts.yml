@@ -53,6 +53,11 @@ groups:
         for: 5m
         labels: {severity: critical}
         annotations: {summary: "Application telemetry emission failures persist"}
+      - alert: CinemataTracingUnconfigured
+        expr: min by (service_role) (cinematacms_tracing_configured) == 0
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "A service role is running without tracing"}
 
   - name: observability-stack
     interval: 30s

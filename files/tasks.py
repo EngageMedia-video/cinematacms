@@ -1476,13 +1476,33 @@ def task_revoked_handler(sender=None, request=None, **kwargs):
 
 @worker_shutting_down.connect
 def worker_shutdown_handler(sender=None, **kwargs):
-    """Kill all ffmpeg processes when the worker shuts down.
+    """Kill the ffmpeg processes in this worker's session when it shuts down.
 
-    Fires once in the main process (not per-fork), preventing orphan
-    ffmpeg processes from accumulating on worker restart or deploy.
+    Fires once in the main process (not per-fork). Each worker runs in its
+    own session: systemd starts every unit with setsid(), and
+    `celery worker --detach` calls it. ffmpeg keeps that session after its
+    prefork child dies and init adopts it, so orphans are found too, while
+    other workers' encoders run in other sessions and keep running.
+
+    Processes match by executable name, not command line, because the
+    worker's own argv can contain "ffmpeg" (`-n long@ffmpeg-node`).
     """
-    logger.info("Worker shutting down, cleaning up ffmpeg processes")
-    kill_all_ffmpeg_processes()
+    worker_pid = os.getpid()
+    worker_session = os.getsid(0)
+    encoder_name = os.path.basename(settings.FFMPEG_COMMAND)
+    candidates = subprocess.run(["pgrep", "-x", encoder_name], capture_output=True, text=True).stdout.split()
+    owned = []
+    for pid in candidates:
+        if int(pid) == worker_pid:
+            continue
+        try:
+            if os.getsid(int(pid)) == worker_session:
+                owned.append(pid)
+        except (ProcessLookupError, PermissionError):
+            continue
+    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
+    for pid in owned:
+        _graceful_kill(pid, label="(worker shutdown)")
 
 
 def _graceful_kill(pid, label=""):
@@ -1549,30 +1569,6 @@ def kill_ffmpeg_process(filepath):
     except Exception as e:
         logger.error(f"Error finding ffmpeg processes for {filepath}: {e}")
     return None
-
-
-def kill_all_ffmpeg_processes():
-    """Kill ALL ffmpeg processes on this worker.
-
-    Used during worker shutdown to ensure no orphan ffmpeg processes remain.
-    Sends SIGTERM first, then SIGKILL after a short timeout.
-    """
-    try:
-        result = subprocess.run(
-            ["pgrep", "-f", "ffmpeg"],
-            capture_output=True,
-        )
-        output = result.stdout.decode("utf-8").strip()
-        if not output:
-            logger.info("No ffmpeg processes found during cleanup")
-            return
-        pids = output.split("\n")
-        for pid in pids:
-            pid = pid.strip()
-            if pid:
-                _graceful_kill(pid, label="(worker shutdown)")
-    except Exception as e:
-        logger.error(f"Error during ffmpeg cleanup on worker shutdown: {e}")
 
 
 # TODO LIST
@@ -1916,10 +1912,9 @@ def apply_visibility_schedules():
 def _apply_visibility_schedules_inner():
     now = timezone.now()
     # Load full rows (no .only()): the candidate set is small (only scheduled
-    # media), and deferring fields here is unsafe — Media.save() fires the
-    # track_featured_change pre_save signal which reads `featured`, and
-    # Media.__init__ reads `media_file`/`thumbnail_time`. If any of those are
-    # deferred, lazy-loading re-enters __init__ and recurses infinitely.
+    # media), and each row is saved. Media.save() and the track_featured_change
+    # pre_save signal read many columns, and a deferred column costs its own
+    # query when read.
     scheduled_media = Media.objects.filter(
         Q(visibility_start_date__isnull=False) | Q(visibility_expires_at__isnull=False)
     ).order_by("id")
