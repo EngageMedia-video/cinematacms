@@ -8,11 +8,10 @@ import os
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import HttpResponse, JsonResponse
-from django.urls import include, path, reverse
+from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
@@ -24,6 +23,7 @@ from cms.health import live as health_live
 from cms.health import ready as health_ready
 from cms.playback_analytics import record_playback
 from cms.request_utils import get_client_ip
+from cms.robots import robots_txt
 from files import sitemaps
 from files.metrics import refresh_runtime_metrics
 from users import views as user_views
@@ -235,15 +235,6 @@ def metrics_view(request):
         data = generate_latest()
 
     return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
-
-
-def robots_txt(request):
-    # Built like the sitemap's own URLs: the configured Site domain and the request scheme.
-    sitemap_url = f"{request.scheme}://{get_current_site(request).domain}{reverse('sitemap_index')}"
-    return HttpResponse(
-        f"User-agent: *\nDisallow:\n\nSitemap: {sitemap_url}\n",
-        content_type="text/plain; charset=utf-8",
-    )
 
 
 urlpatterns = [
