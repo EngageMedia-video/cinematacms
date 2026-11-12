@@ -1,3 +1,4 @@
+import { useHoverPreview } from '../../hooks/useHoverPreview';
 import { cn } from '../../utils/classNames';
 import { Badge } from '../Badge';
 import { Icon } from '../Icon';
@@ -9,10 +10,11 @@ function MovieItemContainer({
 	link = '',
 	title = '',
 	useWrapperLink = true,
+	...containerProps
 }) {
 	if (link && useWrapperLink) {
 		return (
-			<article className={cn(shellClassName, 'relative')}>
+			<article className={cn(shellClassName, 'relative')} {...containerProps}>
 				<a
 					href={link}
 					className="absolute inset-0 z-10 cursor-pointer rounded-[6px] text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
@@ -23,7 +25,11 @@ function MovieItemContainer({
 		);
 	}
 
-	return <article className={cn(shellClassName, contentClassName)}>{children}</article>;
+	return (
+		<article className={cn(shellClassName, contentClassName)} {...containerProps}>
+			{children}
+		</article>
+	);
 }
 
 function MovieMetadata({ items = [] }) {
@@ -105,6 +111,7 @@ function MoviePoster({
 	className = '',
 	link = '',
 	linkTitle = '',
+	preview = null,
 	showTopRightIcon = false,
 	thumbnailOverlay = null,
 }) {
@@ -121,6 +128,23 @@ function MoviePoster({
 				loading="lazy"
 				decoding="async"
 			/>
+
+			{preview ? (
+				<img
+					src={preview.src}
+					alt=""
+					width={320}
+					height={180}
+					className={cn(
+						'absolute inset-0 h-full w-full object-cover',
+						preview.loaded ? 'opacity-100' : 'opacity-0'
+					)}
+					decoding="async"
+					onLoad={preview.onLoad}
+					onError={preview.onError}
+					data-movie-item-preview
+				/>
+			) : null}
 
 			{thumbnailOverlay ? <div className="absolute inset-0">{thumbnailOverlay}</div> : null}
 
@@ -185,12 +209,14 @@ export function HorizontalMovieItem({
 	link = '',
 	metadata = [],
 	posterClassName = 'aspect-video w-[180px]',
+	previewSrc = '',
 	subtitle = '',
 	subtitleLink = '',
 	thumbnailOverlay = null,
 	title = 'Movie Title',
 }) {
 	const useStandaloneLinks = Boolean(subtitleLink);
+	const { containerProps, previewProps } = useHoverPreview(previewSrc);
 
 	return (
 		<MovieItemContainer
@@ -199,6 +225,7 @@ export function HorizontalMovieItem({
 			link={link}
 			title={title}
 			useWrapperLink={!useStandaloneLinks}
+			{...containerProps}
 		>
 			<MoviePoster
 				imageAlt={imageAlt}
@@ -208,6 +235,7 @@ export function HorizontalMovieItem({
 				duration={duration}
 				link={useStandaloneLinks ? link : ''}
 				linkTitle={title}
+				preview={previewProps}
 				className={cn(posterClassName, 'shrink-0')}
 				thumbnailOverlay={thumbnailOverlay}
 			/>
@@ -237,12 +265,14 @@ export function VerticalMovieItem({
 	imageSrc,
 	link = '',
 	metadata = [],
+	previewSrc = '',
 	subtitle = '',
 	subtitleLink = '',
 	thumbnailOverlay = null,
 	title = 'Movie Title',
 }) {
 	const useStandaloneLinks = Boolean(subtitleLink);
+	const { containerProps, previewProps } = useHoverPreview(previewSrc);
 
 	return (
 		<MovieItemContainer
@@ -251,6 +281,7 @@ export function VerticalMovieItem({
 			link={link}
 			title={title}
 			useWrapperLink={!useStandaloneLinks}
+			{...containerProps}
 		>
 			<MoviePoster
 				imageAlt={imageAlt}
@@ -262,6 +293,7 @@ export function VerticalMovieItem({
 				iconLabel={iconLabel}
 				link={useStandaloneLinks ? link : ''}
 				linkTitle={title}
+				preview={previewProps}
 				showTopRightIcon
 				className="aspect-video w-full"
 				thumbnailOverlay={thumbnailOverlay}
