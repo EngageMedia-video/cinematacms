@@ -105,8 +105,8 @@ The allowlists keep the stable HTTP attribute names `http.request.method` and
 `http` to `OTEL_SEMCONV_STABILITY_OPT_IN` unless the variable already names
 `http` or `http/dup`, and keeps any other value an operator set there.
 
-The same endpoint resolves a reference found in a trace or log back to its
-source. Send `{"kind": "actor_ref", "value": "<reference>"}` to get
+The lookup endpoint, `POST /internal/observability/references`, also resolves a
+reference found in a trace or log back to its source. Send `{"kind": "actor_ref", "value": "<reference>"}` to get
 `{"kind": "actor_ref", "user_ids": [<id>, ...]}`, or `{"kind": "media_ref",
 "value": "<reference>"}` to get `{"kind": "media_ref", "media_tokens":
 ["<token>", ...]}`. A reference ignores case, and neither emails nor media
