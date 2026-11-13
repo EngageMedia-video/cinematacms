@@ -10,6 +10,7 @@ import uuid
 from contextvars import ContextVar
 from datetime import timedelta
 from functools import partial
+from urllib.parse import quote
 
 import m3u8
 import waffle
@@ -1816,7 +1817,8 @@ class Category(models.Model):
         verbose_name_plural = "Categories"
 
     def get_absolute_url(self):
-        return reverse("search") + f"?c={self.title}"
+        # The same escaping as encodeURIComponent, which the category links use.
+        return reverse("search") + "?c=" + quote(self.title, safe="!*'()")
 
     def update_category_media(self):
         self.media_count = Media.objects.filter(

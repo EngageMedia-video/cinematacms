@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load django_vite %}
-{% block headermeta %}{% endblock headermeta %}
+{% block headermeta %}{% if category %}<link rel="canonical" href="{{ FRONTEND_HOST }}{{ category.get_absolute_url }}">{% endif %}{% endblock headermeta %}
 
 {% block topimports %}{% vite_asset 'src/entries/search.js' %}{% endblock topimports %}
 

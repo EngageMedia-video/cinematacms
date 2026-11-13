@@ -59,6 +59,8 @@ _MEDIA_CREATE = _operation("upload_transfer", "upload_transfer")
 _OWNED_ROUTE_RULES = (
     # cms.urls
     _rule("robots.txt", "pages", "robots"),
+    _rule("sitemap.xml", "pages", "sitemap", url_name="sitemap_index"),
+    _rule("sitemap-<section>.xml", "pages", "sitemap", url_name="sitemap_section"),
     _rule("metrics", "system", "metrics"),
     _rule("health/live", "system", "health_live"),
     _rule("health/ready", "system", "health_ready"),
