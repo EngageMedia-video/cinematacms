@@ -80,6 +80,14 @@ EXPORTED_SPAN_EVENT_ATTRIBUTES = frozenset(
         "reason_code",
     }
 )
+EXPORTED_RESOURCE_ATTRIBUTES = frozenset(
+    {
+        "service.name",
+        "service.namespace",
+        "service.instance.id",
+        "deployment.environment.name",
+    }
+)
 
 
 def _exported_attributes(attributes, allowed: frozenset[str]) -> dict[str, Any]:
@@ -100,6 +108,7 @@ def anonymise_span(span):
     Status text is dropped because instrumentations copy the raw exception message into it.
     Trace state is dropped because it arrives from callers in the `tracestate` header.
     """
+    from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import Event, ReadableSpan
     from opentelemetry.trace import Link, Status
 
@@ -107,7 +116,7 @@ def anonymise_span(span):
         name=span.name,
         context=_without_trace_state(span.context),
         parent=_without_trace_state(span.parent),
-        resource=span.resource,
+        resource=Resource(_exported_attributes(span.resource.attributes, EXPORTED_RESOURCE_ATTRIBUTES)),
         attributes=_exported_attributes(span.attributes, EXPORTED_SPAN_ATTRIBUTES),
         events=[
             Event(event.name, _exported_attributes(event.attributes, EXPORTED_SPAN_EVENT_ATTRIBUTES), event.timestamp)

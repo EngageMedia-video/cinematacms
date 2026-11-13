@@ -87,10 +87,12 @@ kind, and the attempt number.
 
 Each process anonymises its spans before export, so the guarantee holds in
 every deployment mode, including a `managed` Collector. The exporter keeps only
-the span attributes in `EXPORTED_SPAN_ATTRIBUTES` and the event attributes in
-`EXPORTED_SPAN_EVENT_ATTRIBUTES` (`cms/observability.py`). It keeps the status
+the span attributes in `EXPORTED_SPAN_ATTRIBUTES`, the event attributes in
+`EXPORTED_SPAN_EVENT_ATTRIBUTES`, and the resource attributes in
+`EXPORTED_RESOURCE_ATTRIBUTES` (`cms/observability.py`). It keeps the status
 code and drops the status message, because instrumentations copy the raw
-exception text into it. Exception events keep only `exception.type`. Links keep
+exception text into it. Exception events lose `exception.message` and
+`exception.stacktrace` and keep `exception.type`. Links keep
 their span context and lose their attributes. Every exported span context drops
 its trace state, which callers set through the `tracestate` header. A span that
 cannot be anonymised is dropped and counted as a `traces`/`exporter`/`prepare`

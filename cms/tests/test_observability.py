@@ -467,13 +467,16 @@ class SpanExportAnonymisationTests(SimpleTestCase):
     PERSONAL_DATA = ("alice@example.org", "SECRET123", "10.1.2.3", "Mozilla", "Traceback")
 
     def finished_spans(self):
+        from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import SimpleSpanProcessor
         from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
         from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags, TraceState, set_span_in_context
 
         recorder = InMemorySpanExporter()
-        provider = TracerProvider()
+        provider = TracerProvider(
+            resource=Resource({"service.name": "CinemataCMS/web", "user.email": "alice@example.org"})
+        )
         provider.add_span_processor(SimpleSpanProcessor(recorder))
         tracer = provider.get_tracer("test")
         caller = SpanContext(
@@ -535,6 +538,7 @@ class SpanExportAnonymisationTests(SimpleTestCase):
             },
         )
         self.assertEqual(failed.context.trace_id, 0x0AF7651916CD43DD8448EB211C80319C)
+        self.assertEqual(dict(failed.resource.attributes), {"service.name": "CinemataCMS/web"})
         self.assertEqual(failed.status.status_code, StatusCode.ERROR)
         self.assertEqual([dict(event.attributes) for event in failed.events], [{"exception.type": "ValueError"}])
         self.assertEqual(len(failed.links), 1)
@@ -551,7 +555,11 @@ class SpanExportAnonymisationTests(SimpleTestCase):
         failures.assert_called_once_with("traces", "exporter", "prepare")
 
     def test_the_application_and_the_collector_keep_the_same_span_fields(self):
-        from cms.observability import EXPORTED_SPAN_ATTRIBUTES, EXPORTED_SPAN_EVENT_ATTRIBUTES
+        from cms.observability import (
+            EXPORTED_RESOURCE_ATTRIBUTES,
+            EXPORTED_SPAN_ATTRIBUTES,
+            EXPORTED_SPAN_EVENT_ATTRIBUTES,
+        )
 
         collector = yaml.safe_load((REPOSITORY_ROOT / "deploy/observability/templates/otelcol.yml").read_text())
         contexts = {
@@ -565,6 +573,7 @@ class SpanExportAnonymisationTests(SimpleTestCase):
 
         self.assertEqual(kept_keys("span"), EXPORTED_SPAN_ATTRIBUTES)
         self.assertEqual(kept_keys("spanevent"), EXPORTED_SPAN_EVENT_ATTRIBUTES)
+        self.assertEqual(kept_keys("resource"), EXPORTED_RESOURCE_ATTRIBUTES)
         self.assertIn('set(span.status.message, "")', contexts["span"])
         self.assertIn('set(span.trace_state, "")', contexts["span"])
 
