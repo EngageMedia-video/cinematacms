@@ -972,6 +972,35 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertFalse((self.deploy_root / "etc/cinematacms/prometheus.yml").exists())
         self.assertFalse((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").exists())
 
+    def install_full_stack_collector_unit(self):
+        unit = self.deploy_root / "etc/systemd/system/cinematacms-otelcol.service"
+        unit.parent.mkdir(parents=True, exist_ok=True)
+        full_stack_unit = (PROJECT_ROOT / "deploy/observability/templates/cinematacms-otelcol.service").read_text()
+        unit.write_text(full_stack_unit)
+        return unit, full_stack_unit
+
+    def test_managed_observability_keeps_the_full_stack_collector_unit(self):
+        unit, full_stack_unit = self.install_full_stack_collector_unit()
+
+        for restart in ([], ["--no-restart"]):
+            with self.subTest(restart=restart):
+                result = self.run_updater(
+                    "--domain", "video.example.org", "--proxy", "none", "--observability", "managed", *restart
+                )
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(unit.read_text(), full_stack_unit)
+
+    def test_managed_observability_leaves_the_full_stack_collector_running(self):
+        self.install_full_stack_collector_unit()
+
+        result = self.run_updater("--domain", "video.example.org", "--proxy", "none", "--observability", "managed")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = self.command_log.read_text().splitlines()
+        self.assertIn("systemctl disable --now cinematacms-prometheus", commands)
+        self.assertFalse([command for command in commands if "cinematacms-otelcol" in command], commands)
+
     def test_apply_restarts_active_application_services(self):
         result = self.run_updater(
             "--domain",

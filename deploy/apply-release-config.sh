@@ -415,8 +415,16 @@ done
 
 PROMETHEUS_UNIT="$(root_path /etc/systemd/system/cinematacms-prometheus.service)"
 OTELCOL_UNIT="$(root_path /etc/systemd/system/cinematacms-otelcol.service)"
+# deploy/observability/install.sh installs its own Collector under the same unit name.
+FULL_STACK_COLLECTOR_CONFIG=/etc/cinematacms-observability/otelcol.yml
+full_stack_owns_collector=false
+if [ "$OBSERVABILITY_MODE" != "local" ] && grep -qF "$FULL_STACK_COLLECTOR_CONFIG" "$OTELCOL_UNIT" 2>/dev/null; then
+    full_stack_owns_collector=true
+fi
 install_managed_file "$SCRIPT_DIR/cinematacms-prometheus.service" "$PROMETHEUS_UNIT"
-install_managed_file "$SCRIPT_DIR/cinematacms-otelcol.service" "$OTELCOL_UNIT"
+if [ "$full_stack_owns_collector" = false ]; then
+    install_managed_file "$SCRIPT_DIR/cinematacms-otelcol.service" "$OTELCOL_UNIT"
+fi
 if [ "$OBSERVABILITY_MODE" = "local" ]; then
     install_managed_file "$SCRIPT_DIR/prometheus-cinematacms.yml" "$CONFIG_DIR/prometheus.yml"
     install_managed_file "$SCRIPT_DIR/otelcol-contrib-cinematacms.yml" "$CONFIG_DIR/otelcol-contrib.yml"
@@ -437,6 +445,8 @@ if [ "$NO_RESTART" = false ]; then
     systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
     if [ "$OBSERVABILITY_MODE" = "local" ]; then
         systemctl enable --now cinematacms-prometheus cinematacms-otelcol
+    elif [ "$full_stack_owns_collector" = true ]; then
+        systemctl disable --now cinematacms-prometheus >/dev/null 2>&1 || true
     else
         systemctl disable --now cinematacms-prometheus cinematacms-otelcol >/dev/null 2>&1 || true
     fi
