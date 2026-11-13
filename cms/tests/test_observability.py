@@ -6,11 +6,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+import yaml
 from celery.signals import worker_process_shutdown
 from django.core.cache import cache
 from django.http import HttpResponse
@@ -459,6 +461,112 @@ class ObservabilityConfigTests(SimpleTestCase):
         sampler = OperationAwareSampler(default_ratio=0, priority_ratio=1)
         self.assertEqual(sampler.should_sample(None, 1, "GET /about").decision, Decision.DROP)
         self.assertEqual(sampler.should_sample(None, 1, "email.delivery").decision, Decision.RECORD_AND_SAMPLE)
+
+
+class SpanExportAnonymisationTests(SimpleTestCase):
+    PERSONAL_DATA = ("alice@example.org", "SECRET123", "10.1.2.3", "Mozilla", "Traceback")
+
+    def finished_spans(self):
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+        from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags, TraceState, set_span_in_context
+
+        recorder = InMemorySpanExporter()
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(recorder))
+        tracer = provider.get_tracer("test")
+        caller = SpanContext(
+            trace_id=0x0AF7651916CD43DD8448EB211C80319C,
+            span_id=0xB7AD6B7169203331,
+            is_remote=True,
+            trace_flags=TraceFlags(TraceFlags.SAMPLED),
+            trace_state=TraceState([("vendor", "alice@example.org")]),
+        )
+        with tracer.start_as_current_span("linked", context=set_span_in_context(NonRecordingSpan(caller))) as linked:
+            pass
+        with suppress(ValueError):
+            with tracer.start_as_current_span(
+                "run/encode_media",
+                context=set_span_in_context(NonRecordingSpan(caller)),
+                attributes={
+                    "http.url": "https://example.org/reset?email=alice@example.org&token=SECRET123",
+                    "http.user_agent": "Mozilla/5.0",
+                    "net.peer.ip": "10.1.2.3",
+                    "domain.operation": "encoding",
+                    "http.route": "^search",
+                    "cinematacms.actor_ref": "v1:actor",
+                    "cinematacms.media_ref": "v1:media",
+                    "celery.task_id": "task-1",
+                },
+                links=[Link(linked.get_span_context(), {"email": "alice@example.org"})],
+            ):
+                raise ValueError("cannot process alice@example.org from 10.1.2.3")
+        return recorder.get_finished_spans()
+
+    def export(self, spans):
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+        destination = InMemorySpanExporter()
+        SafeSpanExporter(destination).export(spans)
+        return destination.get_finished_spans()
+
+    def test_exported_spans_carry_no_personal_data(self):
+        from opentelemetry.exporter.otlp.proto.common.trace_encoder import encode_spans
+
+        payload = encode_spans(self.export(self.finished_spans())).SerializeToString()
+
+        for value in self.PERSONAL_DATA:
+            self.assertNotIn(value.encode(), payload, value)
+
+    def test_exported_spans_keep_the_incident_identifiers_and_operational_fields(self):
+        from opentelemetry.trace import StatusCode
+
+        failed = next(span for span in self.export(self.finished_spans()) if span.name == "run/encode_media")
+
+        self.assertEqual(
+            dict(failed.attributes),
+            {
+                "domain.operation": "encoding",
+                "http.route": "^search",
+                "cinematacms.actor_ref": "v1:actor",
+                "cinematacms.media_ref": "v1:media",
+                "celery.task_id": "task-1",
+            },
+        )
+        self.assertEqual(failed.context.trace_id, 0x0AF7651916CD43DD8448EB211C80319C)
+        self.assertEqual(failed.status.status_code, StatusCode.ERROR)
+        self.assertEqual([dict(event.attributes) for event in failed.events], [{"exception.type": "ValueError"}])
+        self.assertEqual(len(failed.links), 1)
+
+    def test_a_span_that_cannot_be_anonymised_is_dropped_not_exported_raw(self):
+        broken = Mock(name="span")
+        type(broken).attributes = property(Mock(side_effect=RuntimeError("unreadable")))
+        healthy = self.finished_spans()
+
+        with patch("files.metrics.record_telemetry_failure") as failures:
+            exported = self.export([broken, *healthy])
+
+        self.assertEqual([span.name for span in exported], [span.name for span in healthy])
+        failures.assert_called_once_with("traces", "exporter", "prepare")
+
+    def test_the_application_and_the_collector_keep_the_same_span_fields(self):
+        from cms.observability import EXPORTED_SPAN_ATTRIBUTES, EXPORTED_SPAN_EVENT_ATTRIBUTES
+
+        collector = yaml.safe_load((REPOSITORY_ROOT / "deploy/observability/templates/otelcol.yml").read_text())
+        contexts = {
+            statement["context"]: statement["statements"]
+            for statement in collector["processors"]["transform/privacy"]["trace_statements"]
+        }
+
+        def kept_keys(context):
+            statement = next(line for line in contexts[context] if line.startswith("keep_keys("))
+            return frozenset(json.loads(statement.split(", ", 1)[1].removesuffix(")")))
+
+        self.assertEqual(kept_keys("span"), EXPORTED_SPAN_ATTRIBUTES)
+        self.assertEqual(kept_keys("spanevent"), EXPORTED_SPAN_EVENT_ATTRIBUTES)
+        self.assertIn('set(span.status.message, "")', contexts["span"])
+        self.assertIn('set(span.trace_state, "")', contexts["span"])
 
 
 @override_settings(OTEL_ENABLED=True, OTEL_SERVICE_ROLE="transcription")

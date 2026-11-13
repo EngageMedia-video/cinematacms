@@ -25,6 +25,111 @@ ALLOWED_SERVICE_ROLES = frozenset({"web", "long-task", "short-task", "transcript
 SENSITIVE_ATTRIBUTE_PARTS = ("email", "authorization", "secret", "password", "body", "filename", "url")
 RESTRICTED_EMAIL_ATTRIBUTES = frozenset({"email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt"})
 RESTRICTED_REFERENCE_ATTRIBUTES = frozenset({"cinematacms.actor_ref", "cinematacms.media_ref"})
+EXPORTED_SPAN_ATTRIBUTES = frozenset(
+    {
+        "cinematacms.actor_ref",
+        "cinematacms.media_ref",
+        "domain.operation",
+        "domain.outcome",
+        "domain.reason_code",
+        "email.delivery_id",
+        "email.recipient_ref",
+        "email.kind",
+        "email.attempt",
+        "media.type",
+        "encoding.profile_id",
+        "encoding.resolution",
+        "encoding.codec",
+        "encoding.extension",
+        "cinematacms.db.workload",
+        "cinematacms.db.context_group",
+        "cinematacms.db.operation",
+        "cinematacms.db.outcome",
+        "db.query.fingerprint",
+        "cinematacms.cache.family",
+        "cinematacms.cache.operation",
+        "cinematacms.cache.result",
+        "service_role",
+        "task_id",
+        "celery.task_id",
+        "celery.task_name",
+        "queue",
+        "messaging.destination.name",
+        "delivery_uuid",
+        "recipient_ref",
+        "operation",
+        "outcome",
+        "reason_code",
+        "route_group",
+        "http.route",
+        "http.request.method",
+        "http.response.status_code",
+    }
+)
+EXPORTED_SPAN_EVENT_ATTRIBUTES = frozenset(
+    {
+        "exception.type",
+        "domain.operation",
+        "domain.outcome",
+        "domain.reason_code",
+        "task_id",
+        "delivery_uuid",
+        "recipient_ref",
+        "operation",
+        "outcome",
+        "reason_code",
+    }
+)
+
+
+def _exported_attributes(attributes, allowed: frozenset[str]) -> dict[str, Any]:
+    return {key: value for key, value in (attributes or {}).items() if key in allowed}
+
+
+def _without_trace_state(context):
+    from opentelemetry.trace import SpanContext
+
+    if context is None:
+        return None
+    return SpanContext(context.trace_id, context.span_id, context.is_remote, context.trace_flags)
+
+
+def anonymise_span(span):
+    """Rebuild a finished span from the fields that may leave the process.
+
+    Status text is dropped because instrumentations copy the raw exception message into it.
+    Trace state is dropped because it arrives from callers in the `tracestate` header.
+    """
+    from opentelemetry.sdk.trace import Event, ReadableSpan
+    from opentelemetry.trace import Link, Status
+
+    return ReadableSpan(
+        name=span.name,
+        context=_without_trace_state(span.context),
+        parent=_without_trace_state(span.parent),
+        resource=span.resource,
+        attributes=_exported_attributes(span.attributes, EXPORTED_SPAN_ATTRIBUTES),
+        events=[
+            Event(event.name, _exported_attributes(event.attributes, EXPORTED_SPAN_EVENT_ATTRIBUTES), event.timestamp)
+            for event in span.events
+        ],
+        links=[Link(_without_trace_state(link.context)) for link in span.links],
+        kind=span.kind,
+        status=Status(span.status.status_code),
+        start_time=span.start_time,
+        end_time=span.end_time,
+        instrumentation_scope=span.instrumentation_scope,
+    )
+
+
+def _anonymise_spans(spans) -> list:
+    anonymised = []
+    for span in spans:
+        try:
+            anonymised.append(anonymise_span(span))
+        except Exception:
+            _record_telemetry_failure("traces", "exporter", "prepare")
+    return anonymised
 
 
 class SafeSpanExporter:
@@ -35,7 +140,7 @@ class SafeSpanExporter:
         from opentelemetry.sdk.trace.export import SpanExportResult
 
         try:
-            result = self.exporter.export(spans)
+            result = self.exporter.export(_anonymise_spans(spans))
         except Exception:
             from files.metrics import record_telemetry_failure
 
