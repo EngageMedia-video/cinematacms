@@ -11,6 +11,7 @@ import { OtherMediaDownloadLink } from './OtherMediaDownloadLink';
 import { VideoMediaDownloadLink } from './VideoMediaDownloadLink';
 import { MediaSaveButton } from './MediaSaveButton';
 import { MediaShareButton } from './MediaShareButton';
+import { MediaReportButton } from './MediaReportButton';
 
 import { formatNumber } from '../../../../static/js/functions';
 import { Text } from '../../../shared/components/Text/Text.jsx';
@@ -104,6 +105,8 @@ export default function MediaActions({ allowDownload, displayViews, downloadLink
 						) : (
 							<OtherMediaDownloadLink link={downloadLink} title={title} />
 						))}
+
+					{!user.is.anonymous && user.can.reportMedia && <MediaReportButton />}
 				</div>
 			</div>
 		</div>
