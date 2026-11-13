@@ -156,7 +156,7 @@ class TusUploadView(TusView):
         session = tus.get(request.user, self.target_media, kwargs["upload_id"])
         if session.total_size > tus.max_upload_size(request.user):
             # The account's limit was lowered after the upload started.
-            return _error(413, tus.TOO_LARGE_MESSAGE)
+            return _error(413, tus.too_large_message(request.user))
         response = HttpResponse(status=204)
         if session.status == UploadSession.Status.OPEN:
             new_offset = tus.append(session, claimed_offset, request)

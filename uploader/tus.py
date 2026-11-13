@@ -14,6 +14,7 @@ import shutil
 import uuid
 
 from django.conf import settings
+from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 
 from . import sessions
@@ -26,9 +27,13 @@ OFFSET_CONTENT_TYPE = "application/offset+octet-stream"
 READ_SIZE = 64 * 1024
 
 SIGN_IN_MESSAGE = "Sign in again to continue this upload."
-NOT_FOUND_MESSAGE = "Upload not found."
-LOCKED_MESSAGE = "This upload is busy. Try again shortly."
-TOO_LARGE_MESSAGE = "This file is larger than the upload limit."
+NOT_FOUND_MESSAGE = "This upload was not found. Select the file again to start a new upload."
+LOCKED_MESSAGE = "This upload is already in progress. Try again in a few seconds."
+
+
+def too_large_message(user):
+    """Names the limit, so the person knows what size of file is accepted."""
+    return f"This file is larger than the upload limit of {filesizeformat(max_upload_size(user))}."
 
 
 class TusError(Exception):
@@ -74,7 +79,7 @@ def expires_at(session):
 def create(user, target_media, *, length, filename, fingerprint="", is_draft=False):
     """Start an upload of ``length`` bytes for the caller and return its session."""
     if length > max_upload_size(user):
-        raise TusError(413, TOO_LARGE_MESSAGE)
+        raise TusError(413, too_large_message(user))
     session = UploadSession.objects.create(
         uuid=uuid.uuid4(),
         protocol=UploadSession.Protocol.TUS,

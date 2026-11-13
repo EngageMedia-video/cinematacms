@@ -204,6 +204,7 @@ class ProtocolTests(TusTestCase):
             response = self.create()
 
         self.assertEqual(response.status_code, 413)
+        self.assertRegex(response.json()["error"], r"upload limit of 9\sbytes\.$")
         self.assertFalse(UploadSession.objects.exists())
 
     def test_limit_lowered_during_the_transfer_refuses_further_bytes(self):
@@ -214,6 +215,7 @@ class ProtocolTests(TusTestCase):
             response = self.patch_bytes(url, 4, CONTENT[4:])
 
         self.assertEqual(response.status_code, 413)
+        self.assertRegex(response.json()["error"], r"upload limit of 9\sbytes\.$")
         self.assertEqual(self.stored_bytes(url), b"0123")
 
     def test_file_at_the_size_limit_is_accepted(self):
