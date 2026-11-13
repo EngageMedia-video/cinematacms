@@ -103,13 +103,13 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
 | `/fu/tus/<uuid>/` | HEAD, PATCH, DELETE | Offset, append, cancel |
 | `/fu/tus/update/<token>/` | OPTIONS, POST, GET | The same for a replacement file of one media |
 | `/fu/tus/update/<token>/<uuid>/` | HEAD, PATCH, DELETE | Offset, append, cancel |
+| `/fu/upload/cancel/<token>/` | POST | Discard the replacement file staged for one media |
 
-#### Fine Uploader endpoints (compatibility)
-The pages no longer load Fine Uploader. Its endpoints (`/fu/upload/…`, `uploader/views.py`) stay so
-that a page loaded before the tus release can finish or resume its chunked upload within the
-retention period. A Fine Uploader upload and a tus upload are both `UploadSession` rows
-(`protocol` is `chunked` or `tus`) and share ownership checks, completion, expiry and cleanup. The
-endpoints can be removed in a later release.
+#### Fine Uploader
+The Fine Uploader endpoints (`/fu/upload/`, `/fu/upload/session/…`, `/fu/upload/update/…`) and the
+chunked upload code are removed. Sessions are cut off before a release, so no page loaded before the
+tus release continues an upload. Migration `uploader.0003` deletes the remaining chunked upload
+rows, and the daily `cleanup_orphaned_uploads` task removes their chunk files.
 
 ---
 

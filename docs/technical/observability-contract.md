@@ -179,7 +179,7 @@ never a metric label.
   `X-Upload-Id` and returns an empty string for anything else. On the
   `upload_transfer` route group, `cinematacms.http.request.denied`, `.failed`,
   and `.slow` carry `upload_ref`, and `uploader.views` logs
-  `cinematacms.upload.started` (first chunk, part 0) and
+  `cinematacms.upload.started` (upload created) and
   `cinematacms.upload.finished` (media created), both with `upload_ref` and
   `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
   attribution key and not as proof of ownership.

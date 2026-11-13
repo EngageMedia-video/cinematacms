@@ -205,7 +205,7 @@ describe('EditMediaPage unsaved changes warning', () => {
 		expect(leaveWarningShown()).toBe(true);
 	});
 
-	// Fine Uploader warns on its own only while bytes are moving, not while paused.
+	// No bytes are moving while an upload is paused, so the page has to warn by itself.
 	it('warns before leaving while a replacement video upload is paused', async () => {
 		renderWithReplacementUploader(StalledUploader);
 

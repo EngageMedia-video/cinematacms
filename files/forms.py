@@ -167,7 +167,9 @@ class MediaForm(forms.ModelForm):
         self.fields["uploaded_poster"].label = "Thumbnail Image Upload"
 
         self.fields["media_file"].label = "Media Upload"
-        self.fields["media_file"].required = False  # Made optional for separate upload via Fine Uploader
+        self.fields[
+            "media_file"
+        ].required = False  # Made optional: the file is uploaded separately through the tus endpoints
 
         self.fields["category"].required = True
         self.fields["media_country"].required = True

@@ -1140,7 +1140,7 @@ def edit_media(request):
             media = form.save()
             apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
 
-            # Check if a new media file was uploaded via Fine Uploader
+            # Check if a new media file was uploaded through the tus endpoints
             session_key = f"media_file_updated_{media.friendly_token}"
             media_update_info = request.session.get(session_key, {})
 
