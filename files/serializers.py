@@ -323,6 +323,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
+    user_has_reported = serializers.SerializerMethodField()
     user_has_disliked = serializers.SerializerMethodField()
     community_impacts = serializers.SerializerMethodField()
     sprite_num_secs = serializers.SerializerMethodField()
@@ -392,6 +393,12 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return MediaAction.objects.filter(media=obj, user=request.user, action="like").exists()
+        return False
+
+    def get_user_has_reported(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return MediaAction.objects.filter(media=obj, user=request.user, action="report").exists()
         return False
 
     def get_user_has_disliked(self, obj):
@@ -500,6 +507,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "allow_download",
             "year_produced",
             "user_has_liked",
+            "user_has_reported",
             "user_has_disliked",
         )
 

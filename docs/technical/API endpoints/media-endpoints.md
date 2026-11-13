@@ -452,8 +452,7 @@ has replies removes those replies too.
 Perform actions on media such as liking, disliking, or reporting inappropriate content.
 
 **Authentication:**  
-✅ Required for `like` and `dislike`  
-❌ Optional for `report`
+✅ Required for `like`, `dislike`, and `report`
 
 ---
 
@@ -500,3 +499,28 @@ Perform actions on media such as liking, disliking, or reporting inappropriate c
   "detail": "action received"
 }
 ```
+
+A `report` is stored before the response returns. The first report from a
+viewer answers `201 Created`. A repeated report from the same viewer answers
+`200 OK` with `"detail": "action already performed"` and is not counted again.
+The media detail response carries `user_has_reported` for the signed-in viewer.
+
+## 🔹 ``DELETE /api/v1/media/{friendly_token}/actions``
+
+**Description:**
+Remove an action from media.
+
+**Authentication:**
+
+- ✅ Required for `retract_report`
+- ✅ Superuser required for `report`
+
+#### Body Parameters (JSON):
+| Name   | Type   | Required | Description |
+|--------|--------|----------|-------------|
+| `type` | string | ✅       | `"like"` or `"dislike"` removes the caller's own action. `"retract_report"` removes the caller's own report and lowers `reported_times` by one. `"report"` clears every report on the media. |
+
+A retraction answers `200 OK` with `"detail": "report retracted"`, or
+`"detail": "no report to retract"` when the caller has no report on the media.
+A retraction does not restore the visibility of media that reports made
+private.

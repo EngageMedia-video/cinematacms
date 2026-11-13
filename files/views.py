@@ -1918,6 +1918,19 @@ class MediaActions(APIView):
                 return self._handle_like_dislike(request, media, action)
 
             user_or_session = get_user_or_session(request)
+            if action == "report":
+                # Stored before the response so a retraction that follows cannot
+                # overtake a queued report.
+                saved = save_user_action(
+                    user_or_session,
+                    friendly_token=media.friendly_token,
+                    action=action,
+                    extra_info=extra,
+                )
+                if not saved:
+                    return Response({"detail": "action already performed"}, status=status.HTTP_200_OK)
+                return Response({"detail": "action received"}, status=status.HTTP_201_CREATED)
+
             save_user_action.delay(
                 user_or_session,
                 friendly_token=media.friendly_token,
@@ -2016,6 +2029,24 @@ class MediaActions(APIView):
             status=status.HTTP_200_OK,
         )
 
+    def _handle_report_retraction(self, request, media):
+        """Remove the signed-in viewer's own report and its count."""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "action allowed on logged in users only"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        deleted_count, _ = MediaAction.objects.filter(media=media, action="report", user=request.user).delete()
+        if not deleted_count:
+            return Response({"detail": "no report to retract"}, status=status.HTTP_200_OK)
+
+        Media.objects.filter(pk=media.pk).update(
+            reported_times=Case(When(reported_times__gt=0, then=F("reported_times") - 1), default=0)
+        )
+        invalidate_media_cache(media.friendly_token)
+        return Response({"detail": "report retracted"}, status=status.HTTP_200_OK)
+
     def delete(self, request, friendly_token, format=None):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
@@ -2024,6 +2055,9 @@ class MediaActions(APIView):
         action = request.data.get("type")
         if action in ("like", "dislike"):
             return self._handle_like_dislike_removal(request, media, action)
+
+        if action == "retract_report":
+            return self._handle_report_retraction(request, media)
 
         if not request.user.is_superuser:
             return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
