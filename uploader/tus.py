@@ -18,8 +18,8 @@ from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 
 from . import sessions
-from .fineuploader import clean_filename
 from .models import UploadSession
+from .utils import clean_filename
 
 VERSION = "1.0.0"
 EXTENSIONS = "creation,expiration,termination"
@@ -82,13 +82,10 @@ def create(user, target_media, *, length, filename, fingerprint="", is_draft=Fal
         raise TusError(413, too_large_message(user))
     session = UploadSession.objects.create(
         uuid=uuid.uuid4(),
-        protocol=UploadSession.Protocol.TUS,
         user=user,
         target_media=target_media,
         filename=clean_filename(filename),
         total_size=length,
-        part_size=0,
-        total_parts=0,
         fingerprint=sessions.clean_fingerprint(fingerprint),
         is_draft=is_draft,
     )
@@ -107,7 +104,7 @@ def create(user, target_media, *, length, filename, fingerprint="", is_draft=Fal
 def get(user, target_media, upload_id):
     """The caller's tus upload. Another account's upload, or one for another target, looks absent."""
     session = sessions.get_owned(user, target_media, upload_id)
-    if session is None or session.protocol != UploadSession.Protocol.TUS:
+    if session is None:
         raise TusError(404, NOT_FOUND_MESSAGE)
     if session.status in (UploadSession.Status.CANCELLED, UploadSession.Status.EXPIRED):
         raise TusError(410, sessions.EXPIRED_MESSAGE)
@@ -141,7 +138,6 @@ def find_resumable(user, target_media, filename, total_size, fingerprint, is_dra
         return None
     session = (
         UploadSession.objects.filter(
-            protocol=UploadSession.Protocol.TUS,
             user=user,
             target_media=target_media,
             status=UploadSession.Status.OPEN,

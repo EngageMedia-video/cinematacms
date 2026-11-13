@@ -3,7 +3,6 @@ import fcntl
 import os
 import shutil
 import tempfile
-import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -15,7 +14,6 @@ from files.models import Media
 from files.tasks import cleanup_orphaned_uploads
 from uploader import sessions
 from uploader.models import UploadSession
-from uploader.test_upload_sessions import create_media
 from users.models import User
 
 CONTENT = b"0123456789"
@@ -23,6 +21,11 @@ FINGERPRINT = "a" * 64
 TUS = {"HTTP_TUS_RESUMABLE": "1.0.0"}
 LOOKUP = {"filename": "clip.mp4", "total_size": 10, "fingerprint": FINGERPRINT}
 OFFSET_TYPE = "application/offset+octet-stream"
+
+
+def create_media(user, title):
+    with patch.object(Media, "media_init", return_value=None):
+        return Media.objects.create(title=title, user=user, media_type="video")
 
 
 def metadata(**values):
@@ -275,11 +278,15 @@ class CompletionTests(TusTestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
-    def test_head_finishes_an_upload_whose_completion_never_ran(self):
+    def received_but_not_completed(self):
         url = self.created_url()
         self.patch_bytes(url, 0, CONTENT[:4])
         with open(sessions.data_path(self.session(url).uuid), "ab") as data:
             data.write(CONTENT[4:])  # the bytes landed, then the worker died before completing
+        return url
+
+    def test_head_finishes_an_upload_whose_completion_never_ran(self):
+        url = self.received_but_not_completed()
 
         response = self.head(url)
 
@@ -295,6 +302,27 @@ class CompletionTests(TusTestCase):
 
         self.assertEqual(self.head(url).status_code, 423)
         self.assertEqual(self.patch_bytes(url, 10, b"").status_code, 423)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
+
+    def test_assembly_abandoned_by_a_dead_worker_is_finished_by_the_next_request(self):
+        url = self.received_but_not_completed()
+        abandoned_at = timezone.now() - sessions.ASSEMBLY_TIMEOUT - timedelta(minutes=1)
+        UploadSession.objects.update(status=UploadSession.Status.ASSEMBLING, updated_at=abandoned_at)
+
+        response = self.head(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
+
+    def test_failed_assembly_leaves_the_upload_open_for_another_attempt(self):
+        url = self.received_but_not_completed()
+
+        with patch.object(sessions, "_combine", side_effect=OSError("disk full")), self.assertRaises(OSError):
+            self.head(url)
+
+        self.assertEqual(self.session(url).status, UploadSession.Status.OPEN)
+        self.assertEqual(self.stored_bytes(url), CONTENT)
+        self.assertEqual(self.head(url).status_code, 200)
         self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
     def test_failed_media_creation_ends_the_upload_without_a_second_media(self):
@@ -499,13 +527,6 @@ class OwnershipTests(TusTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(UploadSession.objects.exists())
 
-    def test_chunked_upload_id_is_not_a_tus_upload(self):
-        chunked = UploadSession.objects.create(
-            uuid=uuid.uuid4(), user=self.owner, filename="clip.mp4", total_size=10, part_size=4, total_parts=3
-        )
-
-        self.assertEqual(self.head(f"/fu/tus/{chunked.uuid}/").status_code, 404)
-
 
 class TerminationAndExpiryTests(TusTestCase):
     def test_delete_discards_the_upload_and_later_requests_get_410(self):
@@ -520,6 +541,17 @@ class TerminationAndExpiryTests(TusTestCase):
         self.assertEqual(self.head(url).status_code, 410)
         self.assertEqual(self.patch_bytes(url, 4, CONTENT[4:]).status_code, 410)
         self.assertFalse(Media.objects.exists())
+
+    def test_upload_being_assembled_cannot_be_deleted(self):
+        url = self.created_url()
+        self.patch_bytes(url, 0, CONTENT[:4])
+        UploadSession.objects.update(status=UploadSession.Status.ASSEMBLING, updated_at=timezone.now())
+
+        response = self.client.delete(url, **TUS)
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(self.session(url).status, UploadSession.Status.ASSEMBLING)
+        self.assertTrue(os.path.exists(sessions.chunks_dir(self.session(url).uuid)))
 
     def test_delete_of_a_completed_upload_ends_the_resource_and_keeps_the_media(self):
         url = self.created_url()

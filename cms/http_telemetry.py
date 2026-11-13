@@ -197,42 +197,6 @@ _OWNED_ROUTE_RULES = (
         url_name="api_get_media_key",
     ),
     # uploader.urls
-    _rule("fu/upload/", "upload_transfer", "upload_transfer", url_name="upload", namespace="uploader"),
-    _rule(
-        "fu/upload/session/",
-        "upload_transfer",
-        "upload_transfer",
-        url_name="session_lookup",
-        namespace="uploader",
-    ),
-    _rule(
-        "fu/upload/session/<uuid:upload_id>/",
-        "upload_transfer",
-        "upload_transfer",
-        url_name="session",
-        namespace="uploader",
-    ),
-    _rule(
-        "fu/^upload/update/(?P<friendly_token>[\\w-]+)/$",
-        "upload_transfer",
-        "upload_transfer",
-        url_name="update",
-        namespace="uploader",
-    ),
-    _rule(
-        "fu/^upload/update/(?P<friendly_token>[\\w-]+)/session/$",
-        "upload_transfer",
-        "upload_transfer",
-        url_name="update_session_lookup",
-        namespace="uploader",
-    ),
-    _rule(
-        "fu/^upload/update/(?P<friendly_token>[\\w-]+)/session/(?P<upload_id>[0-9a-f-]{36})/$",
-        "upload_transfer",
-        "upload_transfer",
-        url_name="update_session",
-        namespace="uploader",
-    ),
     _rule("fu/tus/", "upload_transfer", "upload_transfer", url_name="tus", namespace="uploader"),
     _rule(
         "fu/tus/<uuid:upload_id>/",
@@ -457,8 +421,8 @@ def denial_reason_code(status_code: int, authenticated: bool) -> str:
     return _DENIAL_REASON_BY_STATUS.get(status_code, "other")
 
 
-# Fine Uploader sends its per-file qquuid (a random version-4 UUID) in this
-# header on every chunk. nginx applies the same pattern before it logs the header.
+# The upload engine sends its per-file id (a random version-4 UUID) in this
+# header on every request of one upload. nginx applies the same pattern before it logs the header.
 UPLOAD_ID_META_KEY = "HTTP_X_UPLOAD_ID"
 UPLOAD_ID_PATTERN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
 

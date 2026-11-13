@@ -1,21 +1,18 @@
-from importlib import import_module
+import os
+import re
 
-from django.core.exceptions import ImproperlyConfigured
+UUID4_PATTERN = re.compile(r"^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$", re.IGNORECASE)
 
 
-def import_class(path):
-    path_bits = path.split(".")
+def strip_delimiters(input_string):
+    delimiters = " \t\n\r'\"[]{}()<>\\|&;:*-=+"
+    return "".join(char for char in input_string if char not in delimiters)
 
-    if len(path_bits) < 2:
-        message = f"'{path}' is not a complete Python path."
-        raise ImproperlyConfigured(message)
 
-    class_name = path_bits.pop()
-    module_path = ".".join(path_bits)
-    module_itself = import_module(module_path)
+def clean_filename(filename):
+    # basename first: a client-supplied path must not reach the filesystem
+    return strip_delimiters(os.path.basename(filename))
 
-    if not hasattr(module_itself, class_name):
-        message = f"The Python module '{module_path}' has no '{class_name}' class."
-        raise ImportError(message)
 
-    return getattr(module_itself, class_name)
+def is_valid_uuid_format(uuid_string):
+    return bool(UUID4_PATTERN.match(uuid_string))

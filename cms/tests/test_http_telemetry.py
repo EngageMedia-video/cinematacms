@@ -169,11 +169,11 @@ class UploadDenialLogTests(SimpleTestCase):
 
     def _upload_request(self, *, authenticated):
         request = self.factory.post(
-            "/fu/upload/?qquuid=private-upload-id",
+            "/fu/tus/?upload=private-upload-id",
             HTTP_COOKIE="sessionid=private-session-cookie",
             REMOTE_ADDR="203.0.113.9",
         )
-        request.resolver_match = SimpleNamespace(namespace="uploader", url_name="upload", route="fu/upload/")
+        request.resolver_match = SimpleNamespace(namespace="uploader", url_name="tus", route="fu/tus/")
         request.user = SimpleNamespace(is_authenticated=authenticated, email="person@example.org")
         return request
 
@@ -224,7 +224,7 @@ class UploadDenialLogTests(SimpleTestCase):
             "203.0.113.9",
             "private-session-cookie",
             "private-upload-id",
-            "/fu/upload",
+            "/fu/tus",
         ):
             self.assertNotIn(secret, serialized)
 
@@ -252,9 +252,9 @@ class UploadCorrelationLogTests(SimpleTestCase):
         middleware_logger.addHandler(self.collector)
         self.addCleanup(middleware_logger.removeHandler, self.collector)
 
-    def _upload_request(self, upload_id=UPLOAD_ID, *, route="fu/upload/", namespace="uploader", url_name="upload"):
+    def _upload_request(self, upload_id=UPLOAD_ID, *, route="fu/tus/", namespace="uploader", url_name="tus"):
         extra = {} if upload_id is None else {"HTTP_X_UPLOAD_ID": upload_id}
-        request = self.factory.post("/fu/upload/", **extra)
+        request = self.factory.post("/fu/tus/", **extra)
         request.resolver_match = SimpleNamespace(namespace=namespace, url_name=url_name, route=route)
         request.user = SimpleNamespace(is_authenticated=True, email="person@example.org")
         return request

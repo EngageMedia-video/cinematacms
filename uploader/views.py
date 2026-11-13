@@ -15,10 +15,6 @@ from cms.permissions import is_trusted_uploader, user_allowed_to_upload
 from files.helpers import cleanup_temp_upload_files, rm_file
 from files.models import Media
 
-from . import sessions
-from .fineuploader import ChunkedFineUploader
-from .forms import FineUploaderUploadForm, FineUploaderUploadSuccessForm, UploadSessionLookupForm
-
 logger = logging.getLogger(__name__)
 
 UPLOAD_ROUTE_GROUP = "upload_transfer"
@@ -56,120 +52,6 @@ class UploadTargetMixin:
         if not user_allowed_to_upload(request):
             raise PermissionDenied("Upload not allowed")  # HTTP 403
         return super().dispatch(request, *args, **kwargs)
-
-
-class ChunkedUploadView(UploadTargetMixin, generic.FormView):
-    """Receives Fine Uploader requests: single-request files, chunks, and chunk completion.
-
-    Chunked uploads go through an upload session (see ``uploader.sessions``), which
-    checks ownership and file identity on every chunk and assembles the file once.
-    Subclasses turn the finished file into their result in ``finish``.
-    """
-
-    http_method_names = ("post",)
-    form_class_upload = FineUploaderUploadForm
-    form_class_upload_success = FineUploaderUploadSuccessForm
-
-    @property
-    def concurrent(self):
-        return settings.CONCURRENT_UPLOADS
-
-    @property
-    def chunks_done(self):
-        return self.chunks_done_param_name in self.request.GET
-
-    @property
-    def chunks_done_param_name(self):
-        return settings.CHUNKS_DONE_PARAM_NAME
-
-    def make_response(self, data, **kwargs):
-        return JsonResponse(data, **kwargs)
-
-    def get_form(self, form_class=None):
-        form_class = self.form_class_upload_success if self.chunks_done else self.form_class_upload
-        return form_class(**self.get_form_kwargs())
-
-    def form_invalid(self, form):
-        data = {"success": False, "error": "%s" % repr(form.errors)}
-        return self.make_response(data, status=400)
-
-    def form_valid(self, form):
-        self.upload = ChunkedFineUploader(form.cleaned_data, self.concurrent)
-
-        # Server-side file extension validation before saving
-        from files.helpers import get_allowed_video_extensions
-
-        allowed_extensions = get_allowed_video_extensions()
-
-        # Extract file extension from uploaded filename
-        if self.upload.filename:
-            file_ext = os.path.splitext(self.upload.filename)[1].lower().lstrip(".")
-
-            # Validate extension against allowlist
-            if allowed_extensions and file_ext not in allowed_extensions:
-                data = {
-                    "success": False,
-                    "error": f"File type '.{file_ext}' is not allowed. Allowed types: {', '.join(allowed_extensions)}",
-                    "preventRetry": True,
-                }
-                return self.make_response(data, status=400)
-
-        self.on_request_received()
-        try:
-            if self.chunks_done:
-                return self.make_response(self.complete(form.cleaned_data["qquuid"]))
-            if self.upload.total_parts == 1:
-                self.upload.save()
-                assembly = sessions.Assembly(real_path=self.upload.real_path, upload_dir=self.upload.file_path)
-                return self.make_response({"success": True, "media_url": self.finish(assembly)})
-
-            chunk = sessions.ChunkRequest.from_form(
-                form.cleaned_data, self.request.POST.get(sessions.FINGERPRINT_PARAM)
-            )
-            sessions.accept_chunk(self.request.user, self.target_media, chunk)
-            if not self.concurrent and chunk.part_index == chunk.total_parts - 1:
-                return self.make_response(self.complete(chunk.uuid))
-            return self.make_response({"success": True})
-        except sessions.UploadRejected as rejection:
-            return self.make_response(rejection.response_data(), status=rejection.status)
-
-    def complete(self, upload_uuid):
-        return sessions.complete(self.request.user, self.target_media, upload_uuid, self.finish)
-
-    def on_request_received(self):
-        pass
-
-    def finish(self, assembly):
-        """Turn the uploaded file at ``assembly.real_path`` into this upload's result; return its media URL."""
-        raise NotImplementedError
-
-
-class FineUploaderView(ChunkedUploadView):
-    def on_request_received(self):
-        if self.upload.part_index == 0 and not self.chunks_done:
-            self.log_upload_event("cinematacms.upload.started")
-
-    def finish(self, assembly):
-        # The bulk-upload flow sends `is_draft=1`: each freshly uploaded file
-        # is created as a private draft so it stays out of the admin review
-        # queue (and the public site) until the user explicitly submits/shares
-        # — at which point bulk_submit clears the flag. The single-upload flow
-        # does not send the param, so it is not a draft.
-        is_draft = str(self.request.POST.get("is_draft", "")).lower() in ("1", "true", "yes")
-        return create_media_from_upload(self.request, assembly, is_draft=is_draft)
-
-    def log_upload_event(self, event_name):
-        log_upload_event(self.request, event_name)
-
-
-class MediaFileUpdateView(ChunkedUploadView):
-    """
-    View for updating the media_file of an existing Media object.
-    Used in edit media page to upload replacement media files via upload subdomain.
-    """
-
-    def finish(self, assembly):
-        return stage_replacement_file(self.request, self.target_media, assembly, self.upload.filename)
 
 
 def log_upload_event(request, event_name):
@@ -268,43 +150,6 @@ def stage_replacement_file(request, target_media, assembly, filename):
     request.session[session_key] = session_data
 
     return target_media.get_absolute_url()
-
-
-class UploadSessionLookupView(UploadTargetMixin, generic.View):
-    """Finds the caller's unfinished upload of a file so the browser can resume it.
-
-    The browser sends the file's identity; the response lists the parts the server
-    holds, verified on disk, so only the missing parts are sent again.
-    """
-
-    http_method_names = ("get",)
-
-    def get(self, request, *args, **kwargs):
-        form = UploadSessionLookupForm(request.GET)
-        if not form.is_valid():
-            return JsonResponse({"success": False, "error": "Invalid upload identity."}, status=400)
-        found = sessions.find_resumable(request.user, self.target_media, **form.cleaned_data)
-        if found is None:
-            return JsonResponse({"success": False, "error": "No resumable upload."}, status=404)
-        session, parts = found
-        return JsonResponse(
-            {"success": True, "uuid": str(session.uuid), "total_parts": session.total_parts, "parts": parts}
-        )
-
-
-class UploadSessionView(UploadTargetMixin, generic.View):
-    """Cancels the caller's unfinished upload and deletes its chunks."""
-
-    http_method_names = ("delete",)
-
-    def delete(self, request, *args, **kwargs):
-        try:
-            session = sessions.cancel(request.user, self.target_media, kwargs["upload_id"])
-        except sessions.UploadRejected as rejection:
-            return JsonResponse(rejection.response_data(), status=rejection.status)
-        if session is None:
-            return JsonResponse({"success": False, "error": "Upload not found."}, status=404)
-        return JsonResponse({"success": True, "status": session.status})
 
 
 class MediaFileUploadCancelView(generic.View):

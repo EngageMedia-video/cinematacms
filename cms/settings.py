@@ -638,8 +638,7 @@ ADMINS_NOTIFICATIONS = {
 
 MAX_CHARS_FOR_COMMENT = 10000  # so that it doesn't end up huge
 
-# media uploads: the tus endpoints (uploader/tus.py) and the Fine Uploader endpoints
-# kept for pages loaded before the tus release
+# media uploads: the tus endpoints (uploader/tus.py)
 UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
 # Hours after which orphaned upload files/chunks are considered stale and removed
@@ -651,9 +650,6 @@ ORPHANED_DRAFT_CLEANUP_HOURS = 168
 ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = env_int("UPLOAD_MAX_SIZE", 800 * 1024 * 1000 * 5)
-# bytes per chunk of a Fine Uploader chunked upload, which browsers that loaded the
-# page before the tus release still send
-UPLOAD_PART_SIZE = 2_000_000
 
 # Default file count for the single-upload page. NOTE: this value
 # is overridden per-user in files/context_processors.py (advanced users -> 10,
@@ -661,8 +657,6 @@ UPLOAD_PART_SIZE = 2_000_000
 # bulk-upload flow (issue #524) uses its own per-role limits instead — see
 # BULK_UPLOAD_MAX_FILES_* below and cms.permissions.max_bulk_upload_files.
 UPLOAD_MAX_FILES_NUMBER = env_int("UPLOAD_MAX_FILES_NUMBER", 100)
-CONCURRENT_UPLOADS = True
-CHUNKS_DONE_PARAM_NAME = "done"
 
 # Per-batch file limits for the bulk-upload flow (issue #524). Trusted uploaders
 # (superuser/manager/editor/advancedUser, see cms.permissions.is_trusted_uploader)
@@ -672,7 +666,6 @@ CHUNKS_DONE_PARAM_NAME = "done"
 # above, which governs the legacy single-upload page.
 BULK_UPLOAD_MAX_FILES_REGULAR = 2
 BULK_UPLOAD_MAX_FILES_TRUSTED = 10
-FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 
 
 # valid options: content, author
