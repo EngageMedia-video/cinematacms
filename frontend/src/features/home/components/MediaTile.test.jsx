@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { MediaTile } from './MediaTile';
 
@@ -34,5 +35,17 @@ describe('MediaTile', () => {
 		const author = screen.getByRole('link', { name: 'Duration Author' });
 
 		expect(author).toHaveAttribute('href', '/profiles/duration-author/');
+	});
+
+	it('plays the animated preview from preview_url on hover', async () => {
+		const user = userEvent.setup();
+		const previewUrl = 'https://example.com/media/encoded/preview.gif?v=2';
+		const { container } = render(<MediaTile item={{ ...BASE_ITEM, preview_url: previewUrl }} />);
+
+		expect(container.querySelector('img[data-movie-item-preview]')).toBeNull();
+
+		await user.hover(screen.getByRole('article'));
+
+		expect(container.querySelector('img[data-movie-item-preview]')).toHaveAttribute('src', previewUrl);
 	});
 });

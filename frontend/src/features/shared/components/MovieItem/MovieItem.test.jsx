@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 
 const samplePoster =
@@ -139,5 +141,300 @@ describe('MovieItem', () => {
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).not.toHaveClass('min-h-8');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('touch-manipulation');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' }).closest('a[aria-label]')).toBeNull();
+	});
+});
+
+describe('MovieItem hover preview', () => {
+	const previewSrc = 'https://example.com/media/encoded/preview.gif?v=3';
+	const originalMatchMedia = window.matchMedia;
+
+	function mockMatchMedia(matchingQuery = '') {
+		window.matchMedia = vi.fn((query) => ({
+			matches: Boolean(matchingQuery) && query.includes(matchingQuery),
+			media: query,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		}));
+	}
+
+	function getPreview(container) {
+		return container.querySelector('img[data-movie-item-preview]');
+	}
+
+	beforeEach(() => {
+		mockMatchMedia();
+	});
+
+	afterEach(() => {
+		window.matchMedia = originalMatchMedia;
+	});
+
+	it.each([
+		['vertical', VerticalMovieItem],
+		['horizontal', HorizontalMovieItem],
+	])('loads the %s preview only on hover and removes it on leave', async (_layout, MovieItem) => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<MovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		expect(getPreview(container)).toBeNull();
+
+		await user.hover(article);
+		const preview = getPreview(container);
+		expect(preview).toHaveAttribute('src', previewSrc);
+		expect(preview).toHaveAttribute('alt', '');
+		expect(preview).toHaveClass('opacity-0');
+
+		fireEvent.load(preview);
+		expect(preview).toHaveClass('opacity-100');
+		expect(screen.getByRole('img', { name: 'Movie artwork' })).toHaveAttribute('src', samplePoster);
+
+		await user.unhover(article);
+		expect(getPreview(container)).toBeNull();
+
+		await user.hover(article);
+		expect(getPreview(container)).toHaveClass('opacity-0');
+	});
+
+	it('plays the preview while a tile link has keyboard focus', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<>
+				<VerticalMovieItem
+					imageSrc={samplePoster}
+					previewSrc={previewSrc}
+					title="Arrival"
+					subtitle="Denis Villeneuve"
+					subtitleLink="/profiles/denis/"
+					link="/media/arrival/"
+				/>
+				<a href="/after/">After</a>
+			</>
+		);
+
+		await user.tab();
+		const preview = getPreview(container);
+		expect(preview).toHaveAttribute('src', previewSrc);
+		fireEvent.load(preview);
+
+		await user.tab();
+		await user.tab();
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'Denis Villeneuve' }));
+		// Moving focus between links inside the tile must not restart the preview.
+		expect(getPreview(container)).toBe(preview);
+		expect(preview).toHaveClass('opacity-100');
+
+		await user.tab();
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'After' }));
+		expect(getPreview(container)).toBeNull();
+
+		await user.tab({ shift: true });
+		expect(getPreview(container)).toHaveClass('opacity-0');
+	});
+
+	it('keeps playing while keyboard focus stays in the tile after the pointer leaves', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		await user.tab();
+		const preview = getPreview(container);
+		fireEvent.load(preview);
+
+		await user.hover(article);
+		await user.unhover(article);
+
+		expect(getPreview(container)).toBe(preview);
+		expect(preview).toHaveClass('opacity-100');
+	});
+
+	it('keeps playing while the pointer stays on the tile after focus leaves', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<>
+				<VerticalMovieItem
+					imageSrc={samplePoster}
+					previewSrc={previewSrc}
+					title="Arrival"
+					link="/media/arrival/"
+				/>
+				<a href="/after/">After</a>
+			</>
+		);
+
+		await user.hover(screen.getByRole('article'));
+		await user.tab();
+		await user.tab();
+
+		expect(document.activeElement).toBe(screen.getByRole('link', { name: 'After' }));
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('stops when the pointer leaves a tile it focused by pressing a link', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		await user.hover(link);
+		await user.pointer({ keys: '[MouseLeft>]', target: link });
+		expect(document.activeElement).toBe(link);
+
+		await user.unhover(screen.getByRole('article'));
+
+		expect(getPreview(container)).toBeNull();
+	});
+
+	it('ignores the focus that follows a touch tap, then plays on later keyboard focus', () => {
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		// Browser order for a tap: the pointer leaves before the link receives focus.
+		fireEvent.pointerOver(link, { pointerType: 'touch' });
+		fireEvent.pointerDown(link, { pointerType: 'touch' });
+		fireEvent.pointerOut(article, { pointerType: 'touch', relatedTarget: document.body });
+		act(() => link.focus());
+		expect(getPreview(container)).toBeNull();
+
+		act(() => link.blur());
+		act(() => link.focus());
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('plays on keyboard focus after a touch press that moved no focus', () => {
+		const { container } = render(
+			<VerticalMovieItem
+				imageSrc={samplePoster}
+				previewSrc={previewSrc}
+				title="Arrival"
+				subtitle="Denis Villeneuve"
+				subtitleLink="/profiles/denis/"
+				metadata={['Indonesia']}
+				link="/media/arrival/"
+			/>
+		);
+		const article = screen.getByRole('article');
+
+		fireEvent.pointerDown(screen.getByText('Indonesia'), { pointerType: 'touch' });
+		fireEvent.pointerOut(article, { pointerType: 'touch', relatedTarget: document.body });
+		act(() => screen.getByRole('link', { name: 'Arrival' }).focus());
+
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('plays on keyboard focus after a touch press on a link turns into a scroll', () => {
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const link = screen.getByRole('link', { name: 'Open Arrival' });
+
+		fireEvent.pointerDown(link, { pointerType: 'touch' });
+		fireEvent.pointerCancel(link, { pointerType: 'touch' });
+		fireEvent.pointerOut(screen.getByRole('article'), { pointerType: 'touch', relatedTarget: document.body });
+		act(() => link.focus());
+
+		expect(getPreview(container)).toHaveAttribute('src', previewSrc);
+	});
+
+	it('hides a replacement preview source until that source loads', async () => {
+		const user = userEvent.setup();
+		const nextSrc = 'https://example.com/media/encoded/preview.gif?v=4';
+		const { container, rerender } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		await user.hover(screen.getByRole('article'));
+		fireEvent.load(getPreview(container));
+		expect(getPreview(container)).toHaveClass('opacity-100');
+
+		rerender(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={nextSrc} title="Arrival" link="/media/arrival/" />
+		);
+		expect(getPreview(container)).toHaveAttribute('src', nextSrc);
+		expect(getPreview(container)).toHaveClass('opacity-0');
+
+		fireEvent.load(getPreview(container));
+		expect(getPreview(container)).toHaveClass('opacity-100');
+	});
+
+	it('keeps the static thumbnail and stops requesting the preview after it fails to load', async () => {
+		const user = userEvent.setup();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		const article = screen.getByRole('article');
+
+		await user.hover(article);
+		fireEvent.error(getPreview(container));
+		expect(getPreview(container)).toBeNull();
+
+		await user.unhover(article);
+		await user.hover(article);
+		expect(getPreview(container)).toBeNull();
+		expect(screen.getByRole('img', { name: 'Movie artwork' })).toHaveAttribute('src', samplePoster);
+	});
+
+	it.each([
+		{
+			name: 'plays on a mouse pointer',
+			previewUrl: previewSrc,
+			matchingQuery: '',
+			pointerType: 'mouse',
+			plays: true,
+		},
+		{ name: 'skips without a preview URL', previewUrl: '', matchingQuery: '', pointerType: 'mouse', plays: false },
+		{
+			name: 'skips under reduced motion',
+			previewUrl: previewSrc,
+			matchingQuery: 'prefers-reduced-motion: reduce',
+			pointerType: 'mouse',
+			plays: false,
+		},
+		{
+			name: 'skips on a hover-less device',
+			previewUrl: previewSrc,
+			matchingQuery: 'hover: none',
+			pointerType: 'mouse',
+			plays: false,
+		},
+		{
+			name: 'skips a touch pointer',
+			previewUrl: previewSrc,
+			matchingQuery: '',
+			pointerType: 'touch',
+			plays: false,
+		},
+	])('$name', ({ previewUrl, matchingQuery, pointerType, plays }) => {
+		mockMatchMedia(matchingQuery);
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewUrl} title="Arrival" link="/media/arrival/" />
+		);
+
+		fireEvent.pointerOver(screen.getByRole('article'), { pointerType });
+
+		expect(Boolean(getPreview(container))).toBe(plays);
+	});
+
+	it.each([
+		{ name: 'plays on focus', matchingQuery: '', plays: true },
+		{ name: 'skips focus under reduced motion', matchingQuery: 'prefers-reduced-motion: reduce', plays: false },
+		{ name: 'skips focus on a hover-less device', matchingQuery: 'hover: none', plays: false },
+	])('$name', ({ matchingQuery, plays }) => {
+		mockMatchMedia(matchingQuery);
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		act(() => screen.getByRole('link', { name: 'Open Arrival' }).focus());
+
+		expect(Boolean(getPreview(container))).toBe(plays);
 	});
 });
