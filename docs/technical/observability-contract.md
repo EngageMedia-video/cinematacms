@@ -85,6 +85,21 @@ authorization data, secrets, passwords, filenames, or URLs. Restricted email
 spans may contain only the delivery UUID, the recipient reference, the email
 kind, and the attempt number.
 
+Each process anonymises its spans before export, so the guarantee holds in
+every deployment mode, including a `managed` Collector. The exporter keeps only
+the span attributes in `EXPORTED_SPAN_ATTRIBUTES`, the event attributes in
+`EXPORTED_SPAN_EVENT_ATTRIBUTES`, and the resource attributes in
+`EXPORTED_RESOURCE_ATTRIBUTES` (`cms/observability.py`). It keeps the status
+code and drops the status message, because instrumentations copy the raw
+exception text into it. Exception events lose `exception.message` and
+`exception.stacktrace` and keep `exception.type`. Links keep
+their span context and lose their attributes. Every exported span context drops
+its trace state, which callers set through the `tracestate` header. A span that
+cannot be anonymised is dropped and counted as a `traces`/`exporter`/`prepare`
+telemetry failure. The repository's Collector applies the same allowlist and
+clears the status message and trace state again; a test keeps the two
+allowlists equal.
+
 The Collector reads each rotated application log together with its `.1` copy.
 After a Collector outage that spans one rotation, it recovers the unread lines
 from the `.1` copy. After an outage that spans two or more rotations, the lines

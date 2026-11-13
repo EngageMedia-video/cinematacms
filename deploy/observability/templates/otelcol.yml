@@ -377,6 +377,8 @@ processors:
     trace_statements:
       - context: span
         statements:
+          - set(span.status.message, "")
+          - set(span.trace_state, "")
           - keep_keys(span.attributes, ["cinematacms.actor_ref", "cinematacms.media_ref", "domain.operation", "domain.outcome", "domain.reason_code", "email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt", "media.type", "encoding.profile_id", "encoding.resolution", "encoding.codec", "encoding.extension", "cinematacms.db.workload", "cinematacms.db.context_group", "cinematacms.db.operation", "cinematacms.db.outcome", "db.query.fingerprint", "cinematacms.cache.family", "cinematacms.cache.operation", "cinematacms.cache.result", "service_role", "task_id", "celery.task_id", "celery.task_name", "queue", "messaging.destination.name", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "http.request.method", "http.response.status_code"])
       - context: spanevent
         statements:
