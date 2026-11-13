@@ -16,5 +16,5 @@ Notifications, the audit of `/manage/` actions, owner notices for those actions 
 ## Consequences
 
 - Work moved into handlers, such as in-app notifications, appears a few seconds after the request.
-- Domain events are transport, not history. They are deleted after a retention period, and the audit store is separate.
+- Domain events are transport, not history. An event is deleted a retention period after every handler run for it has ended, either succeeded or failed after its last attempt. Until then a failed run can be replayed, so a worker outage delays handlers but does not drop events. The audit store is separate.
 - Analytics events stay in the browser and do not use this outbox.
