@@ -231,7 +231,10 @@ To add a local Grafana dashboard, follow the
 Use `--observability managed` when another deployment system provides the
 Prometheus and OpenTelemetry Collector services. This mode enables application
 tracing to `http://127.0.0.1:4318/v1/traces`, stops the local observability
-services, and does not install a second Collector.
+services, and does not install a second Collector. When
+`deploy/observability/install.sh` has installed the full stack, its
+`cinematacms-otelcol` unit reads `/etc/cinematacms-observability/otelcol.yml`;
+each later apply leaves that unit in place and keeps the Collector running.
 The generated application environment also contains
 `OBSERVABILITY_REFERENCE_LOOKUP_TOKEN` and
 `OBSERVABILITY_REFERENCE_HMAC_KEY`. Give the lookup token only to the managed
