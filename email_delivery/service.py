@@ -66,6 +66,32 @@ def recipient_reference_candidates(address: str) -> tuple[str, ...]:
     return tuple(candidates)
 
 
+def user_id_for_recipient_reference(reference: str) -> int | None:
+    """Find the account whose email produces this reference.
+
+    A keyed reference cannot be reversed, so this recomputes it for each account
+    instead of storing an index from reference to person.
+    """
+    from django.contrib.auth import get_user_model
+
+    current_key = getattr(settings, "EMAIL_RECIPIENT_HMAC_KEY", "")
+    if not current_key:
+        raise ValidationError("EMAIL_RECIPIENT_HMAC_KEY is required")
+    keys = {str(getattr(settings, "EMAIL_RECIPIENT_HMAC_VERSION", "v1")): current_key}
+    previous_key = getattr(settings, "EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY", "")
+    if previous_key:
+        keys[str(getattr(settings, "EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION", "previous"))] = previous_key
+    version = reference.partition(":")[0]
+    if version not in keys:
+        raise ValueError(f"No recipient reference key for version {version}")
+
+    accounts = get_user_model().objects.exclude(email="").values_list("id", "email")
+    for user_id, email in accounts.iterator(chunk_size=2000):
+        if recipient_reference(email, key=keys[version], version=version) == reference:
+            return user_id
+    return None
+
+
 def enqueue(envelope: EmailEnvelope) -> EmailDeliveryReceipt:
     from .tasks import deliver_email
 

@@ -105,6 +105,20 @@ The allowlists keep the stable HTTP attribute names `http.request.method` and
 `http` to `OTEL_SEMCONV_STABILITY_OPT_IN` unless the variable already names
 `http` or `http/dup`, and keeps any other value an operator set there.
 
+The same endpoint resolves a reference found in a trace or log back to its
+source. Send `{"kind": "actor_ref", "value": "<reference>"}` to get
+`{"kind": "actor_ref", "user_id": <id>}`, or `{"kind": "media_ref", "value":
+"<reference>"}` to get `{"kind": "media_ref", "media_token": "<token>"}`. The
+response never contains an email address. An actor reference made with the
+current or the previous `EMAIL_RECIPIENT_HMAC_*` key resolves; a reference with
+any other version returns 400 `unknown_reference_version`. A reference that
+matches nothing returns 404 `not_found`, and a missing key returns 503
+`reference_unavailable`. A keyed reference cannot be reversed, so the endpoint
+recomputes it for each account or media instead of storing an index from
+reference to person. Each lookup keeps the endpoint's token, source address
+check, rate limit, and audit log; the audit log records the kind and outcome,
+never the reference or the match.
+
 The Collector reads each rotated application log together with its `.1` copy.
 After a Collector outage that spans one rotation, it recovers the unread lines
 from the `.1` copy. After an outage that spans two or more rotations, the lines

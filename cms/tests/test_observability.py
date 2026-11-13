@@ -16,7 +16,7 @@ import yaml
 from celery.signals import worker_process_shutdown
 from django.core.cache import cache
 from django.http import HttpResponse
-from django.test import RequestFactory, SimpleTestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from prometheus_client import CollectorRegistry
 from prometheus_client.multiprocess import MultiProcessCollector
 
@@ -636,6 +636,82 @@ class SpanExportAnonymisationTests(SimpleTestCase):
 
         self.assertEqual(attributes.get("http.request.method"), "GET")
         self.assertEqual(attributes.get("http.response.status_code"), 200)
+
+
+@override_settings(
+    OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+    OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
+    EMAIL_RECIPIENT_HMAC_KEY="email-secret",
+    EMAIL_RECIPIENT_HMAC_VERSION="v2",
+    EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY="old-email-secret",
+    EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION="v1",
+)
+class ReverseReferenceLookupTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        from files.models import Media
+
+        user_model = get_user_model()
+        self.bystander = user_model.objects.create_user(username="bystander", email="bystander@example.org")
+        self.affected = user_model.objects.create_user(username="affected", email="Affected@Example.org")
+        with patch.object(Media, "media_init", return_value=None):
+            Media.objects.create(user=self.bystander, title="Other", friendly_token="othertoken", media_type="video")
+            Media.objects.create(user=self.affected, title="Broken", friendly_token="brokentoken", media_type="video")
+        self.addCleanup(cache.clear)
+
+    def lookup(self, kind, value):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            data=json.dumps({"kind": kind, "value": value}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+        )
+        return observability_reference_lookup(request)
+
+    def references(self, kind, value):
+        return [item["reference"] for item in json.loads(self.lookup(kind, value).content)["references"]]
+
+    def test_an_actor_reference_from_a_trace_resolves_to_the_account(self):
+        current, previous = self.references("actor", "affected@example.org")
+
+        for reference in (current, previous):
+            response = self.lookup("actor_ref", reference)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(json.loads(response.content), {"kind": "actor_ref", "user_id": self.affected.pk})
+            self.assertNotIn("affected@example.org", response.content.decode().lower())
+
+    def test_a_media_reference_from_a_trace_resolves_to_the_media(self):
+        (reference,) = self.references("media", "brokentoken")
+
+        response = self.lookup("media_ref", reference)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {"kind": "media_ref", "media_token": "brokentoken"})
+
+    def test_a_reference_with_no_match_is_not_found_and_not_logged(self):
+        unknown = "v2:" + "0" * 64
+
+        with self.assertLogs("cms.observability.lookup", level="INFO") as captured:
+            response = self.lookup("actor_ref", unknown)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn(unknown, " ".join(captured.output))
+
+    def test_a_malformed_or_unknown_version_reference_is_rejected(self):
+        for kind, value in (
+            ("actor_ref", "affected@example.org"),
+            ("actor_ref", "v9:" + "a" * 64),
+            ("media_ref", "v9:" + "a" * 64),
+            ("media_ref", "v1:not-hex"),
+        ):
+            with self.subTest(kind=kind, value=value):
+                self.assertEqual(self.lookup(kind, value).status_code, 400)
+
+    @override_settings(EMAIL_RECIPIENT_HMAC_KEY="", OBSERVABILITY_REFERENCE_HMAC_KEY="")
+    def test_a_reference_cannot_be_resolved_without_its_key(self):
+        self.assertEqual(self.lookup("actor_ref", "v2:" + "a" * 64).status_code, 503)
+        self.assertEqual(self.lookup("media_ref", "v1:" + "a" * 64).status_code, 503)
 
 
 @override_settings(OTEL_ENABLED=True, OTEL_SERVICE_ROLE="transcription")

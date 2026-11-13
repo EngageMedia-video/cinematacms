@@ -4,6 +4,7 @@ import ipaddress
 import json
 import logging
 import os
+import re
 
 from django.apps import apps
 from django.conf import settings
@@ -138,6 +139,37 @@ def _audit_reference_lookup(level, outcome, reason, kind=""):
     )
 
 
+REFERENCE_PATTERN = re.compile(r"[A-Za-z0-9._-]{1,32}:[0-9a-f]{64}")
+REVERSE_REFERENCE_KINDS = frozenset({"actor_ref", "media_ref"})
+
+
+def _resolve_reference(kind, reference):
+    from cms.observability import media_token_for_reference
+    from email_delivery.service import user_id_for_recipient_reference
+
+    if not REFERENCE_PATTERN.fullmatch(reference):
+        _audit_reference_lookup("warning", "denied", "invalid_reference", kind)
+        return JsonResponse({"error": "invalid_reference"}, status=400)
+    try:
+        if kind == "actor_ref":
+            user_id = user_id_for_recipient_reference(reference)
+            match = None if user_id is None else {"user_id": user_id}
+        else:
+            media_token = media_token_for_reference(reference)
+            match = None if media_token is None else {"media_token": media_token}
+    except ValidationError:
+        _audit_reference_lookup("error", "failed", "reference_unavailable", kind)
+        return JsonResponse({"error": "reference_unavailable"}, status=503)
+    except ValueError:
+        _audit_reference_lookup("warning", "denied", "unknown_reference_version", kind)
+        return JsonResponse({"error": "unknown_reference_version"}, status=400)
+    if match is None:
+        _audit_reference_lookup("info", "resolved", "not_found", kind)
+        return JsonResponse({"error": "not_found"}, status=404)
+    _audit_reference_lookup("info", "resolved", "success", kind)
+    return JsonResponse({"kind": kind, **match})
+
+
 @csrf_exempt
 def observability_reference_lookup(request):
     if not _reference_lookup_source_allowed(request):
@@ -170,6 +202,8 @@ def observability_reference_lookup(request):
         _audit_reference_lookup("warning", "denied", "invalid_request")
         return JsonResponse({"error": "invalid_request"}, status=400)
 
+    if kind in REVERSE_REFERENCE_KINDS:
+        return _resolve_reference(kind, value)
     if kind == "actor":
         from email_delivery.service import recipient_reference_candidates
 
