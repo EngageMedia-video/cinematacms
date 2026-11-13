@@ -669,6 +669,16 @@ def featured_media(request):
     return render(request, "cms/featured-media.html", context)
 
 
+def _category_page(request):
+    """Return the category when the search URL selects only that category, else None."""
+    if len(request.GET) != 1:
+        return None
+    parameter, values = next(iter(request.GET.lists()))
+    if parameter not in ("c", "category") or len(values) != 1:
+        return None
+    return Category.objects.filter(title=values[0]).first()
+
+
 def search(request):
     try:
         RSS_URL = f"/rss{request.environ['REQUEST_URI']}"
@@ -676,6 +686,8 @@ def search(request):
         RSS_URL = "/rss"
     context = {}
     context["RSS_URL"] = RSS_URL
+    context["category"] = _category_page(request)
+    context["robots_noindex"] = context["category"] is None
     return render(request, "cms/search.html", context)
 
 
@@ -2225,14 +2237,10 @@ class MediaSearch(APIView):
             media = media.filter(topics__title__in=topic).distinct()
 
         if language:
-            language_codes = self._resolve_language_codes(language)
-            if language_codes:
-                media = media.filter(media_language__in=language_codes)
+            media = media.filter(media_language__in=self._resolve_language_codes(language))
 
         if country:
-            country_codes = self._resolve_country_codes(country)
-            if country_codes:
-                media = media.filter(media_country__in=country_codes)
+            media = media.filter(media_country__in=self._resolve_country_codes(country))
 
         if subtitle_language:
             media = media.filter(subtitles__language__code__in=subtitle_language).distinct()
@@ -2261,11 +2269,10 @@ class MediaSearch(APIView):
                 CommunityImpact.ACADEMIC,
             }
             community_impact_values = [value for value in community_impact if value in community_impact_options]
-            if community_impact_values:
-                media = media.filter(
-                    community_impacts__status=CommunityImpact.APPROVED,
-                    community_impacts__category__in=community_impact_values,
-                ).distinct()
+            media = media.filter(
+                community_impacts__status=CommunityImpact.APPROVED,
+                community_impacts__category__in=community_impact_values,
+            ).distinct()
 
         if media_type:
             media = media.filter(media_type=media_type)
@@ -2274,21 +2281,11 @@ class MediaSearch(APIView):
             media = media.filter(user__username=author)
 
         if license_values:
-            license_query = Q()
-            license_ids = []
+            license_ids = [int(value) for value in license_values if value.isdecimal()]
+            license_query = Q(license_id__in=license_ids)
             if "no_license" in license_values:
                 license_query |= Q(license=None)
-            for license_value in license_values:
-                if license_value == "no_license":
-                    continue
-                try:
-                    license_ids.append(int(license_value))
-                except ValueError:
-                    pass
-            if license_ids:
-                license_query |= Q(license_id__in=license_ids)
-            if license_query:
-                media = media.filter(license_query)
+            media = media.filter(license_query)
 
         if upload_date:
             gte = lte = None

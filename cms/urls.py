@@ -23,6 +23,8 @@ from cms.health import live as health_live
 from cms.health import ready as health_ready
 from cms.playback_analytics import record_playback
 from cms.request_utils import get_client_ip
+from cms.robots import robots_txt
+from files import sitemaps
 from files.metrics import refresh_runtime_metrics
 from users import views as user_views
 
@@ -235,10 +237,6 @@ def metrics_view(request):
     return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
 
 
-def robots_txt(request):
-    return HttpResponse("User-agent: *\nDisallow:\n", content_type="text/plain; charset=utf-8")
-
-
 urlpatterns = [
     path("analytics", user_views.view_analytics, name="creator_analytics"),
     path("analytics/export", user_views.export_analytics, name="export_analytics"),
@@ -246,6 +244,8 @@ urlpatterns = [
     path("analytics/segment-event", record_segment_event, name="record_segment_event"),
     path("analytics/segments", segment_report, name="segment_report"),
     path("robots.txt", robots_txt),
+    path("sitemap.xml", sitemaps.sitemap_index, name="sitemap_index"),
+    path("sitemap-<section>.xml", sitemaps.sitemap_section, name="sitemap_section"),
     path("metrics", metrics_view),
     path("internal/observability/references", observability_reference_lookup),
     path("internal/observability/error-probe", error_tracking_diagnostic),
