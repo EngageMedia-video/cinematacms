@@ -8,7 +8,7 @@ from django.core.management.base import CommandError
 from django.db import DatabaseError, connection
 from django.test import Client, TestCase
 
-from files.models import Category, CommunityImpact, Language, MediaCountry, Tag, Topic
+from files.models import Category, CommunityImpact, Language, License, MediaCountry, Tag, Topic
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -235,6 +235,90 @@ class MediaSearchTaxonomyFilterTests(TestCase):
             self.assertIn(title, rss_content)
         self.assertNotIn("PH Labor Health", rss_content)
         self.assertNotIn("AU Other Justice", rss_content)
+
+
+class MediaSearchUnrecognisedFilterValueTests(TestCase):
+    """An unrecognised filter value matches no film; recognised values in the same list still filter."""
+
+    API_FILTERS = (
+        ("category", "Labor", "does-not-exist"),
+        ("tag", "climate", "does-not-exist"),
+        ("topic", "Justice", "does-not-exist"),
+        ("language", "en", "does-not-exist"),
+        ("country", "Philippines", "does-not-exist"),
+        ("community_impact", CommunityImpact.SCREENING, "curated"),
+        ("subtitle_language", None, "does-not-exist"),
+        ("license", None, "does-not-exist"),
+    )
+    RSS_FILTERS = tuple(f for f in API_FILTERS if f[0] != "license")
+
+    def setUp(self):
+        self.client = Client()
+        self.user = create_test_user(username="unrecognised_user")
+        Language.objects.create(code="en", title="English")
+        self.license = License.objects.create(title="Unrecognised Test License")
+
+        self.matching = create_test_media(self.user, media_language="en", media_country="PH")
+        self.matching.title = "Matching Film"
+        self.matching.license = self.license
+        self.matching.save(update_fields=["title", "license"])
+        self.matching.category.add(Category.objects.create(title="Labor"))
+        self.matching.tags.add(Tag.objects.create(title="climate"))
+        self.matching.topics.add(Topic.objects.create(title="Justice"))
+        CommunityImpact.objects.create(
+            media=self.matching,
+            user=self.user,
+            category=CommunityImpact.SCREENING,
+            status=CommunityImpact.APPROVED,
+            title="Matching impact",
+            event_date=date(2025, 1, 1),
+        )
+
+        self.plain = create_test_media(self.user, media_language=None)
+        self.plain.title = "Plain Film"
+        self.plain.save(update_fields=["title"])
+
+    def _api_titles(self, params):
+        response = self.client.get("/api/v1/search", params)
+        self.assertEqual(response.status_code, 200)
+        return {item["title"] for item in response.json()["results"]}
+
+    def _rss_titles(self, params):
+        response = self.client.get("/rss/search/", params)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        return {title for title in ("Matching Film", "Plain Film") if title in content}
+
+    def test_api_unrecognised_value_returns_no_films(self):
+        for key, _known, unknown in self.API_FILTERS:
+            with self.subTest(filter=key):
+                self.assertEqual(self._api_titles({key: unknown}), set())
+
+    def test_rss_unrecognised_value_returns_no_films(self):
+        for key, _known, unknown in self.RSS_FILTERS:
+            with self.subTest(filter=key):
+                self.assertEqual(self._rss_titles({key: unknown}), set())
+
+    def test_api_mixed_list_filters_by_recognised_values(self):
+        filters = [(key, known, unknown) for key, known, unknown in self.API_FILTERS if known]
+        filters.append(("license", str(self.license.id), "does-not-exist"))
+        for key, known, unknown in filters:
+            with self.subTest(filter=key):
+                self.assertEqual(self._api_titles({key: [known, unknown]}), {"Matching Film"})
+
+    def test_api_no_license_matches_films_without_a_license(self):
+        self.assertEqual(self._api_titles({"license": "no_license"}), {"Plain Film"})
+        self.assertEqual(
+            self._api_titles({"license": ["no_license", str(self.license.id), "does-not-exist"]}),
+            {"Matching Film", "Plain Film"},
+        )
+
+    def test_rss_mixed_list_filters_by_recognised_values(self):
+        for key, known, unknown in self.RSS_FILTERS:
+            if not known:
+                continue
+            with self.subTest(filter=key):
+                self.assertEqual(self._rss_titles({key: [known, unknown]}), {"Matching Film"})
 
 
 class SearchFilterOptionListTests(TestCase):

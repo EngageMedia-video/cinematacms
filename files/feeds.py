@@ -158,13 +158,9 @@ class SearchRSSFeed(Feed):
         if topic:
             media = media.filter(topics__title__in=topic).distinct()
         if language:
-            language_codes = _resolve_language_codes(language)
-            if language_codes:
-                media = media.filter(media_language__in=language_codes)
+            media = media.filter(media_language__in=_resolve_language_codes(language))
         if country:
-            country_codes = _resolve_country_codes(country)
-            if country_codes:
-                media = media.filter(media_country__in=country_codes)
+            media = media.filter(media_country__in=_resolve_country_codes(country))
         if query:
             query = helpers.clean_query(query)
             q_parts = [q_part.strip("y") for q_part in query.split() if q_part not in STOP_WORDS]
@@ -202,11 +198,10 @@ class SearchRSSFeed(Feed):
                 CommunityImpact.ACADEMIC,
             }
             community_impact_values = [value for value in community_impact if value in community_impact_options]
-            if community_impact_values:
-                media = media.filter(
-                    community_impacts__status=CommunityImpact.APPROVED,
-                    community_impacts__category__in=community_impact_values,
-                ).distinct()
+            media = media.filter(
+                community_impacts__status=CommunityImpact.APPROVED,
+                community_impacts__category__in=community_impact_values,
+            ).distinct()
 
         media = media.order_by("-add_date").prefetch_related("user")
 
