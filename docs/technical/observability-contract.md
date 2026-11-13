@@ -107,9 +107,12 @@ The allowlists keep the stable HTTP attribute names `http.request.method` and
 
 The same endpoint resolves a reference found in a trace or log back to its
 source. Send `{"kind": "actor_ref", "value": "<reference>"}` to get
-`{"kind": "actor_ref", "user_id": <id>}`, or `{"kind": "media_ref", "value":
-"<reference>"}` to get `{"kind": "media_ref", "media_token": "<token>"}`. The
-response never contains an email address. An actor reference made with the
+`{"kind": "actor_ref", "user_ids": [<id>, ...]}`, or `{"kind": "media_ref",
+"value": "<reference>"}` to get `{"kind": "media_ref", "media_tokens":
+["<token>", ...]}`. A reference ignores case, and neither emails nor media
+tokens are unique once case is ignored, so the response lists every match; check
+each one before you attribute an incident. The response never contains an email
+address. An actor reference made with the
 current or the previous `EMAIL_RECIPIENT_HMAC_*` key resolves; a reference with
 any other version returns 400 `unknown_reference_version`. A reference that
 matches nothing returns 404 `not_found`, and a missing key returns 503

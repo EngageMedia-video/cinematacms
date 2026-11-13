@@ -678,8 +678,20 @@ class ReverseReferenceLookupTests(TestCase):
         for reference in (current, previous):
             response = self.lookup("actor_ref", reference)
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(json.loads(response.content), {"kind": "actor_ref", "user_id": self.affected.pk})
+            self.assertEqual(json.loads(response.content), {"kind": "actor_ref", "user_ids": [self.affected.pk]})
             self.assertNotIn("affected@example.org", response.content.decode().lower())
+
+    def test_an_actor_reference_shared_by_several_accounts_resolves_to_all_of_them(self):
+        from django.contrib.auth import get_user_model
+
+        namesake = get_user_model().objects.create_user(username="namesake", email="affected@example.org")
+        current, _ = self.references("actor", "affected@example.org")
+
+        response = self.lookup("actor_ref", current)
+
+        self.assertEqual(
+            json.loads(response.content), {"kind": "actor_ref", "user_ids": [self.affected.pk, namesake.pk]}
+        )
 
     def test_a_media_reference_from_a_trace_resolves_to_the_media(self):
         (reference,) = self.references("media", "brokentoken")
@@ -687,7 +699,23 @@ class ReverseReferenceLookupTests(TestCase):
         response = self.lookup("media_ref", reference)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content), {"kind": "media_ref", "media_token": "brokentoken"})
+        self.assertEqual(json.loads(response.content), {"kind": "media_ref", "media_tokens": ["brokentoken"]})
+
+    def test_a_media_reference_shared_by_tokens_differing_in_case_resolves_to_all_of_them(self):
+        from files.models import Media
+
+        with patch.object(Media, "media_init", return_value=None):
+            Media.objects.create(user=self.affected, title="Twin", friendly_token="BrokenToken", media_type="video")
+        (reference,) = self.references("media", "brokentoken")
+
+        response = self.lookup("media_ref", reference)
+
+        self.assertEqual(sorted(json.loads(response.content)["media_tokens"]), ["BrokenToken", "brokentoken"])
+
+    def test_a_kind_that_is_not_text_is_rejected(self):
+        for kind in ([], {}, 1):
+            with self.subTest(kind=kind):
+                self.assertEqual(self.lookup(kind, "v2:" + "a" * 64).status_code, 400)
 
     def test_a_reference_with_no_match_is_not_found_and_not_logged(self):
         unknown = "v2:" + "0" * 64

@@ -66,11 +66,12 @@ def recipient_reference_candidates(address: str) -> tuple[str, ...]:
     return tuple(candidates)
 
 
-def user_id_for_recipient_reference(reference: str) -> int | None:
-    """Find the account whose email produces this reference.
+def user_ids_for_recipient_reference(reference: str) -> list[int]:
+    """Find every account whose email produces this reference.
 
     A keyed reference cannot be reversed, so this recomputes it for each account
-    instead of storing an index from reference to person.
+    instead of storing an index from reference to person. Emails are not unique
+    and the reference ignores case, so several accounts can share one reference.
     """
     from django.contrib.auth import get_user_model
 
@@ -85,11 +86,12 @@ def user_id_for_recipient_reference(reference: str) -> int | None:
     if version not in keys:
         raise ValueError(f"No recipient reference key for version {version}")
 
-    accounts = get_user_model().objects.exclude(email="").values_list("id", "email")
-    for user_id, email in accounts.iterator(chunk_size=2000):
-        if recipient_reference(email, key=keys[version], version=version) == reference:
-            return user_id
-    return None
+    accounts = get_user_model().objects.exclude(email="").order_by("id").values_list("id", "email")
+    return [
+        user_id
+        for user_id, email in accounts.iterator(chunk_size=2000)
+        if recipient_reference(email, key=keys[version], version=version) == reference
+    ]
 
 
 def enqueue(envelope: EmailEnvelope) -> EmailDeliveryReceipt:

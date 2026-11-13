@@ -445,8 +445,11 @@ def media_reference(value: str) -> str:
     return f"{version}:{digest}"
 
 
-def media_token_for_reference(reference: str) -> str | None:
-    """Find the media whose public token produces this reference, by recomputing it per media."""
+def media_tokens_for_reference(reference: str) -> list[str]:
+    """Find every media whose public token produces this reference, by recomputing it per media.
+
+    The reference ignores case and tokens do not, so several media can share one reference.
+    """
     from django.core.exceptions import ValidationError
 
     from files.models import Media
@@ -457,11 +460,8 @@ def media_token_for_reference(reference: str) -> str | None:
     if version != str(getattr(settings, "OBSERVABILITY_REFERENCE_HMAC_VERSION", "v1")):
         raise ValueError(f"No media reference key for version {version}")
 
-    tokens = Media.objects.exclude(friendly_token="").values_list("friendly_token", flat=True)
-    for token in tokens.iterator(chunk_size=2000):
-        if media_reference(token) == reference:
-            return token
-    return None
+    tokens = Media.objects.exclude(friendly_token="").order_by("id").values_list("friendly_token", flat=True)
+    return [token for token in tokens.iterator(chunk_size=2000) if media_reference(token) == reference]
 
 
 def current_trace_ids() -> tuple[str, str]:
