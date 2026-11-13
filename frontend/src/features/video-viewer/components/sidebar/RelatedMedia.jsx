@@ -84,6 +84,7 @@ export function RelatedMedia({ hideFirst = true }) {
 					key={item.friendly_token || item.url}
 					title={item.title}
 					imageSrc={item.thumbnail_url}
+					previewSrc={item.preview_url || ''}
 					link={item.url}
 					duration={getMediaDurationLabel(item)}
 					subtitle={getAuthorName(item)}

@@ -39,8 +39,8 @@ vi.mock('../../../shared/components/Text/Text', () => ({ Text: ({ children }) =>
 vi.mock('../../../home/utils/mediaList', () => ({ getMediaDurationLabel: () => null }));
 
 vi.mock('../../../shared/components/MovieItem/MovieItem', () => ({
-	HorizontalMovieItem: ({ title, badge, badgeColor }) => (
-		<article>
+	HorizontalMovieItem: ({ title, badge, badgeColor, previewSrc }) => (
+		<article data-preview-src={previewSrc}>
 			{title}
 			{badge ? (
 				<span data-testid="badge" data-badge-color={badgeColor}>
@@ -87,5 +87,24 @@ describe('AutoPlay', () => {
 		render(<AutoPlay />);
 
 		expect(screen.queryByTestId('badge')).not.toBeInTheDocument();
+	});
+
+	it.each([
+		{
+			name: 'its preview URL',
+			item: { preview_url: '/media/encoded/next.gif?v=1' },
+			expected: '/media/encoded/next.gif?v=1',
+		},
+		{ name: 'an empty preview URL when it has none', item: {}, expected: '' },
+	])('gives the up-next card $name', ({ item, expected }) => {
+		storeMocks.state.mediaData = {
+			related_media: [
+				{ friendly_token: 'next-3', title: 'Next Up', url: '/media/next-3', thumbnail_url: '/t.jpg', ...item },
+			],
+		};
+
+		render(<AutoPlay />);
+
+		expect(screen.getByRole('article')).toHaveAttribute('data-preview-src', expected);
 	});
 });
