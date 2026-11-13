@@ -4,6 +4,7 @@ import ipaddress
 import json
 import logging
 import os
+import re
 
 from django.apps import apps
 from django.conf import settings
@@ -138,6 +139,35 @@ def _audit_reference_lookup(level, outcome, reason, kind=""):
     )
 
 
+REFERENCE_PATTERN = re.compile(r"[A-Za-z0-9._-]{1,32}:[0-9a-f]{64}")
+REVERSE_REFERENCE_KINDS = frozenset({"actor_ref", "media_ref"})
+
+
+def _resolve_reference(kind, reference):
+    from cms.observability import media_tokens_for_reference
+    from email_delivery.service import user_ids_for_recipient_reference
+
+    if not REFERENCE_PATTERN.fullmatch(reference):
+        _audit_reference_lookup("warning", "denied", "invalid_reference", kind)
+        return JsonResponse({"error": "invalid_reference"}, status=400)
+    try:
+        if kind == "actor_ref":
+            matches = {"user_ids": user_ids_for_recipient_reference(reference)}
+        else:
+            matches = {"media_tokens": media_tokens_for_reference(reference)}
+    except ValidationError:
+        _audit_reference_lookup("error", "failed", "reference_unavailable", kind)
+        return JsonResponse({"error": "reference_unavailable"}, status=503)
+    except ValueError:
+        _audit_reference_lookup("warning", "denied", "unknown_reference_version", kind)
+        return JsonResponse({"error": "unknown_reference_version"}, status=400)
+    if not any(matches.values()):
+        _audit_reference_lookup("info", "resolved", "not_found", kind)
+        return JsonResponse({"error": "not_found"}, status=404)
+    _audit_reference_lookup("info", "resolved", "success", kind)
+    return JsonResponse({"kind": kind, **matches})
+
+
 @csrf_exempt
 def observability_reference_lookup(request):
     if not _reference_lookup_source_allowed(request):
@@ -164,12 +194,14 @@ def observability_reference_lookup(request):
         payload = json.loads(request.body)
         kind = payload["kind"]
         value = payload["value"]
-        if not isinstance(value, str) or not value.strip():
+        if not isinstance(kind, str) or not isinstance(value, str) or not value.strip():
             raise ValueError
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
         _audit_reference_lookup("warning", "denied", "invalid_request")
         return JsonResponse({"error": "invalid_request"}, status=400)
 
+    if kind in REVERSE_REFERENCE_KINDS:
+        return _resolve_reference(kind, value)
     if kind == "actor":
         from email_delivery.service import recipient_reference_candidates
 
