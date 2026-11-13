@@ -100,6 +100,11 @@ telemetry failure. The repository's Collector applies the same allowlist and
 clears the status message and trace state again; a test keeps the two
 allowlists equal.
 
+The allowlists keep the stable HTTP attribute names `http.request.method` and
+`http.response.status_code`. Before it instruments anything, each process adds
+`http` to `OTEL_SEMCONV_STABILITY_OPT_IN` unless the variable already names
+`http` or `http/dup`, and keeps any other value an operator set there.
+
 The Collector reads each rotated application log together with its `.1` copy.
 After a Collector outage that spans one rotation, it recovers the unread lines
 from the `.1` copy. After an outage that spans two or more rotations, the lines

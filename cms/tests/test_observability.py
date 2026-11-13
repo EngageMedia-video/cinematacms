@@ -577,6 +577,66 @@ class SpanExportAnonymisationTests(SimpleTestCase):
         self.assertIn('set(span.status.message, "")', contexts["span"])
         self.assertIn('set(span.trace_state, "")', contexts["span"])
 
+    def exported_request_span_attributes(self, semconv_opt_in=None):
+        script = (
+            "import json\n"
+            "import sys\n"
+            "import types\n"
+            "import django\n"
+            "django.setup()\n"
+            "from django.conf import settings\n"
+            "from django.http import HttpResponse\n"
+            "from django.test import Client\n"
+            "from django.urls import path\n"
+            "from opentelemetry import trace\n"
+            "from opentelemetry.sdk.trace import TracerProvider\n"
+            "from opentelemetry.sdk.trace.export import SimpleSpanProcessor\n"
+            "from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter\n"
+            "from cms import observability\n"
+            "settings.OTEL_ENABLED = True\n"
+            "settings.ALLOWED_HOSTS = ['testserver']\n"
+            "settings.MIDDLEWARE = []\n"
+            "urls = types.ModuleType('request_span_urls')\n"
+            "urls.urlpatterns = [path('ping', lambda request: HttpResponse('ok'))]\n"
+            "sys.modules['request_span_urls'] = urls\n"
+            "settings.ROOT_URLCONF = 'request_span_urls'\n"
+            "exported = InMemorySpanExporter()\n"
+            "provider = TracerProvider()\n"
+            "provider.add_span_processor(SimpleSpanProcessor(observability.SafeSpanExporter(exported)))\n"
+            "trace.set_tracer_provider(provider)\n"
+            "observability._tracer_configured = True\n"
+            "observability.configure_django_observability()\n"
+            "Client().get('/ping')\n"
+            "server = [span for span in exported.get_finished_spans() if span.kind == trace.SpanKind.SERVER]\n"
+            "print(json.dumps(dict(server[0].attributes)))\n"
+        )
+        env = {key: value for key, value in os.environ.items() if key != "OTEL_SEMCONV_STABILITY_OPT_IN"}
+        env["DJANGO_SETTINGS_MODULE"] = "cms.test_settings"
+        if semconv_opt_in is not None:
+            env["OTEL_SEMCONV_STABILITY_OPT_IN"] = semconv_opt_in
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=REPOSITORY_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120,
+        )
+        return json.loads(result.stdout.strip().splitlines()[-1])
+
+    def test_exported_request_spans_keep_the_method_and_status(self):
+        attributes = self.exported_request_span_attributes()
+
+        self.assertEqual(attributes.get("http.request.method"), "GET")
+        self.assertEqual(attributes.get("http.response.status_code"), 200)
+
+    def test_an_operator_opt_in_for_another_signal_still_keeps_the_method_and_status(self):
+        attributes = self.exported_request_span_attributes(semconv_opt_in="database")
+
+        self.assertEqual(attributes.get("http.request.method"), "GET")
+        self.assertEqual(attributes.get("http.response.status_code"), 200)
+
 
 @override_settings(OTEL_ENABLED=True, OTEL_SERVICE_ROLE="transcription")
 class TracingConfigurationStateTests(SimpleTestCase):
@@ -584,6 +644,9 @@ class TracingConfigurationStateTests(SimpleTestCase):
         from files import metrics
 
         metrics.TRACING_CONFIGURED.clear()
+        environment = patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
         process_state = patch.multiple(
             "cms.observability",
             _tracer_configured=False,

@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from ipaddress import ip_address
@@ -25,6 +26,8 @@ ALLOWED_SERVICE_ROLES = frozenset({"web", "long-task", "short-task", "transcript
 SENSITIVE_ATTRIBUTE_PARTS = ("email", "authorization", "secret", "password", "body", "filename", "url")
 RESTRICTED_EMAIL_ATTRIBUTES = frozenset({"email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt"})
 RESTRICTED_REFERENCE_ATTRIBUTES = frozenset({"cinematacms.actor_ref", "cinematacms.media_ref"})
+SEMCONV_STABILITY_OPT_IN = "OTEL_SEMCONV_STABILITY_OPT_IN"
+STABLE_HTTP_SEMCONV_MODES = frozenset({"http", "http/dup"})
 EXPORTED_SPAN_ATTRIBUTES = frozenset(
     {
         "cinematacms.actor_ref",
@@ -363,9 +366,20 @@ def _instrument_celery() -> bool:
     return True
 
 
+def _opt_in_to_stable_http_semantic_conventions() -> None:
+    """Make the HTTP instrumentations emit the attribute names that EXPORTED_SPAN_ATTRIBUTES keeps.
+
+    The instrumentations read this variable once, on the first instrument() call in the process.
+    """
+    opted_in = [signal.strip() for signal in os.environ.get(SEMCONV_STABILITY_OPT_IN, "").split(",") if signal.strip()]
+    if not STABLE_HTTP_SEMCONV_MODES & set(opted_in):
+        os.environ[SEMCONV_STABILITY_OPT_IN] = ",".join([*opted_in, "http"])
+
+
 def _configure_tracing(instrument) -> None:
     if not observability_enabled():
         return
+    _opt_in_to_stable_http_semantic_conventions()
     configured = False
     try:
         configured = _configure_tracer_provider() and instrument()
