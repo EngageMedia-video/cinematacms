@@ -71,6 +71,7 @@ from .methods import (
     can_manage_uploads,
     can_upload_media,
     community_impact_auto_approves,
+    community_impact_search_filter,
     get_current_featured_media,
     get_user_or_session,
     is_curator,
@@ -2262,17 +2263,7 @@ class MediaSearch(APIView):
                 ).distinct()
 
         if community_impact:
-            community_impact_options = {
-                CommunityImpact.SCREENING,
-                CommunityImpact.FEATURED,
-                CommunityImpact.SAVES,
-                CommunityImpact.ACADEMIC,
-            }
-            community_impact_values = [value for value in community_impact if value in community_impact_options]
-            media = media.filter(
-                community_impacts__status=CommunityImpact.APPROVED,
-                community_impacts__category__in=community_impact_values,
-            ).distinct()
+            media = media.filter(community_impact_search_filter(community_impact))
 
         if media_type:
             media = media.filter(media_type=media_type)
