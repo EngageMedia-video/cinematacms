@@ -82,6 +82,30 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
+    def test_viewer_who_opted_out_of_activity_logging_can_still_report(self):
+        self.viewer.disable_activity_logging = True
+        self.viewer.save(update_fields=["disable_activity_logging"])
+        self.client.force_login(self.viewer)
+
+        response = self._report()
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(self._reports(self.viewer).count(), 1)
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 1)
+        self.assertTrue(self.client.get(self.detail_url).json()["user_has_reported"])
+
+        self.assertEqual(self._retract().json()["detail"], "report retracted")
+
+    def test_opting_out_still_stops_like_records(self):
+        self.viewer.disable_activity_logging = True
+        self.viewer.save(update_fields=["disable_activity_logging"])
+        self.client.force_login(self.viewer)
+
+        self._send("post", {"type": "like"})
+
+        self.assertFalse(MediaAction.objects.filter(media=self.media, user=self.viewer, action="like").exists())
+
     def test_second_report_from_the_same_viewer_is_not_counted(self):
         self.client.force_login(self.viewer)
         self._report()
