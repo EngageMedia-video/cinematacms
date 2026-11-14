@@ -122,6 +122,16 @@ chunked upload code are removed. Sessions are cut off before a release, so no pa
 tus release continues an upload. Migration `uploader.0003` deletes the remaining chunked upload
 rows, and the daily `cleanup_orphaned_uploads` task removes their chunk files.
 
+#### Release and rollback
+- **Release:** cut off the sessions before the deploy, as for any maintenance. Migration
+  `uploader.0003` drops columns the previous application code writes, so the previous code cannot
+  run against the new schema.
+- **Rollback:** before the previous code is deployed, run `python manage.py migrate uploader 0001`
+  with the new code still in place. It restores the dropped columns and deletes every upload
+  session, because the restored columns have no default. Unfinished uploads are lost and their
+  files are selected again; media that was already created is not affected. `rollback.sh` does not
+  run this step.
+
 ---
 
 ## 🔐 Security Considerations
