@@ -79,6 +79,10 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   time, and first and last MiB. On a match the upload continues from the server's offset; a different
   file, account or target never matches. A draft (bulk) upload and a non-draft (single) upload of one
   file are separate uploads: the lookup sends `is_draft` and matches only the same mode.
+- **The same file twice:** a file selected again while its first copy is still in the list is sent as
+  its own upload and becomes its own media; the browser does not attach it to the first copy's
+  upload. Another tab is a separate engine: selecting the same file there continues the same upload,
+  and both tabs end on the same media.
 - **Lost final response:** the browser keeps the upload's URL in `localStorage` until it sees the upload
   end. If the response to the last byte is lost and the page reloads, the completed upload is no longer
   unfinished, so the lookup finds nothing; the engine then asks the remembered URL, and its `HEAD`

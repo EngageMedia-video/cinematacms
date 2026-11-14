@@ -309,6 +309,58 @@ describe('createTusUploader', () => {
 		});
 	});
 
+	describe('the same file selected twice', () => {
+		// Holds every PATCH, so the first copy is still uploading when the second is added.
+		function holdTransfers(server) {
+			const handle = server.handle;
+			let release;
+			const released = new Promise((resolve) => {
+				release = resolve;
+			});
+			server.handle = async (request) => {
+				if (request.method === 'PATCH') await released;
+				return handle(request);
+			};
+			return release;
+		}
+
+		async function addTwice(context) {
+			const release = holdTransfers(context.server);
+			context.uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(context.server.uploads.size).toBe(1));
+			context.uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(context.server.uploads.size).toBe(2));
+			release();
+			await vi.waitFor(() => expect(context.events.filter(([name]) => name === 'complete')).toHaveLength(2));
+		}
+
+		it('gives the second copy its own upload when the server reports the first as unfinished', async () => {
+			const context = setup();
+			context.fetchImpl.mockImplementation(async () => ({
+				ok: true,
+				status: 200,
+				json: async () => ({
+					uploads: [...context.server.uploads]
+						.filter(([, upload]) => upload.text.length < upload.length)
+						.map(([url]) => ({ url })),
+				}),
+			}));
+
+			await addTwice(context);
+
+			expect(context.storedText()).toEqual([CONTENT, CONTENT]);
+			expect(context.server.requests.filter((request) => request.method === 'POST')).toHaveLength(2);
+		});
+
+		it('gives the second copy its own upload when only the browser remembers the first', async () => {
+			const context = setup();
+
+			await addTwice(context);
+
+			expect(context.storedText()).toEqual([CONTENT, CONTENT]);
+		});
+	});
+
 	describe('sign-in recovery', () => {
 		it('waits for sign-in on 401 without using retries, then continues from the server offset', async () => {
 			const { server, uploader, events, statuses, settled, patches, storedText } = setup();

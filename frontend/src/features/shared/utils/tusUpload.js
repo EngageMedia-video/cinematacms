@@ -69,6 +69,18 @@ function browserStorage() {
 	}
 }
 
+function pathOf(url) {
+	try {
+		return new URL(url, globalThis.location?.href ?? 'http://localhost').pathname;
+	} catch {
+		return url;
+	}
+}
+
+function isSameFile(a, b) {
+	return a === b || (a.name === b.name && a.size === b.size && a.lastModified === b.lastModified);
+}
+
 function newUploadId() {
 	return globalThis.crypto?.randomUUID?.() ?? '';
 }
@@ -193,6 +205,19 @@ export function createTusUploader({
 		}
 	}
 
+	// Two rows of one engine must never drive one upload: they would trade 409 and 423 until the
+	// last byte, cancelling one would delete the other's bytes, and both would end on one media.
+	// A row that has no upload URL yet may be about to get this one, so the same file counts too.
+	function drivenByAnotherItem(item, uploadUrl) {
+		const path = pathOf(uploadUrl);
+		for (const other of items.values()) {
+			if (other === item || other.status === UPLOAD_STATUS.COMPLETE) continue;
+			const otherUrl = other.upload?.url;
+			if (otherUrl ? pathOf(otherUrl) === path : isSameFile(other.file, item.file)) return true;
+		}
+		return false;
+	}
+
 	function buildUpload(item, uploadUrl) {
 		return new Upload(item.file, {
 			endpoint,
@@ -281,9 +306,12 @@ export function createTusUploader({
 			return;
 		}
 		if (stale()) return;
-		const remembered = uploadUrl ? null : pendingUrl(item);
+		// The same file selected again while its first copy is still here is sent as its own upload.
+		const free = (url) => (url && !drivenByAnotherItem(item, url) ? url : null);
+		const found = free(uploadUrl);
+		const remembered = found ? null : free(pendingUrl(item));
 		item.recalled = Boolean(remembered);
-		item.upload = buildUpload(item, uploadUrl ?? remembered);
+		item.upload = buildUpload(item, found ?? remembered);
 		item.upload.start();
 	}
 
