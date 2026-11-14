@@ -21,6 +21,7 @@ export function DateChooserField({
 	className = 'w-full',
 	id,
 	label,
+	max,
 	min,
 	name,
 	onChange,
@@ -60,6 +61,7 @@ export function DateChooserField({
 				id={id}
 				name={name}
 				min={min}
+				max={max}
 				value={value}
 				onChange={(event) => onChange?.(event.target.value)}
 				tabIndex={-1}
