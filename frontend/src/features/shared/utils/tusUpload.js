@@ -94,6 +94,14 @@ function newUploadId() {
 	return globalThis.crypto?.randomUUID?.() ?? '';
 }
 
+const UPLOAD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** The server's id of the upload at `url`, when it has the format nginx and the application log. */
+function serverUploadId(url) {
+	const id = url ? pathOf(url).replace(/\/+$/, '').split('/').pop() : '';
+	return UPLOAD_ID_PATTERN.test(id) ? id : null;
+}
+
 function extensionOf(name) {
 	const dot = name.lastIndexOf('.');
 	return dot < 0 ? '' : name.slice(dot + 1).toLowerCase();
@@ -227,6 +235,13 @@ export function createTusUploader({
 		return false;
 	}
 
+	// The id sent as X-Upload-Id. Once the upload exists it is the server's id, so the log lines of
+	// one upload share one id across reloads and resumes. Only the creation request, which has no
+	// server id yet, carries the id minted in the browser.
+	function adoptUploadIdOf(item, uploadUrl) {
+		item.uuid = serverUploadId(uploadUrl) ?? item.provisionalUuid;
+	}
+
 	function buildUpload(item, uploadUrl) {
 		return new Upload(item.file, {
 			endpoint,
@@ -259,6 +274,7 @@ export function createTusUploader({
 				}
 			},
 			onUploadUrlAvailable() {
+				adoptUploadIdOf(item, item.upload?.url);
 				setPendingUrl(item, item.upload?.url);
 			},
 			onShouldRetry(error) {
@@ -321,6 +337,7 @@ export function createTusUploader({
 		const found = free(uploadUrl);
 		const remembered = found ? null : free(pendingUrl(item));
 		item.recalled = Boolean(remembered);
+		adoptUploadIdOf(item, found ?? remembered);
 		item.upload = buildUpload(item, found ?? remembered);
 		item.upload.start();
 	}
@@ -344,6 +361,7 @@ export function createTusUploader({
 					continue;
 				}
 				const item = { id: nextId++, uuid: newUploadId(), file, status: UPLOAD_STATUS.UPLOADING };
+				item.provisionalUuid = item.uuid;
 				items.set(item.id, item);
 				notify('onSubmitted', item.id, file.name);
 				begin(item);

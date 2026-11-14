@@ -157,10 +157,13 @@ path, query string, address, cookie, or email. nginx answers some upload errors
 ### Upload correlation: `upload_ref`
 
 `upload_ref` joins an nginx upload line to the application events of the same
-upload, and through them to `actor_ref` and `trace_id`. It is a random
-version-4 UUID that the browser creates for each selected file. The upload pages
-send it as the `X-Upload-Id` header on every request of that upload (creation,
-offset check, and each `PATCH`), because nginx can log a header. It carries no personal data and grants no access; it only
+upload, and through them to `actor_ref` and `trace_id`. It is the id the server
+gives the upload, a random version-4 UUID. The upload pages send it as the
+`X-Upload-Id` header on every request after the creation (offset check and each
+`PATCH`), because nginx can log a header, and they send the same id again when
+an upload continues after a reload or a new sign-in. The creation request has no
+server id yet, so it carries an id the browser creates; a creation that fails is
+found by that id only. It carries no personal data and grants no access; it only
 attributes log lines. `config/observability/coverage.json` (`log_correlation`)
 holds the one definition: header, pattern, maximum length (36), and the events
 that carry it. `scripts/validate_observability_coverage.py` checks it, and it is
@@ -178,10 +181,10 @@ never a metric label.
 - Django: `cms.http_telemetry.upload_reference` applies the same pattern to
   `X-Upload-Id` and returns an empty string for anything else. On the
   `upload_transfer` route group, `cinematacms.http.request.denied`, `.failed`,
-  and `.slow` carry `upload_ref`, and `uploader.views` logs
+  and `.slow` carry the `upload_ref` of the header, and `uploader.views` logs
   `cinematacms.upload.started` (upload created) and
-  `cinematacms.upload.finished` (media created), both with `upload_ref` and
-  `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
+  `cinematacms.upload.finished` (media created), both with the server's upload
+  id as `upload_ref` and with `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
   attribution key and not as proof of ownership.
 - CORS: `x-upload-id` is in `CORS_ALLOW_HEADERS`. It matters only when
   `UPLOAD_HOST` is a different origin from the site: without it the browser

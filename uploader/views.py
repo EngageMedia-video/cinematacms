@@ -54,18 +54,19 @@ class UploadTargetMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-def log_upload_event(request, event_name):
+def log_upload_event(request, event_name, upload_ref=None):
+    """Log an upload lifecycle event. ``upload_ref`` is the server's upload id; without one, the request's."""
     logger.info(
         event_name,
         extra={
             "route_group": UPLOAD_ROUTE_GROUP,
             "operation": UPLOAD_ROUTE_GROUP,
-            "upload_ref": upload_reference(request),
+            "upload_ref": upload_ref or upload_reference(request),
         },
     )
 
 
-def create_media_from_upload(request, assembly, *, is_draft):
+def create_media_from_upload(request, assembly, *, is_draft, upload_ref=None):
     """Create the caller's media from an uploaded file and return its URL."""
     media_file = os.path.join(settings.MEDIA_ROOT, assembly.real_path)
     with open(media_file, "rb") as f:
@@ -83,7 +84,7 @@ def create_media_from_upload(request, assembly, *, is_draft):
         new.save(force_insert=True, initial_state="private")
     rm_file(media_file)
     shutil.rmtree(os.path.join(settings.MEDIA_ROOT, assembly.upload_dir))
-    log_upload_event(request, "cinematacms.upload.finished")
+    log_upload_event(request, "cinematacms.upload.finished", upload_ref)
     return new.get_absolute_url()
 
 

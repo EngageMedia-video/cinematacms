@@ -167,6 +167,41 @@ describe('createTusUploader', () => {
 		expect([...uploadIds][0]).toBe(uploader.getUuid(0));
 	});
 
+	describe('upload id header', () => {
+		const SERVER_ID = '11111111-2222-4333-8444-555555555555';
+		const idsOf = (requests) => requests.map((request) => request.headers['X-Upload-Id']);
+
+		it('switches to the id the server gave the upload once it is created', async () => {
+			const { server, uploader, settled } = setup();
+			server.intercept = (request) => {
+				if (request.method !== 'POST') return null;
+				const location = `${ENDPOINT}${SERVER_ID}/`;
+				server.uploads.set(location, { length: Number(request.headers['Upload-Length']), text: '' });
+				return { status: 201, headers: { Location: location } };
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			const [creation, ...transfers] = idsOf(server.requests);
+			expect(creation).toMatch(/^[0-9a-f-]{36}$/);
+			expect(creation).not.toBe(SERVER_ID);
+			expect(new Set(transfers)).toEqual(new Set([SERVER_ID]));
+			expect(uploader.getUuid(0)).toBe(SERVER_ID);
+		});
+
+		it('keeps the server id of an upload that is resumed after a reload', async () => {
+			const url = `${ENDPOINT}${SERVER_ID}/`;
+			const { server, uploader, settled } = setup({ lookup: { uploads: [{ url, size: 26, offset: 10 }] } });
+			server.uploads.set(url, { length: 26, text: CONTENT.slice(0, 10) });
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(new Set(idsOf(server.requests))).toEqual(new Set([SERVER_ID]));
+		});
+	});
+
 	it('recovers from three separated interruptions without failing the upload', async () => {
 		const { server, uploader, events, settled, storedText } = setup();
 		const failed = new Set();

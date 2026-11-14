@@ -185,7 +185,7 @@ class _LogCollector(logging.Handler):
 
 
 class UploadLifecycleLogTests(TestCase):
-    """Start and finish events carry the same upload_ref as the nginx line and the denial events."""
+    """Start and finish events carry the server's upload id, which the browser sends on the later requests."""
 
     def setUp(self):
         self.user = User.objects.create_user(username="person", email="person@example.org", password="pw")
@@ -245,7 +245,8 @@ class UploadLifecycleLogTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         (record,) = self._events("cinematacms.upload.started")
-        self.assertEqual(record.upload_ref, FILE_UUID)
+        self.assertEqual(record.upload_ref, str(UploadSession.objects.get().uuid))
+        self.assertNotEqual(record.upload_ref, FILE_UUID)
         self.assertEqual(record.actor_ref, self.actor_ref)
         self.assertTrue(hasattr(record, "trace_id"))
         self.assertEqual(record.route_group, "upload_transfer")
@@ -268,14 +269,15 @@ class UploadLifecycleLogTests(TestCase):
 
         self.assertEqual(response.status_code, 204)
         (record,) = self._events("cinematacms.upload.finished")
-        self.assertEqual(record.upload_ref, FILE_UUID)
+        (started,) = self._events("cinematacms.upload.started")
+        self.assertEqual(record.upload_ref, started.upload_ref)
         self.assertEqual(record.actor_ref, self.actor_ref)
 
-    def test_malformed_upload_id_is_logged_as_empty(self):
+    def test_started_never_logs_what_the_upload_id_header_carries(self):
         self._create(upload_id="not-an-id\r\nforged=1")
 
         (record,) = self._events("cinematacms.upload.started")
-        self.assertEqual(record.upload_ref, "")
+        self.assertEqual(record.upload_ref, str(UploadSession.objects.get().uuid))
 
 
 class UploadIdCorsTests(SimpleTestCase):

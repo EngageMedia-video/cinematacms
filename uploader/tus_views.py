@@ -120,7 +120,9 @@ class TusCollectionView(TusView):
 
         session = tus.create(request.user, self.target_media, **form.cleaned_data)
         if self.target_media is None:
-            log_upload_event(request, "cinematacms.upload.started")
+            # The server's id, which the browser sends as X-Upload-Id from the next request on, so
+            # the events and nginx lines of one upload share it across reloads and resumes.
+            log_upload_event(request, "cinematacms.upload.started", str(session.uuid))
         response = HttpResponse(status=201)
         response["Location"] = self.upload_url(session)
         response["Upload-Expires"] = http_date(tus.expires_at(session).timestamp())
@@ -198,5 +200,7 @@ class TusUploadView(TusView):
 
     def _finish(self, session):
         if self.target_media is None:
-            return lambda assembly: create_media_from_upload(self.request, assembly, is_draft=session.is_draft)
+            return lambda assembly: create_media_from_upload(
+                self.request, assembly, is_draft=session.is_draft, upload_ref=str(session.uuid)
+            )
         return lambda assembly: stage_replacement_file(self.request, self.target_media, assembly, session.filename)
