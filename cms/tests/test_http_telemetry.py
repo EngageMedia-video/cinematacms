@@ -205,7 +205,15 @@ class UploadDenialLogTests(SimpleTestCase):
         self.assertEqual(record.actor_ref, "v1:" + "a" * 64)
 
     def test_other_upload_client_errors_use_bounded_reason_codes(self):
-        expected = {400: "bad_request", 413: "payload_too_large", 429: "rate_limited", 418: "other"}
+        expected = {
+            400: "bad_request",
+            409: "conflict",
+            410: "gone",
+            413: "payload_too_large",
+            423: "locked",
+            429: "rate_limited",
+            418: "other",
+        }
         for status_code, reason_code in expected.items():
             with self.subTest(status_code=status_code):
                 self.collector.records.clear()

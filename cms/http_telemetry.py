@@ -407,9 +407,14 @@ def normalize_status_class(status_code: int) -> str:
     return "other"
 
 
+# 409, 410 and 423 are ordinary answers of the tus endpoints: a stale offset after a lost
+# response, an expired upload, and a second writer or a completion in progress.
 _DENIAL_REASON_BY_STATUS = {
     400: "bad_request",
+    409: "conflict",
+    410: "gone",
     413: "payload_too_large",
+    423: "locked",
     429: "rate_limited",
 }
 

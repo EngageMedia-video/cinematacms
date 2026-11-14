@@ -406,6 +406,9 @@
         "bad_request",
         "forbidden",
         "payload_too_large",
+        "conflict",
+        "gone",
+        "locked",
         "other"
       ],
       "description": "Bounded domain reason codes."
@@ -1644,6 +1647,9 @@
           "missing_credentials",
           "payload_too_large",
           "rate_limited",
+          "conflict",
+          "gone",
+          "locked",
           "other"
         ]
       },

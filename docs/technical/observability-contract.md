@@ -149,8 +149,12 @@ A 4xx response on the `upload_transfer` route group logs
 `cinematacms.http.request.denied` with `route_group`, `operation`, `method`,
 `status_code`, a bounded `reason_code`, `trace_id`, and `actor_ref` when the
 session is authenticated. `reason_code` is `missing_credentials` or `forbidden`
-for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
-`rate_limited` for 429, and `other` otherwise. The event never carries the
+for 401 and 403, `bad_request` for 400, `conflict` for 409, `gone` for 410,
+`payload_too_large` for 413, `locked` for 423, `rate_limited` for 429, and
+`other` otherwise. On the tus endpoints 409, 410 and 423 are ordinary answers (a
+stale offset after a lost response, an expired upload, a second writer or a
+completion in progress), so these three reasons are retries and expiries, not
+refusals. The event never carries the
 path, query string, address, cookie, or email. nginx answers some upload errors
 (408, 413, 499) before Django runs; those appear only in the nginx access log.
 
