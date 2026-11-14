@@ -8,7 +8,18 @@ from django.core.management.base import CommandError
 from django.db import DatabaseError, connection
 from django.test import Client, TestCase
 
-from files.models import Category, CommunityImpact, Language, License, MediaCountry, Tag, Topic
+from files.models import (
+    Category,
+    CommunityImpact,
+    Language,
+    License,
+    Media,
+    MediaCountry,
+    Playlist,
+    PlaylistMedia,
+    Tag,
+    Topic,
+)
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -148,6 +159,85 @@ class MediaSearchAwardFilterTests(TestCase):
         for title in api_titles:
             self.assertIn(title, rss_content)
         self.assertNotIn("Academic Film", rss_content)
+
+
+class MediaSearchSavesFilterTests(TestCase):
+    """The "Saves & Playlists" filter reads playlist membership, as the film page does."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = create_test_user(username="saves_user")
+        self.other_user = create_test_user(username="saves_other_user")
+
+        self.saved = self._media("Saved Film")
+        self.saved_twice = self._media("Twice Saved Film")
+        self.screened = self._media("Screened Film")
+        self.admin_row_only = self._media("Admin Row Film")
+        self.private_saved = self._media("Private Saved Film", state="private")
+        self.plain = self._media("Plain Film")
+
+        first_playlist = Playlist.objects.create(title="First playlist", user=self.user)
+        second_playlist = Playlist.objects.create(title="Second playlist", user=self.other_user)
+        PlaylistMedia.objects.create(playlist=first_playlist, media=self.saved)
+        PlaylistMedia.objects.create(playlist=first_playlist, media=self.saved_twice)
+        PlaylistMedia.objects.create(playlist=second_playlist, media=self.saved_twice)
+        PlaylistMedia.objects.create(playlist=first_playlist, media=self.private_saved)
+
+        self._impact(self.screened, CommunityImpact.SCREENING)
+        self._impact(self.saved_twice, CommunityImpact.SCREENING)
+        self._impact(self.admin_row_only, CommunityImpact.SAVES)
+
+    def _media(self, title, **kwargs):
+        media = create_test_media(self.user, **kwargs)
+        media.title = title
+        media.save(update_fields=["title"])
+        return media
+
+    def _impact(self, media, category):
+        return CommunityImpact.objects.create(
+            media=media,
+            user=self.user,
+            category=category,
+            status=CommunityImpact.APPROVED,
+            title=f"{media.title} impact",
+            event_date=date(2025, 1, 1),
+        )
+
+    def _api_titles(self, params):
+        response = self.client.get("/api/v1/search", params)
+        self.assertEqual(response.status_code, 200)
+        return sorted(item["title"] for item in response.json()["results"])
+
+    def _rss_titles(self, params):
+        response = self.client.get("/rss/search/", params)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        return sorted(media.title for media in Media.objects.all() if f"<title>{media.title}</title>" in content)
+
+    def test_saves_filter_returns_public_films_in_a_playlist(self):
+        titles = self._api_titles({"community_impact": [CommunityImpact.SAVES]})
+
+        self.assertEqual(titles, ["Saved Film", "Twice Saved Film"])
+
+    def test_saves_filter_combined_with_another_category_returns_films_matching_either(self):
+        titles = self._api_titles({"community_impact": [CommunityImpact.SAVES, CommunityImpact.SCREENING]})
+
+        self.assertEqual(titles, ["Saved Film", "Screened Film", "Twice Saved Film"])
+
+    def test_other_category_alone_does_not_return_films_that_are_only_in_a_playlist(self):
+        titles = self._api_titles({"community_impact": [CommunityImpact.SCREENING]})
+
+        self.assertEqual(titles, ["Screened Film", "Twice Saved Film"])
+
+    def test_rss_saves_filter_returns_public_films_in_a_playlist(self):
+        titles = self._rss_titles({"community_impact": [CommunityImpact.SAVES]})
+
+        self.assertEqual(titles, ["Saved Film", "Twice Saved Film"])
+
+    def test_rss_saves_filter_combined_with_another_category_returns_films_matching_either(self):
+        titles = self._rss_titles({"community_impact": [CommunityImpact.SAVES, CommunityImpact.SCREENING]})
+
+        self.assertEqual(titles, ["Saved Film", "Screened Film", "Twice Saved Film"])
 
 
 class MediaSearchTaxonomyFilterTests(TestCase):

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from cms import celery_app
@@ -616,6 +616,33 @@ def community_impact_auto_approves(user, media):
     except AttributeError:
         pass
     return False
+
+
+def community_impact_search_filter(values):
+    """Return a Q matching films that have any of the requested impact categories.
+
+    "saves" reads playlist membership, the same data the film page counts.
+    The other categories read approved CommunityImpact entries. A value outside
+    these categories matches no film.
+    """
+    entry_categories = {
+        models.CommunityImpact.SCREENING,
+        models.CommunityImpact.FEATURED,
+        models.CommunityImpact.ACADEMIC,
+    }.intersection(values)
+    # Exists keeps one row per film, so the caller needs no distinct().
+    match = Q(
+        Exists(
+            models.CommunityImpact.objects.filter(
+                media=OuterRef("pk"),
+                status=models.CommunityImpact.APPROVED,
+                category__in=entry_categories,
+            )
+        )
+    )
+    if models.CommunityImpact.SAVES in values:
+        match |= Q(Exists(models.PlaylistMedia.objects.filter(media=OuterRef("pk"))))
+    return match
 
 
 def is_curator(user):
