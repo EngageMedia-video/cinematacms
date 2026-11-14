@@ -41,9 +41,6 @@ class TusView(UploadTargetMixin, generic.View):
     """Applies the rules every tus request shares: sign-in, protocol version, and response headers."""
 
     def dispatch(self, request, *args, **kwargs):
-        override = request.headers.get("X-HTTP-Method-Override", "").upper()
-        if request.method == "POST" and override in ("PATCH", "DELETE"):
-            request.method = override
         response = self._respond(request, *args, **kwargs)
         if request.method == "PATCH" and response.status_code >= 400:
             _drain(request)

@@ -46,7 +46,8 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
 - `DELETE` cancels an upload and deletes its bytes. Later requests get `410`. For a completed upload it
   ends the upload resource only; the media stays.
 - If the data file cannot be created, creation fails and leaves no upload row behind.
-- A request without `Tus-Resumable: 1.0.0` gets `412`. `X-HTTP-Method-Override` is honoured on `POST`.
+- A request without `Tus-Resumable: 1.0.0` gets `412`. `X-HTTP-Method-Override` is not supported:
+  the browser sends `PATCH` and `DELETE` themselves, and no proxy in the stock deployment blocks them.
 
 #### Sign-in, ownership and limits
 - tus leaves authentication to the application. Every request needs the session cookie and, for

@@ -132,21 +132,6 @@ class ProtocolTests(TusTestCase):
         self.assertIn("GMT", response["Upload-Expires"])
         self.assertEqual(self.stored_bytes(url), b"0123")
 
-    def test_post_with_method_override_is_handled_as_patch(self):
-        url = self.created_url()
-
-        response = self.client.post(
-            url,
-            CONTENT[:4],
-            content_type=OFFSET_TYPE,
-            HTTP_UPLOAD_OFFSET="0",
-            HTTP_X_HTTP_METHOD_OVERRIDE="PATCH",
-            **TUS,
-        )
-
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(self.stored_bytes(url), b"0123")
-
     def test_bad_requests_are_refused_without_storing_bytes(self):
         url = self.created_url()
         self.patch_bytes(url, 0, CONTENT[:4])
