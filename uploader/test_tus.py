@@ -476,6 +476,28 @@ class ResumeTests(TusTestCase):
         self.assertGreater(self.session(url).updated_at, last_hour + timedelta(minutes=59))
         self.assertGreater(os.path.getmtime(directory), last_hour.timestamp() + 59 * 60)
 
+    def test_request_that_starts_writing_counts_as_activity_before_its_body_ends(self):
+        url = self.created_url()
+        last_hour = timezone.now() - timedelta(hours=1)
+        UploadSession.objects.update(updated_at=last_hour)
+        directory = sessions.chunks_dir(self.session(url).uuid)
+        os.utime(directory, (last_hour.timestamp(), last_hour.timestamp()))
+        seen = {}
+
+        class SlowStream:
+            def read(stream, size):
+                # Cleanup that runs while the body is still arriving reads these values.
+                seen["updated_at"] = self.session(url).updated_at
+                seen["mtime"] = os.path.getmtime(directory)
+                return b""
+
+        from uploader import tus
+
+        tus.append(self.session(url), 0, SlowStream())
+
+        self.assertGreater(seen["updated_at"], last_hour + timedelta(minutes=59))
+        self.assertGreater(seen["mtime"], last_hour.timestamp() + 59 * 60)
+
     def test_second_writer_is_locked_out_while_a_request_appends(self):
         url = self.created_url()
         with open(sessions.data_path(self.session(url).uuid), "r+b") as held:

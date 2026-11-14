@@ -187,6 +187,9 @@ def append(session, claimed_offset, stream):
         if claimed_offset != current:
             raise TusError(409, "Upload-Offset does not match the upload.")
         data.seek(current)
+        # Before the body is read: cleanup ages an upload by these timestamps, and a slow
+        # body must not let it remove the upload that is being written.
+        _record_activity(session)
         written = 0
         remaining = session.total_size - current
         try:
