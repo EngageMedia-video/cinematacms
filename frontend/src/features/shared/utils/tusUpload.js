@@ -38,6 +38,8 @@ const MEDIA_URL_HEADER = 'X-Media-Url';
 const RESULT_HEADER = 'X-Upload-Result';
 const RESULT_UNKNOWN = 'unknown';
 const PENDING_UPLOAD_PREFIX = 'cinemata-upload:';
+// As long as the server keeps an untouched upload (ORPHANED_UPLOAD_CLEANUP_HOURS, 24 by default).
+export const REMEMBER_UPLOAD_MS = 24 * 60 * 60 * 1000;
 const FINGERPRINT_SAMPLE_BYTES = 1024 * 1024;
 
 class SignInRequired extends Error {}
@@ -135,6 +137,8 @@ export function createTusUploader({
 	retryDelays = RETRY_DELAYS_MS,
 	fetchImpl = (...args) => globalThis.fetch(...args),
 	storage = browserStorage(),
+	// Whose uploads this engine remembers; another account on the same browser has its own entries.
+	account = globalThis.MediaCMS?.user?.username ?? '',
 	httpStack,
 }) {
 	const items = new Map();
@@ -144,28 +148,55 @@ export function createTusUploader({
 	// last byte is lost and the page reloads, the server no longer lists the upload as
 	// unfinished; asking this URL returns the media it created, so the file is not sent, and
 	// the media not created, a second time. The entry is dropped once the upload is seen to end.
-	// The key names the same file the server lookup does, so a renamed copy is a different upload.
-	const pendingKey = (item) =>
-		`${PENDING_UPLOAD_PREFIX}${endpoint}:${metadata.is_draft ? 'draft' : 'final'}:${item.fingerprint}:${item.file.name}`;
+	// The key names the same file the server lookup does, plus the account, so a renamed copy and
+	// another account's copy are different uploads. It is a hash: the entry outlives the session,
+	// and a file name must not stay readable on a shared machine.
+	async function pendingKeyOf(item) {
+		const subtle = globalThis.crypto?.subtle;
+		if (!item.fingerprint || !subtle) return null;
+		const mode = metadata.is_draft ? 'draft' : 'final';
+		const identity = [endpoint, mode, account, item.fingerprint, item.file.name].join('\n');
+		return PENDING_UPLOAD_PREFIX + toHex(await subtle.digest('SHA-256', new TextEncoder().encode(identity)));
+	}
 
-	function pendingUrl(item) {
-		if (!item.fingerprint) return null;
+	// An entry older than the server keeps an upload points at nothing, so it is not used.
+	function readPending(key) {
 		try {
-			return storage?.getItem(pendingKey(item)) || null;
+			const entry = JSON.parse(storage?.getItem(key));
+			return entry?.url && Date.now() - entry.at < REMEMBER_UPLOAD_MS ? entry : null;
 		} catch {
 			return null;
 		}
 	}
 
+	function pendingUrl(item) {
+		return item.pendingKey ? (readPending(item.pendingKey)?.url ?? null) : null;
+	}
+
 	function setPendingUrl(item, url) {
-		if (!item.fingerprint) return;
+		if (!item.pendingKey) return;
 		try {
-			if (url) storage?.setItem(pendingKey(item), url);
-			else storage?.removeItem(pendingKey(item));
+			if (url) storage?.setItem(item.pendingKey, JSON.stringify({ url, at: Date.now() }));
+			else storage?.removeItem(item.pendingKey);
 		} catch {
 			// Without the entry a lost final response is not recovered; the upload itself is unaffected.
 		}
 	}
+
+	// An upload nobody comes back to would leave its entry forever.
+	function forgetStaleUploads() {
+		try {
+			const keys = [];
+			for (let index = 0; index < (storage?.length ?? 0); index += 1) {
+				const key = storage.key(index);
+				if (key?.startsWith(PENDING_UPLOAD_PREFIX)) keys.push(key);
+			}
+			keys.filter((key) => !readPending(key)).forEach((key) => storage.removeItem(key));
+		} catch {
+			// Storage that cannot be listed keeps its entries; each one is still ignored once stale.
+		}
+	}
+	forgetStaleUploads();
 
 	const notify = (name, ...args) => callbacks[name]?.(...args);
 
@@ -323,6 +354,7 @@ export function createTusUploader({
 			items.get(item.id) !== item || item.startToken !== token || item.status !== UPLOAD_STATUS.UPLOADING;
 
 		item.fingerprint = item.fingerprint ?? (await fileFingerprint(item.file).catch(() => null));
+		item.pendingKey = item.pendingKey ?? (await pendingKeyOf(item).catch(() => null));
 		let uploadUrl;
 		try {
 			uploadUrl = await findUploadUrl(item);

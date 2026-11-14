@@ -88,7 +88,9 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   upload. Another tab is a separate engine: selecting the same file there continues the same upload,
   and both tabs end on the same media.
 - **Lost final response:** the browser keeps the upload's URL in `localStorage` until it sees the upload
-  end. If the response to the last byte is lost and the page reloads, the completed upload is no longer
+  end. The key is a hash of the endpoint, the mode, the signed-in account, the fingerprint and the
+  file name, so the entry shows no file name and another account on the same browser never recalls
+  it. An entry is ignored after 24 hours, and stale entries are removed when an upload page opens. If the response to the last byte is lost and the page reloads, the completed upload is no longer
   unfinished, so the lookup finds nothing; the engine then asks the remembered URL, and its `HEAD`
   returns the media that was created. Nothing is sent or created twice. If that URL is gone, the
   upload may have created its media before the server removed it, so the engine does not send the

@@ -1,5 +1,6 @@
 import {
 	EXPIRED_MESSAGE,
+	REMEMBER_UPLOAD_MS,
 	SIGN_IN_MESSAGE,
 	UNKNOWN_RESULT_MESSAGE,
 	UPLOAD_STATUS,
@@ -92,6 +93,10 @@ function memoryStorage() {
 	const entries = new Map();
 	return {
 		entries,
+		get length() {
+			return entries.size;
+		},
+		key: (index) => [...entries.keys()][index] ?? null,
 		getItem: (key) => entries.get(key) ?? null,
 		setItem: (key, value) => entries.set(key, value),
 		removeItem: (key) => entries.delete(key),
@@ -584,6 +589,43 @@ describe('createTusUploader', () => {
 
 			expect(second.server.requests[0].method).toBe('POST');
 			expect(second.storedText()).toEqual([CONTENT, CONTENT]);
+		});
+
+		it('remembers the upload under a key that does not show the file name', async () => {
+			const first = await uploadWithLostFinalResponse();
+
+			const [[key, value]] = [...first.storage.entries];
+			expect(key).toMatch(/^cinemata-upload:[0-9a-f]{64}$/);
+			expect(`${key}${value}`).not.toContain('clip');
+		});
+
+		it('does not recall an upload another account remembered on this browser', async () => {
+			const first = await uploadWithLostFinalResponse();
+			first.server.intercept = () => null;
+			first.server.requests.length = 0;
+			const second = setup({ server: first.server, storage: first.storage, account: 'someone-else' });
+
+			second.uploader.addFiles([makeFile()]);
+			await second.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(second.server.requests[0].method).toBe('POST');
+			expect(second.statuses.map((entry) => entry[1])).not.toContain(UPLOAD_STATUS.EXPIRED);
+		});
+
+		it('forgets remembered uploads the server no longer keeps when the engine starts', async () => {
+			const storage = memoryStorage();
+			const fresh = JSON.stringify({ url: '/fu/tus/a/', at: Date.now() });
+			storage.setItem('cinemata-upload:fresh', fresh);
+			storage.setItem(
+				'cinemata-upload:old',
+				JSON.stringify({ url: '/fu/tus/b/', at: Date.now() - REMEMBER_UPLOAD_MS })
+			);
+			storage.setItem('cinemata-upload:/fu/tus/:final:abc:clip.mp4', '/fu/tus/c/'); // the earlier format
+			storage.setItem('unrelated', 'kept');
+
+			setup({ storage });
+
+			expect([...storage.entries.keys()].sort()).toEqual(['cinemata-upload:fresh', 'unrelated']);
 		});
 
 		it('uploads the same file again once its completion was seen', async () => {
