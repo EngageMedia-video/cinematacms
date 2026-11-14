@@ -304,6 +304,20 @@ class CompletionTests(TusTestCase):
         self.assertEqual(self.patch_bytes(url, 10, b"").status_code, 423)
         self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
+    def test_completion_waits_for_a_request_that_is_still_writing(self):
+        url = self.received_but_not_completed()
+        with open(sessions.data_path(self.session(url).uuid), "r+b") as held:
+            fcntl.flock(held, fcntl.LOCK_EX)  # the request that sent the last byte has not ended
+
+            response = self.head(url)
+
+        self.assertEqual(response.status_code, 423)
+        self.assertEqual(self.session(url).status, UploadSession.Status.OPEN)
+        self.assertEqual(self.stored_bytes(url), CONTENT)
+        self.assertFalse(Media.objects.exists())
+        self.assertEqual(self.head(url).status_code, 200)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
+
     def test_assembly_abandoned_by_a_dead_worker_is_finished_by_the_next_request(self):
         url = self.received_but_not_completed()
         abandoned_at = timezone.now() - sessions.ASSEMBLY_TIMEOUT - timedelta(minutes=1)

@@ -7,6 +7,7 @@ request, resume lookup, cancellation, and completion is checked against it, so a
 retry or a resumed upload can only extend the upload it belongs to.
 """
 
+import fcntl
 import os
 import re
 import shutil
@@ -127,7 +128,17 @@ def _combine(session):
     os.makedirs(absolute_dir, exist_ok=True)
     # The data file already is the whole upload, so it only has to move. A retry after an
     # assembly that died finds it moved already.
-    if _size_or_none(data_path(session.uuid)) is not None:
+    try:
+        data = open(data_path(session.uuid), "rb")
+    except FileNotFoundError:
+        return Assembly(real_path=real_path, upload_dir=upload_dir)
+    with data:
+        try:
+            # A request that is still appending holds this lock until its body ends. Moving the
+            # file under it would let that request truncate or extend the finished upload.
+            fcntl.flock(data, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise UploadRejected(409, "This upload is still being written.", prevent_retry=False) from None
         os.replace(data_path(session.uuid), _assembled_path(session))
     return Assembly(real_path=real_path, upload_dir=upload_dir)
 
