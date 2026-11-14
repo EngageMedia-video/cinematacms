@@ -6,7 +6,8 @@ import tempfile
 from datetime import timedelta
 from unittest.mock import patch
 
-from django.test import TestCase, override_settings
+from django.conf import settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -525,6 +526,33 @@ class OwnershipTests(TusTestCase):
         self.assertEqual([response.status_code for response in responses], [401, 401, 401, 401])
         self.client.force_login(self.owner)
         self.assertEqual(self.head(url)["Upload-Offset"], "4")
+
+    def test_signed_out_request_passes_csrf_and_gets_401_so_the_browser_waits_for_sign_in(self):
+        # In the browser CSRF runs before the view. The engine waits for a sign-in on 401 and gives
+        # up on 403, so a signed-out request that still carries its CSRF token must reach the view.
+        secret = "a" * 32
+        client = Client(enforce_csrf_checks=True)
+        csrf = {"HTTP_X_CSRFTOKEN": secret}
+        send = {"content_type": OFFSET_TYPE, "HTTP_UPLOAD_OFFSET": "0", **TUS}
+        client.force_login(self.owner)
+        client.cookies[settings.CSRF_COOKIE_NAME] = secret
+        created = client.post(
+            self.endpoint, HTTP_UPLOAD_LENGTH="10", HTTP_UPLOAD_METADATA=metadata(filename="clip.mp4"), **TUS, **csrf
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        url = created["Location"]
+
+        client.logout()  # the session ends; the browser still holds its CSRF cookie
+        client.cookies[settings.CSRF_COOKIE_NAME] = secret
+        signed_out = client.patch(url, CONTENT[:4], **send, **csrf)
+        without_token = client.patch(url, CONTENT[:4], **send)
+        client.force_login(self.owner)
+        resumed = client.patch(url, CONTENT, **send, **csrf)
+
+        self.assertEqual(signed_out.status_code, 401)
+        self.assertEqual(without_token.status_code, 403)
+        self.assertEqual(resumed.status_code, 204)
+        self.assertEqual(Media.objects.filter(user=self.owner).count(), 1)
 
     def test_owner_resumes_after_signing_in_again(self):
         url = self.created_url()
