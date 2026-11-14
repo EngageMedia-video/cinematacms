@@ -30,7 +30,6 @@ def build_policy(
             "https://www.google.com/recaptcha/",
             "https://www.gstatic.com/recaptcha/",
             "https://vjs.zencdn.net/7.20.2/video.min.js",
-            "https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js",
         ],
         "script-src-attr": [NONE],
         "style-src": [SELF, NONCE, "https://vjs.zencdn.net/7.20.2/video-js.min.css", "https://fonts.googleapis.com"],

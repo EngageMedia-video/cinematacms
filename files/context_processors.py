@@ -63,7 +63,7 @@ def stuff(request):
     ret["STORAGE_SCOPE"] = storage_scope
     ret["STORAGE_USED_BYTES"] = storage_used_bytes
 
-    # Per-user file cap for the single-upload page's FineUploader. This is the
+    # Per-user file cap for the single-upload page. This is the
     # legacy multi-file config and is intentionally separate from the dedicated
     # bulk-upload flow (issue #524), which uses BULK_UPLOAD_MAX_FILES_* via
     # cms.permissions.max_bulk_upload_files. Advanced users may queue several

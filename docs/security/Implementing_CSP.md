@@ -37,7 +37,7 @@ the enabled `ANALYTICS_URL`, and the configured Vite development server.
 and WebSocket sources appear only when Vite development mode is enabled.
 
 The policy permits the CMS's existing optional integrations: the pinned
-Video.js and FineUploader CDN files, Material Icons fonts, and Google
+Video.js CDN files, Material Icons fonts, and Google
 reCAPTCHA. The configured analytics script path and connection origin are
 allowed only when analytics is enabled. No installation-specific analytics,
 media, upload, or production hostname is included in the CSP defaults.

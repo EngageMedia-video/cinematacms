@@ -951,7 +951,7 @@ frontend/
 
 | Task | File/Directory | Line Reference |
 |------|----------------|----------------|
-| **Change upload behavior** | `uploader/views.py` | Upload workflow logic |
+| **Change upload behavior** | `uploader/tus_views.py`, `uploader/tus.py` | tus upload endpoints and rules |
 | **Modify media encoding** | `files/tasks.py` | Encoding task: `encode_media()` |
 | **Add new API endpoint** | `files/views.py` | REST API views |
 | **Change media models** | `files/models.py` | Media, Encoding, Subtitle models |
@@ -969,14 +969,14 @@ frontend/
 
 ```text
 1. Frontend: templates/cms/add-media (Django template)
-2. Backend: uploader/views.py → validate_file()
+2. Backend: uploader/tus_views.py → TusCollectionView, TusUploadView
 3. Processing: files/tasks.py → encode_media()
 4. Storage: media_files/ directory
 5. Database: files/models.py → Media object created
 ```
 
 **Key files:**
-- `uploader/views.py:upload_media_view()` - Main upload handler
+- `uploader/tus_views.py` - tus upload endpoints
 - `files/tasks.py:encode_media()` - Async encoding
 - `files/helpers.py:get_file_type()` - File validation
 

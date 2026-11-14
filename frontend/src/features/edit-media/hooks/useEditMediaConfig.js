@@ -27,7 +27,6 @@ const EMPTY_EDIT_MEDIA_CONFIG = {
 	permissions: {},
 	statusOptions: DEFAULT_STATUS_OPTIONS,
 	uploadCancelEndpoint: '',
-	uploadCompleteEndpoint: '',
 	uploadEndpoint: '',
 	uploadMaxSize: null,
 };

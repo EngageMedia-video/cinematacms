@@ -406,6 +406,9 @@
         "bad_request",
         "forbidden",
         "payload_too_large",
+        "conflict",
+        "gone",
+        "locked",
         "other"
       ],
       "description": "Bounded domain reason codes."
@@ -649,7 +652,7 @@
   "log_correlation": {
     "upload_ref": {
       "description": "Random per-file id that joins an nginx upload access line to the application events of the same upload. Never a metric label.",
-      "source": "Fine Uploader qquuid",
+      "source": "Server upload id (UploadSession.uuid); a browser-created id on the creation request",
       "header": "X-Upload-Id",
       "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
       "max_length": 36,
@@ -1644,6 +1647,9 @@
           "missing_credentials",
           "payload_too_large",
           "rate_limited",
+          "conflict",
+          "gone",
+          "locked",
           "other"
         ]
       },
