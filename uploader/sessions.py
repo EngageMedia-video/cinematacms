@@ -28,7 +28,7 @@ FINGERPRINT_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 ASSEMBLY_TIMEOUT = timedelta(minutes=30)
 
 EXPIRED_MESSAGE = "This upload expired. Select the file again to start a new upload."
-FAILED_MESSAGE = "This upload could not be finished. Select the file again to start a new upload."
+FAILED_MESSAGE = "This upload could not be finished, and its media may already exist. Check your media before you upload the file again."
 
 
 class UploadRejected(Exception):

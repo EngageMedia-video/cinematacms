@@ -25,6 +25,10 @@ VERSION = "1.0.0"
 EXTENSIONS = "creation,expiration,termination"
 OFFSET_CONTENT_TYPE = "application/offset+octet-stream"
 READ_SIZE = 64 * 1024
+# Not part of tus. A HEAD response has no body, so this header is how the browser learns that an
+# upload ended without a known result: its media may exist, and sending the file again may duplicate it.
+RESULT_HEADER = "X-Upload-Result"
+RESULT_UNKNOWN = "unknown"
 
 SIGN_IN_MESSAGE = "Sign in again to continue this upload."
 NOT_FOUND_MESSAGE = "This upload was not found. Select the file again to start a new upload."
@@ -39,10 +43,11 @@ def too_large_message(user):
 class TusError(Exception):
     """A tus request the server refuses, with the HTTP status the protocol asks for."""
 
-    def __init__(self, status, error):
+    def __init__(self, status, error, headers=None):
         super().__init__(error)
         self.status = status
         self.error = error
+        self.headers = headers or {}
 
 
 def max_upload_size(user):
@@ -109,7 +114,7 @@ def get(user, target_media, upload_id):
     if session.status in (UploadSession.Status.CANCELLED, UploadSession.Status.EXPIRED):
         raise TusError(410, sessions.EXPIRED_MESSAGE)
     if session.status == UploadSession.Status.FAILED:
-        raise TusError(410, sessions.FAILED_MESSAGE)
+        raise TusError(410, sessions.FAILED_MESSAGE, headers={RESULT_HEADER: RESULT_UNKNOWN})
     if session.status == UploadSession.Status.OPEN and sessions.is_stale(session, timezone.now()):
         sessions.expire(session)
         raise TusError(410, sessions.EXPIRED_MESSAGE)

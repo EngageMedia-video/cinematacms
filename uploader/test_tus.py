@@ -332,7 +332,10 @@ class CompletionTests(TusTestCase):
                 self.upload_all(url)
 
         self.assertEqual(self.session(url).status, UploadSession.Status.FAILED)
-        self.assertEqual(self.head(url).status_code, 410)
+        refused = self.head(url)
+        self.assertEqual(refused.status_code, 410)
+        # A HEAD has no body, so the header tells the browser the media may exist.
+        self.assertEqual(refused["X-Upload-Result"], "unknown")
         self.assertEqual(self.patch_bytes(url, 10, b"").status_code, 410)
         self.assertFalse(Media.objects.exists())
 
@@ -538,7 +541,9 @@ class TerminationAndExpiryTests(TusTestCase):
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(os.path.exists(directory))
-        self.assertEqual(self.head(url).status_code, 410)
+        refused = self.head(url)
+        self.assertEqual(refused.status_code, 410)
+        self.assertNotIn("X-Upload-Result", refused)
         self.assertEqual(self.patch_bytes(url, 4, CONTENT[4:]).status_code, 410)
         self.assertFalse(Media.objects.exists())
 

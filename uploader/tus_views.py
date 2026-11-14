@@ -21,8 +21,11 @@ MEDIA_URL_HEADER = "X-Media-Url"
 TUS_METHODS = ("POST", "HEAD", "PATCH", "DELETE")
 
 
-def _error(status, message):
-    return JsonResponse({"error": message}, status=status)
+def _error(status, message, headers=None):
+    response = JsonResponse({"error": message}, status=status)
+    for name, value in (headers or {}).items():
+        response[name] = value
+    return response
 
 
 def _drain(request):
@@ -60,7 +63,7 @@ class TusView(UploadTargetMixin, generic.View):
         except PermissionDenied as denial:
             return _error(403, str(denial) or "Upload not allowed")
         except tus.TusError as refusal:
-            return _error(refusal.status, refusal.error)
+            return _error(refusal.status, refusal.error, refusal.headers)
         except sessions.UploadRejected as rejection:
             return _error(rejection.status, rejection.error)
 

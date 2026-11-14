@@ -34,11 +34,20 @@ export const UNKNOWN_RESULT_MESSAGE =
 	'This file may already be uploaded. Check your media, then retry only if it is missing.';
 
 const MEDIA_URL_HEADER = 'X-Media-Url';
+// Set by the server on the 410 of an upload whose completion failed after it may have saved a media.
+const RESULT_HEADER = 'X-Upload-Result';
+const RESULT_UNKNOWN = 'unknown';
 const PENDING_UPLOAD_PREFIX = 'cinemata-upload:';
 const FINGERPRINT_SAMPLE_BYTES = 1024 * 1024;
 
 class SignInRequired extends Error {}
-class UploadGone extends Error {}
+class UploadGone extends Error {
+	/** `resultUnknown`: the upload ended on the server and its media may already exist. */
+	constructor(resultUnknown = false) {
+		super('The upload is gone.');
+		this.resultUnknown = resultUnknown;
+	}
+}
 
 function toHex(buffer) {
 	return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -244,7 +253,7 @@ export function createTusUploader({
 				// tus-js-client answers any failed HEAD except 423 by silently creating a new upload,
 				// which would send the whole file again and could create a second media.
 				if (request.getMethod() === 'HEAD' && status >= 400 && status !== 423) {
-					if (status < 500) throw new UploadGone();
+					if (status < 500) throw new UploadGone(response.getHeader(RESULT_HEADER) === RESULT_UNKNOWN);
 					// Thrown, a server error goes through the retries and keeps the upload URL.
 					throw new Error(`Offset check failed with status ${status}.`);
 				}
@@ -275,9 +284,10 @@ export function createTusUploader({
 				} else if (cause instanceof UploadGone) {
 					setPendingUrl(item, null);
 					item.upload = null;
-					// A remembered upload the server no longer has may have created its media before
-					// it was removed. Sending the file again is the user's decision, through Retry.
-					setStatus(item, UPLOAD_STATUS.EXPIRED, item.recalled ? UNKNOWN_RESULT_MESSAGE : EXPIRED_MESSAGE);
+					// A remembered upload the server no longer has, or one whose completion failed,
+					// may have created its media. Sending the file again is the user's decision, through Retry.
+					const unknown = item.recalled || cause.resultUnknown;
+					setStatus(item, UPLOAD_STATUS.EXPIRED, unknown ? UNKNOWN_RESULT_MESSAGE : EXPIRED_MESSAGE);
 					item.recalled = false;
 				} else {
 					const message = serverMessage(error) || 'Upload failed.';

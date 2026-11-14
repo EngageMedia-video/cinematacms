@@ -79,6 +79,10 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   time, and first and last MiB. On a match the upload continues from the server's offset; a different
   file, account or target never matches. A draft (bulk) upload and a non-draft (single) upload of one
   file are separate uploads: the lookup sends `is_draft` and matches only the same mode.
+- **Failed completion:** if creating the media fails after the last byte, the upload ends as failed
+  and later requests get `410` with `X-Upload-Result: unknown`. The media may already exist, so the
+  browser shows the upload as expired with a message to check the media first, the same as for a
+  remembered upload that is gone; **Retry** sends the file as a new upload.
 - **The same file twice:** a file selected again while its first copy is still in the list is sent as
   its own upload and becomes its own media; the browser does not attach it to the first copy's
   upload. Another tab is a separate engine: selecting the same file there continues the same upload,

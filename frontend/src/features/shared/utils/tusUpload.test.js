@@ -407,6 +407,28 @@ describe('createTusUploader', () => {
 			expect(server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
 		});
 
+		it('says the media may exist when the completion failed on the server', async () => {
+			const { server, uploader, statuses, settled } = setup();
+			let failed = false;
+			server.intercept = (request) => {
+				// The last byte arrives, creating the media fails, and the session ends as failed.
+				if (request.method === 'PATCH' && request.headers['Upload-Offset'] === '20') {
+					failed = true;
+					return { status: 500 };
+				}
+				if (failed && request.method === 'HEAD') {
+					return { status: 410, headers: { 'X-Upload-Result': 'unknown' } };
+				}
+				return null;
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.EXPIRED);
+
+			expect(statuses.at(-1)).toEqual([0, UPLOAD_STATUS.EXPIRED, UNKNOWN_RESULT_MESSAGE]);
+			expect(server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
+		});
+
 		it('sends an expired upload again as a new upload on retry', async () => {
 			const { server, uploader, statuses, settled } = setup();
 			let gone = false;
