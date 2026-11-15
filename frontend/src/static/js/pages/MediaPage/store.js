@@ -115,7 +115,8 @@ function initialMediaState() {
 		// getter can apply an optimistic +1 only for fresh actions
 		// (not for prior actions already counted in data.likes).
 		likedInSession: false,
-		reported_times: 0,
+		reportedByViewer: false,
+		reportPending: false,
 		while: {
 			deleteMedia: false,
 			submitCommunityImpact: false,
@@ -570,7 +571,9 @@ class MediaPageStore extends EventEmitter {
 			/* ################################################## */
 			/* ################################################## */
 
-			MediaPageStoreData[this.id].reported_times = !!MediaPageStoreData[this.id].data.reported_times;
+			// data.reported_times counts every viewer's report, so it must not block this viewer.
+			MediaPageStoreData[this.id].reportedByViewer = true === response.data.user_has_reported;
+			MediaPageStoreData[this.id].reportPending = false;
 
 			// Initialize like/dislike state from the API so that returning
 			// visitors see the correct counter and cannot re-submit actions.
@@ -813,14 +816,64 @@ class MediaPageStore extends EventEmitter {
 		}
 	}
 
-	requestMediaReport(descr) {
-		if (!MediaPageStoreData[this.id].mediaId) {
-			console.warn('Invalid media id:', MediaPageStoreData[this.id].mediaId);
+	requestMediaReportRetraction() {
+		const visit = MediaPageStoreData[this.id];
+		const mediaId = visit.mediaId;
+
+		if (!mediaId) {
+			console.warn('Invalid media id:', mediaId);
 			return false;
 		}
 
-		const url = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId + '/actions';
-		this.reportActionResponse = this.reportActionResponse.bind(this);
+		const url = this.mediacms_config.api.media + '/' + mediaId + '/actions';
+		const onResponse = (response) => this.reportRetractionResponse(visit, mediaId, response);
+		MediaPageStoreData[this.id].reportPending = true;
+		deleteRequest(
+			url,
+			{
+				data: {
+					type: 'retract_report',
+				},
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+				},
+			},
+			false,
+			onResponse,
+			onResponse
+		);
+	}
+
+	reportRetractionResponse(visit, mediaId, response) {
+		// The page moved to another playlist item before the answer arrived. A
+		// switch replaces the store entry, so this also catches a return to the
+		// same media.
+		if (visit !== MediaPageStoreData[this.id] || mediaId !== visit.mediaId) {
+			return;
+		}
+
+		MediaPageStoreData[this.id].reportPending = false;
+
+		if (response && !(response instanceof Error) && response.status >= 200 && response.status < 300) {
+			MediaPageStoreData[this.id].reportedByViewer = false;
+			this.emit('media_report_retracted');
+		} else {
+			this.emit('media_report_retract_failed');
+		}
+	}
+
+	requestMediaReport(descr) {
+		const visit = MediaPageStoreData[this.id];
+		const mediaId = visit.mediaId;
+
+		if (!mediaId) {
+			console.warn('Invalid media id:', mediaId);
+			return false;
+		}
+
+		const url = this.mediacms_config.api.media + '/' + mediaId + '/actions';
+		const onResponse = (response) => this.reportActionResponse(visit, mediaId, response);
+		MediaPageStoreData[this.id].reportPending = true;
 		postRequest(
 			url,
 			{
@@ -833,23 +886,34 @@ class MediaPageStore extends EventEmitter {
 				},
 			},
 			false,
-			this.reportActionResponse,
-			this.reportActionResponse
+			onResponse,
+			onResponse
 		);
 	}
 
-	reportActionResponse(response) {
-		if (response) {
-			if (response instanceof Error) {
-				// console.error( response );
-			} else if (response.status >= 200 && response.status < 300 && response.data) {
-				MediaPageStoreData[this.id].reported_times += 1;
-				this.emit('reported_media');
-			} else {
-				// @todo: ......
-			}
+	reportActionResponse(visit, mediaId, response) {
+		// The page moved to another playlist item before the answer arrived. A
+		// switch replaces the store entry, so this also catches a return to the
+		// same media.
+		if (visit !== MediaPageStoreData[this.id] || mediaId !== visit.mediaId) {
+			return;
+		}
+
+		MediaPageStoreData[this.id].reportPending = false;
+
+		if (
+			response &&
+			!(response instanceof Error) &&
+			response.status >= 200 &&
+			response.status < 300 &&
+			response.data
+		) {
+			MediaPageStoreData[this.id].reportedByViewer = true;
+			// Only 201 stores a new report. Any other success means the server
+			// already held this viewer's report, so analytics must not count it.
+			this.emit(201 === response.status ? 'reported_media' : 'media_report_already_stored');
 		} else {
-			// @todo: ......
+			this.emit('media_report_failed');
 		}
 	}
 
@@ -1027,6 +1091,9 @@ class MediaPageStore extends EventEmitter {
 			case 'user-liked-media':
 				r = MediaPageStoreData[this.id].likedMedia;
 				break;
+			case 'user-reported-media':
+				r = MediaPageStoreData[this.id].reportedByViewer;
+				break;
 			case 'user-disliked-media':
 				r = MediaPageStoreData[this.id].dislikedMedia;
 				break;
@@ -1203,10 +1270,17 @@ class MediaPageStore extends EventEmitter {
 				}
 				break;
 			case 'REPORT_MEDIA':
-				if (!MediaPageStoreData[this.id].reported_times) {
-					if ('' !== action.reportDescription) {
-						this.requestMediaReport(action.reportDescription);
-					}
+				if (
+					!MediaPageStoreData[this.id].reportedByViewer &&
+					!MediaPageStoreData[this.id].reportPending &&
+					'' !== action.reportDescription
+				) {
+					this.requestMediaReport(action.reportDescription);
+				}
+				break;
+			case 'RETRACT_MEDIA_REPORT':
+				if (MediaPageStoreData[this.id].reportedByViewer && !MediaPageStoreData[this.id].reportPending) {
+					this.requestMediaReportRetraction();
 				}
 				break;
 			case 'COPY_SHARE_LINK':
@@ -1407,6 +1481,7 @@ Object.entries({
 	media_delete: 'media_delete',
 	playlist_creation_completed: 'playlist_create',
 	reported_media: 'media_report_success',
+	media_report_retracted: 'media_report_retract',
 }).forEach(([event, name]) => {
 	mediaPageStore.on(event, () => window.CinemataAnalytics?.track(name));
 });

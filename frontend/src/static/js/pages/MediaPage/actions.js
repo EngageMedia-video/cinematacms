@@ -31,7 +31,13 @@ export function unlikeMedia() {
 export function reportMedia(reportDescription) {
 	Dispatcher.dispatch({
 		type: 'REPORT_MEDIA',
-		reportDescription: !!reportDescription ? reportDescription.replace(/\s/g, '') : '',
+		reportDescription: reportDescription ? reportDescription.trim() : '',
+	});
+}
+
+export function retractMediaReport() {
+	Dispatcher.dispatch({
+		type: 'RETRACT_MEDIA_REPORT',
 	});
 }
 

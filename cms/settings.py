@@ -558,6 +558,9 @@ RUNNING_STATE_STALE = 60 * 60 * 2
 # how many times an item need be reported
 # to get to private state automatically
 REPORTED_TIMES_THRESHOLD = 10
+# how many seconds must pass before the same viewer reporting the same media
+# again sends moderators another email. The report itself is always stored.
+REPORT_NOTIFICATION_WINDOW_SECONDS = 60 * 60 * 24
 
 MEDIA_IS_REVIEWED = True  # whether an admin needs to review a media file.
 # By default consider this is not needed.
