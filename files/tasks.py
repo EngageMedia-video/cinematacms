@@ -1947,10 +1947,14 @@ def _apply_visibility_schedules_inner():
     # locks are released — notify_users() sends email synchronously and must
     # not run while a DB row lock and transaction are still open.
     tokens_to_notify = []
+    # Windows that closed this run: (token, expires_at, new state). The expiry is
+    # captured here because the settled branch below clears it.
+    ended_windows = []
 
     for media in scheduled_media.iterator():
         try:
             went_public = False
+            window_ended = None
             with transaction.atomic():
                 # Re-fetch under a row lock so a concurrent user edit that arrived
                 # between the queryset evaluation and this point isn't overwritten.
@@ -1984,6 +1988,7 @@ def _apply_visibility_schedules_inner():
                     and now >= media.visibility_expires_at
                     and expected == (media.visibility_after_expiry or "private")
                 ):
+                    window_ended = (media.friendly_token, media.visibility_expires_at, expected)
                     media.visibility_start_date = None
                     media.visibility_expires_at = None
                     media.visibility_after_expiry = None
@@ -2000,6 +2005,8 @@ def _apply_visibility_schedules_inner():
             transition_count += 1
             if went_public:
                 tokens_to_notify.append(media.friendly_token)
+            if window_ended:
+                ended_windows.append(window_ended)
         except Exception as error:
             failure_count += 1
             logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
@@ -2013,6 +2020,18 @@ def _apply_visibility_schedules_inner():
         except Exception as error:
             failure_count += 1
             logger.exception("Failed to send publish notification for media %s", token)
+            capture_unexpected_exception(error)
+
+    for token, expires_at, state in ended_windows:
+        try:
+            notify_users(
+                friendly_token=token,
+                action="media_visibility_ended",
+                extra={"expires_at": expires_at, "state": state},
+            )
+        except Exception as error:
+            failure_count += 1
+            logger.exception("Failed to send visibility-ended notification for media %s", token)
             capture_unexpected_exception(error)
 
     if transition_count:
