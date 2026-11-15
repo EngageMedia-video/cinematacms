@@ -6,16 +6,6 @@
 
 {% block headermeta %}{% endblock headermeta %}
 
-{% block externallinks %}
-{% if LOAD_FROM_CDN %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous"></script>
-{% else %}
-<link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
-<script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>
-{% endif %}
-{% endblock externallinks %}
-
 {% block modernpageimports %}
 {% vite_asset 'src/entries/add-media.js' %}
 {% endblock modernpageimports %}
@@ -28,12 +18,10 @@
 	window.MediaCMS.addMediaPage = {
 		canAdd: {% if can_add %}true{% else %}false{% endif %},
 		canPublishDirectly: {% if can_publish_directly %}true{% else %}false{% endif %},
-		uploadEndpoint: "{% url 'uploader:upload' %}",
-		uploadCompleteEndpoint: "{% url 'uploader:upload' %}?done",
+		uploadEndpoint: "{% url 'uploader:tus' %}",
 		uploadMaxFilesNumber: {{ UPLOAD_MAX_FILES_NUMBER }},
 		uploadMaxSize: {{ UPLOAD_MAX_SIZE }},
 		maxBulkFiles: {{ max_bulk_files }},
-		chunksDoneParam: "{{ chunks_done_param|escapejs }}",
 		isTrustedUser: {% if is_trusted_user %}true{% else %}false{% endif %},
 		defaultMediaStatus: "{{ default_media_status|escapejs }}",
 		userName: "{{ request.user.name|default:request.user.username|escapejs }}",

@@ -1,3 +1,9 @@
+const tus = vi.hoisted(() => ({ create: null }));
+vi.mock('../shared/utils/tusUpload', async (importOriginal) => ({
+	...(await importOriginal()),
+	createTusUploader: (options) => tus.create(options),
+}));
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { EditMediaPage } from './EditMediaPage';
 import editMediaQueryClient from './queryClient';
@@ -43,42 +49,31 @@ function leaveWarningShown() {
 	return event.defaultPrevented;
 }
 
-// Stands in for the Fine Uploader script that the page template loads.
+// Stands in for the upload engine: the file is complete as soon as it is added.
 class InstantUploader {
 	constructor({ callbacks }) {
 		this.callbacks = callbacks;
 	}
 
 	addFiles([file]) {
-		this.callbacks.onSubmit(0, file.name);
-		this.callbacks.onComplete(0, file.name, { success: true });
+		this.callbacks.onSubmitted(0, file.name);
+		this.callbacks.onComplete(0, file.name, { media_url: '/view?m=abc123' });
 	}
 
-	getFile() {
+	getSize() {
 		return null;
 	}
 }
 
-let uploaderListeners = new AbortController();
-
-afterEach(() => {
-	uploaderListeners.abort();
-	uploaderListeners = new AbortController();
-});
-
-// Like Fine Uploader 5.13.0, it adds its own beforeunload prompt while bytes are moving.
 class StalledUploader {
 	constructor({ callbacks }) {
 		this.callbacks = callbacks;
 		this.uploading = false;
-		window.addEventListener('beforeunload', (event) => this.uploading && event.preventDefault(), {
-			signal: uploaderListeners.signal,
-		});
 	}
 
 	addFiles([file]) {
 		this.uploading = true;
-		this.callbacks.onSubmit(0, file.name);
+		this.callbacks.onSubmitted(0, file.name);
 	}
 
 	pauseUpload() {
@@ -91,7 +86,7 @@ function renderWithReplacementUploader(Uploader) {
 	window.MediaCMS = {
 		editMediaPage: { ...PAGE_CONFIG, permissions: { canReplaceMedia: true }, uploadEndpoint: '/upload/' },
 	};
-	window.qq = { FineUploaderBasic: Uploader };
+	tus.create = (options) => new Uploader(options);
 	render(<EditMediaPage />);
 	fireEvent.change(screen.getByLabelText('Choose media files'), {
 		target: { files: [new File(['video'], 'replacement.mp4', { type: 'video/mp4' })] },
@@ -121,7 +116,7 @@ describe('EditMediaPage unsaved changes warning', () => {
 
 	afterEach(() => {
 		delete window.MediaCMS;
-		delete window.qq;
+		tus.create = null;
 		vi.unstubAllGlobals();
 	});
 
@@ -210,7 +205,7 @@ describe('EditMediaPage unsaved changes warning', () => {
 		expect(leaveWarningShown()).toBe(true);
 	});
 
-	// Fine Uploader warns on its own only while bytes are moving, not while paused.
+	// No bytes are moving while an upload is paused, so the page has to warn by itself.
 	it('warns before leaving while a replacement video upload is paused', async () => {
 		renderWithReplacementUploader(StalledUploader);
 
@@ -243,7 +238,7 @@ describe('EditMediaPage leave confirmation', () => {
 		window.removeEventListener('click', recordFollowedLink);
 		document.querySelectorAll('body > a').forEach((link) => link.remove());
 		delete window.MediaCMS;
-		delete window.qq;
+		tus.create = null;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});

@@ -2,27 +2,28 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useBulkUpload } from './useBulkUpload';
 
+const tus = vi.hoisted(() => ({ create: null }));
+vi.mock('../../../shared/utils/tusUpload', async (importOriginal) => ({
+	...(await importOriginal()),
+	createTusUploader: (options) => tus.create(options),
+}));
+
 afterEach(() => {
 	vi.unstubAllGlobals();
-	delete window.qq;
+	tus.create = null;
 	delete window.CinemataAnalytics;
 });
 it('tracks accepted transfers and completion, omitting byte progress and disposal cancellation', async () => {
 	let callbacks;
 	const uploadEvent = vi.fn();
-	const setCustomHeaders = vi.fn();
 	window.CinemataAnalytics = { uploadEvent };
-	window.qq = {
-		FineUploaderBasic: function (config) {
-			callbacks = config.callbacks;
-			return {
-				getFile: () => new File(['contents'], 'secret-film.mp4'),
-				getSize: () => 8,
-				getUuid: () => '00000000-0000-4000-8000-000000000001',
-				setCustomHeaders,
-				cancelAll: () => callbacks.onCancel(1),
-			};
-		},
+	tus.create = (options) => {
+		callbacks = options.callbacks;
+		return {
+			getFile: () => new File(['contents'], 'secret-film.mp4'),
+			getSize: () => 8,
+			cancelAll: () => callbacks.onCancel(1),
+		};
 	};
 	vi.stubGlobal(
 		'fetch',
@@ -32,13 +33,7 @@ it('tracks accepted transfers and completion, omitting byte progress and disposa
 	act(() => callbacks.onSubmitted(1, 'secret-film.mp4'));
 	act(() => callbacks.onProgress(1, 'secret-film.mp4', 4, 8));
 	expect(uploadEvent).toHaveBeenCalledExactlyOnceWith('start', 1);
-	expect(setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
-		expect.objectContaining({ 'X-Upload-Id': '00000000-0000-4000-8000-000000000001' }),
-		1
-	);
-	await act(async () =>
-		callbacks.onComplete(1, 'secret-film.mp4', { success: true, media_url: '/view?m=secret-token' })
-	);
+	await act(async () => callbacks.onComplete(1, 'secret-film.mp4', { media_url: '/view?m=secret-token' }));
 	expect(uploadEvent.mock.calls).toEqual([
 		['start', 1],
 		['complete', 1],

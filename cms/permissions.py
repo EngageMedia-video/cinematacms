@@ -78,7 +78,7 @@ def max_bulk_upload_files(user):
     Trusted uploaders (see ``is_trusted_uploader``) get the higher limit;
     everyone else gets the regular limit. Both limits are settings-overridable so
     a deployment can tighten or relax the policy without code changes (issue
-    #524). This is distinct from the single-upload page's per-user FineUploader
+    #524). This is distinct from the single-upload page's per-user
     cap (``UPLOAD_MAX_FILES_NUMBER`` in files/context_processors.py).
     """
     if not user or user.is_anonymous:

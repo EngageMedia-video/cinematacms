@@ -136,8 +136,8 @@ This guide helps **authorized users** (including *Site Administrators* and *Medi
 - Upload permission denied
 
 ### ✅ Steps to Resolve
-1. **Inspect FineUploader Logs**  
-   Use browser developer tools → Check if all chunks were sent successfully.
+1. **Inspect the upload requests:**
+   Use browser developer tools → Check the `PATCH` requests to `/fu/tus/…` and the status each one returned.
 
 2. **Check Upload Size Settings**  
    Configured via `MAX_UPLOAD_SIZE` in `cms/settings.py`.

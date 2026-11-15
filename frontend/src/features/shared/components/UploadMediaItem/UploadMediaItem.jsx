@@ -65,19 +65,8 @@ const ACTION_CALLBACKS = {
 	reupload: 'onReupload',
 };
 
-const ACTION_FU_VISIBILITY = {
-	cancel: 'group-data-[upload-status=failed]:hidden',
-	reupload: 'hidden group-data-[upload-status=complete]:inline-flex',
-	delete: 'hidden group-data-[upload-status=complete]:inline-flex group-data-[upload-status=failed]:inline-flex',
-};
-
-const ACTION_SELECTOR_CLASSES = {
-	cancel: 'qq-upload-cancel-selector text-text-danger hover:text-text-danger',
-	continue: 'qq-upload-continue-selector',
-	delete: 'qq-upload-delete-selector',
-	pause: 'qq-upload-pause-selector',
-	retry: 'qq-upload-retry-selector',
-	reupload: 'reupload-media-upload-item',
+const ACTION_TEXT_CLASSES = {
+	cancel: 'text-text-danger hover:text-text-danger',
 };
 
 function clampPercent(value) {
@@ -118,28 +107,26 @@ function UploadLimitMessage({ className = '', contactHref, regularUserMaxFiles, 
 	);
 }
 
-function ActionButton({ action, callbacks, includeFineUploaderSelectors }) {
+function ActionButton({ action, callbacks }) {
 	const callbackName = ACTION_CALLBACKS[action.key];
 	const onClicked = callbacks[callbackName];
 
-	const selectorClassName = ACTION_SELECTOR_CLASSES[action.key];
+	const actionClassName = ACTION_TEXT_CLASSES[action.key];
 	const textColorClassName =
 		action.type === 'danger' ? 'text-text-danger' : action.type === 'warning' ? 'text-text-warning' : '';
 
-	const visibilityClassName = includeFineUploaderSelectors ? ACTION_FU_VISIBILITY[action.key] : '';
-
 	return (
-		<span className={cn(selectorClassName, visibilityClassName)}>
+		<span className={actionClassName}>
 			<Button
 				type="button"
 				variant="text"
 				size="xs"
 				icon={<Icon name={action.iconName} decorative className={textColorClassName} />}
-				iconContainerClassName={selectorClassName}
-				className={cn('hover:bg-bg-primary-hover/40 p-0', selectorClassName)}
+				iconContainerClassName={actionClassName}
+				className={cn('hover:bg-bg-primary-hover/5', actionClassName)}
 				textClassName={textColorClassName}
 				aria-label={action.label}
-				onClick={includeFineUploaderSelectors ? undefined : onClicked}
+				onClick={onClicked}
 			>
 				{action.label}
 			</Button>
@@ -151,7 +138,6 @@ export function UploadMediaItem({
 	alt,
 	className = '',
 	fileSize,
-	includeFineUploaderSelectors = false,
 	onCancel,
 	onContinue,
 	onDelete,
@@ -172,16 +158,7 @@ export function UploadMediaItem({
 	const callbacks = { onCancel, onContinue, onDelete, onPause, onRetry, onReupload };
 	const showProgress = config.showProgress;
 	const thumbnailAlt = alt ?? `${title} thumbnail`;
-	const actions = includeFineUploaderSelectors
-		? [
-				{ key: 'pause', label: 'Pause', iconName: 'pause', type: 'warning' },
-				{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
-				{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' },
-				{ key: 'reupload', label: 'Replace', iconName: 'arrowClockwise' },
-				{ key: 'retry', label: 'Retry', iconName: 'arrowClockwise', type: 'warning' },
-				{ key: 'delete', label: 'Delete', iconName: 'trash', type: 'danger' },
-			]
-		: config.actions;
+	const actions = config.actions;
 
 	return (
 		<article
@@ -195,22 +172,13 @@ export function UploadMediaItem({
 				<SquareImage
 					alt={thumbnailAlt}
 					className="h-full w-full [&_img]:aspect-square [&_img]:object-cover"
-					imageProps={
-						includeFineUploaderSelectors
-							? {
-									className: 'qq-thumbnail-selector',
-									'qq-max-size': '120',
-									'qq-server-scale': '',
-								}
-							: undefined
-					}
 					loading={false}
 					radius={8}
 					size={72}
 					src={thumbnailSrc}
 				/>
 
-				{/* Status overlays toggled by CSS so they react to data-upload-status mutations (no React re-render needed). */}
+				{/* Status overlays follow data-upload-status. */}
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted/80 group-data-[upload-status=uploading]:flex"
@@ -243,10 +211,7 @@ export function UploadMediaItem({
 						<Text
 							variant="body-16-medium"
 							as="h3"
-							className={cn(
-								'm-0 line-clamp-2 wrap-break-word text-text-strong',
-								'qq-upload-file-selector'
-							)}
+							className="m-0 line-clamp-2 wrap-break-word text-text-strong"
 							title={title}
 						>
 							{title}
@@ -261,56 +226,35 @@ export function UploadMediaItem({
 							value={progressPercent}
 							max={100}
 							trackClassName="bg-bg-emblem-green"
-							indicatorClassName={cn(config.progressClassName, 'qq-progress-bar-selector')}
-							className={cn('qq-progress-bar-container-selector')}
+							indicatorClassName={config.progressClassName}
 						/>
 					) : null}
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-1">
-							<Text
-								variant="body-14"
-								as="span"
-								className="min-h-5 text-text-muted qq-upload-size-selector"
-							>
-								{includeFineUploaderSelectors ? null : sizeLabel}
+							<Text variant="body-14" as="span" className="min-h-5 text-text-muted">
+								{sizeLabel}
 							</Text>
 
 							<Text
 								variant="body-14"
 								as="span"
 								className={cn(
-									'whitespace-nowrap',
+									// A custom message, such as sign-in instructions, is a sentence and must wrap.
+									statusText ? 'min-w-0 wrap-break-word' : 'whitespace-nowrap',
 									config.statusClassName,
-									'group-data-[upload-status=complete]:text-text-success group-data-[upload-status=failed]:text-text-danger',
-									'qq-upload-status-text-selector'
+									'group-data-[upload-status=complete]:text-text-success group-data-[upload-status=failed]:text-text-danger'
 								)}
 								role={status === 'failed' ? 'status' : undefined}
 							>
-								{includeFineUploaderSelectors ? null : displayStatusText}
+								{displayStatusText}
 							</Text>
 						</div>
 
-						<div className="flex flex-col items-start sm:flex-row sm:flex-wrap sm:items-center">
+						<div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center">
 							{actions.map((action) => (
-								<ActionButton
-									key={action.key}
-									action={action}
-									callbacks={callbacks}
-									includeFineUploaderSelectors={includeFineUploaderSelectors}
-								/>
+								<ActionButton key={action.key} action={action} callbacks={callbacks} />
 							))}
-
-							{includeFineUploaderSelectors ? (
-								<a
-									href="#"
-									className="view-uploaded-media-link hidden h-8 rounded-[4px] px-2 py-1 text-text-secondary no-underline hover:bg-bg-surface-muted hover:text-text-strong hover:no-underline"
-									target="_blank"
-									rel="noreferrer"
-								>
-									View media
-								</a>
-							) : null}
 						</div>
 					</div>
 				</div>
