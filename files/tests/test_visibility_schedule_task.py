@@ -237,7 +237,7 @@ class VisibilityWindowEndedEmailTest(TestCase):
         budi_body = emails["budi@example.com"].body
         self.assertIn(
             'The visibility window you set for "River Songs" ended on 3 March 2025. '
-            "As scheduled, your film is now private, so only you can see it.",
+            "As scheduled, your film is now private, so it is hidden from public view.",
             budi_body,
         )
         self.assertIn(f"URL: https://films.example.org/view?m={private_film.friendly_token}", budi_body)
@@ -280,3 +280,33 @@ class VisibilityWindowEndedEmailTest(TestCase):
         media.refresh_from_db()
         self.assertEqual(media.state, "private")
         self.assertEqual(self._window_ended_emails(), [])
+
+    def test_a_window_already_in_its_after_expiry_state_is_still_settled_and_emailed(self):
+        # MediaForm.save() applies the expected state when details are saved, so a
+        # save after the end date (or with an end date already past) leaves the
+        # film in its after-expiry state before this task runs.
+        expires = timezone.make_aware(datetime(2025, 3, 4))
+        media = self._scheduled_media(
+            username="eko",
+            title="Paper Boats",
+            state="unlisted",
+            start=expires - timedelta(days=10),
+            expires=expires,
+            after="unlisted",
+            window="public",
+        )
+        mail.outbox = []
+
+        apply_visibility_schedules()
+        apply_visibility_schedules()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "unlisted")
+        self.assertIsNone(media.visibility_expires_at)
+        emails = self._window_ended_emails()
+        self.assertEqual([message.to for message in emails], [["eko@example.com"]])
+        self.assertIn(
+            'The visibility window you set for "Paper Boats" ended on 3 March 2025. '
+            "As scheduled, your film is now unlisted, so only people with the link can see it.",
+            emails[0].body,
+        )

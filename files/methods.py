@@ -164,7 +164,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
 
 
 VISIBILITY_ENDED_STATE_TEXT = {
-    "private": "private, so only you can see it",
+    "private": "private, so it is hidden from public view",
     "unlisted": "unlisted, so only people with the link can see it",
 }
 
