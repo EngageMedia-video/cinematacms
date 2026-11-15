@@ -817,7 +817,8 @@ class MediaPageStore extends EventEmitter {
 	}
 
 	requestMediaReportRetraction() {
-		const mediaId = MediaPageStoreData[this.id].mediaId;
+		const visit = MediaPageStoreData[this.id];
+		const mediaId = visit.mediaId;
 
 		if (!mediaId) {
 			console.warn('Invalid media id:', mediaId);
@@ -825,7 +826,7 @@ class MediaPageStore extends EventEmitter {
 		}
 
 		const url = this.mediacms_config.api.media + '/' + mediaId + '/actions';
-		const onResponse = (response) => this.reportRetractionResponse(mediaId, response);
+		const onResponse = (response) => this.reportRetractionResponse(visit, mediaId, response);
 		MediaPageStoreData[this.id].reportPending = true;
 		deleteRequest(
 			url,
@@ -843,9 +844,11 @@ class MediaPageStore extends EventEmitter {
 		);
 	}
 
-	reportRetractionResponse(mediaId, response) {
-		// The page moved to another playlist item before the answer arrived.
-		if (mediaId !== MediaPageStoreData[this.id].mediaId) {
+	reportRetractionResponse(visit, mediaId, response) {
+		// The page moved to another playlist item before the answer arrived. A
+		// switch replaces the store entry, so this also catches a return to the
+		// same media.
+		if (visit !== MediaPageStoreData[this.id] || mediaId !== visit.mediaId) {
 			return;
 		}
 
@@ -860,7 +863,8 @@ class MediaPageStore extends EventEmitter {
 	}
 
 	requestMediaReport(descr) {
-		const mediaId = MediaPageStoreData[this.id].mediaId;
+		const visit = MediaPageStoreData[this.id];
+		const mediaId = visit.mediaId;
 
 		if (!mediaId) {
 			console.warn('Invalid media id:', mediaId);
@@ -868,7 +872,7 @@ class MediaPageStore extends EventEmitter {
 		}
 
 		const url = this.mediacms_config.api.media + '/' + mediaId + '/actions';
-		const onResponse = (response) => this.reportActionResponse(mediaId, response);
+		const onResponse = (response) => this.reportActionResponse(visit, mediaId, response);
 		MediaPageStoreData[this.id].reportPending = true;
 		postRequest(
 			url,
@@ -887,9 +891,11 @@ class MediaPageStore extends EventEmitter {
 		);
 	}
 
-	reportActionResponse(mediaId, response) {
-		// The page moved to another playlist item before the answer arrived.
-		if (mediaId !== MediaPageStoreData[this.id].mediaId) {
+	reportActionResponse(visit, mediaId, response) {
+		// The page moved to another playlist item before the answer arrived. A
+		// switch replaces the store entry, so this also catches a return to the
+		// same media.
+		if (visit !== MediaPageStoreData[this.id] || mediaId !== visit.mediaId) {
 			return;
 		}
 

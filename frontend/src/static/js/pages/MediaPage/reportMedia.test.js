@@ -189,6 +189,41 @@ describe('MediaPageStore reportMedia', () => {
 		expect(track).toHaveBeenCalledExactlyOnceWith('media_report_retract');
 	});
 
+	function switchTo(friendlyToken) {
+		window.CinemataAnalytics.switchMedia = vi.fn();
+		MediaPageActions.switchMedia({ friendlyToken, url: `/view?m=${friendlyToken}` });
+		network.get
+			.findLast(({ url }) => url.endsWith(`media/${friendlyToken}`))
+			.onSuccess({ data: mediaData({ friendly_token: friendlyToken }) });
+	}
+
+	it('ignores a report answer from an earlier visit to the same media', () => {
+		loadMedia();
+		MediaPageActions.reportMedia('Spam');
+
+		switchTo('b');
+		switchTo('a');
+		loadMedia();
+		reportRequests()[0].onSuccess({ status: 201, data: { detail: 'action received' } });
+
+		expect(reported).not.toHaveBeenCalled();
+		expect(MediaPageStore.get('user-reported-media')).toBe(false);
+		expect(track).not.toHaveBeenCalledWith('media_report_success');
+	});
+
+	it('ignores a retraction answer from an earlier visit to the same media', () => {
+		loadMedia({ user_has_reported: true });
+		MediaPageActions.retractMediaReport();
+
+		switchTo('b');
+		switchTo('a');
+		loadMedia({ user_has_reported: true });
+		network.delete[0].onSuccess({ status: 200, data: { detail: 'report retracted' } });
+
+		expect(retracted).not.toHaveBeenCalled();
+		expect(MediaPageStore.get('user-reported-media')).toBe(true);
+	});
+
 	it('lets the viewer report again after a retraction', () => {
 		loadMedia({ user_has_reported: true });
 		MediaPageActions.retractMediaReport();
