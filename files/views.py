@@ -2049,16 +2049,22 @@ class MediaActions(APIView):
         return Response({"detail": "report retracted"}, status=status.HTTP_200_OK)
 
     def delete(self, request, friendly_token, format=None):
+        action = request.data.get("type")
+        if action == "retract_report":
+            # Reports can make the media private. The viewer must still be able
+            # to withdraw theirs, so this lookup skips the private-media guard.
+            # The retraction only touches rows owned by the signed-in viewer.
+            media = Media.objects.filter(friendly_token=friendly_token).first()
+            if not media:
+                return Response({"detail": "media file does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return self._handle_report_retraction(request, media)
+
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
 
-        action = request.data.get("type")
         if action in ("like", "dislike"):
             return self._handle_like_dislike_removal(request, media, action)
-
-        if action == "retract_report":
-            return self._handle_report_retraction(request, media)
 
         if not request.user.is_superuser:
             return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)

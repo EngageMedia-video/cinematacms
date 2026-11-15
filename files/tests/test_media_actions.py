@@ -171,6 +171,42 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 0)
 
+    def test_viewer_can_retract_after_reports_made_the_media_private(self):
+        self.client.force_login(self.viewer)
+        with override_settings(REPORTED_TIMES_THRESHOLD=1):
+            self._report()
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.state, "private")
+
+        response = self._retract()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["detail"], "report retracted")
+        self.assertFalse(self._reports(self.viewer).exists())
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 0)
+        self.assertEqual(self.media.state, "private")
+
+    def test_private_media_still_rejects_other_actions_from_a_viewer(self):
+        Media.objects.filter(pk=self.media.pk).update(state="private")
+        self.client.force_login(self.viewer)
+
+        response = self._send("delete", {"type": "like"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "media is private")
+
+    def test_retracting_for_unknown_media_answers_not_found(self):
+        self.client.force_login(self.viewer)
+
+        response = self.client.delete(
+            "/api/v1/media/doesnotexist/actions",
+            data=json.dumps({"type": "retract_report"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+
     def test_retracting_without_a_report_changes_nothing(self):
         self.client.force_login(self.owner)
         self._report("Owner report")
