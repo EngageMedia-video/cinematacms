@@ -1247,7 +1247,7 @@ class FullStackContractTests(unittest.TestCase):
             return route
 
         expected = {
-            "/fu/upload/": "/fu/:resource",
+            "/fu/tus/": "/fu/:resource",
             "/fu": "/fu/:resource",
             "/upload/": "/upload/:resource",
             "/api/v1/media/8f2c": "/api/:resource",
@@ -1318,12 +1318,12 @@ class FullStackContractTests(unittest.TestCase):
         regex = re.compile(pattern)
 
         timed_out = (
-            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/?qquuid=private-id HTTP/1.1" '
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/tus/?upload=private-id HTTP/1.1" '
             '408 0 "https://cinemata.org/upload" "Mozilla/5.0 (X11)" "-" rt=300.001 urt=- rl=1048576'
         )
         fields = regex.match(timed_out).groupdict()
         self.assertEqual(fields["http_method"], "POST")
-        self.assertEqual(fields["request_path"], "/fu/upload/")
+        self.assertEqual(fields["request_path"], "/fu/tus/")
         self.assertEqual(fields["status_code"], "408")
         self.assertEqual(fields["bytes_sent"], "0")
         self.assertEqual(fields["request_time"], "300.001")
@@ -1346,7 +1346,7 @@ class FullStackContractTests(unittest.TestCase):
                 self.assertEqual(fields["request_length"], "1048576")
 
         combined_only = (
-            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/tus/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
         )
         fields = regex.match(combined_only).groupdict()
         self.assertEqual(fields["status_code"], "403")

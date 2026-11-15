@@ -20,6 +20,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
+from django.db.models.functions import Greatest
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -726,7 +727,6 @@ def upload_media(request):
     # Bulk-upload config consumed by the Bulk Upload tab (sibling of single):
     # per-role batch limit and trusted-user gating.
     context["max_bulk_files"] = max_bulk_upload_files(request.user)
-    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
     context["is_trusted_user"] = is_trusted_uploader(request.user)
     context["default_media_status"] = get_default_state(request.user)
 
@@ -836,13 +836,12 @@ def _edit_media_page_config(request, form, media, licenses_dict, video_extension
 
     selected_license = _field_value(form, "custom_license")
     no_license = bool(_field_value(form, "no_license")) or selected_license in ("", "None", "none")
-    update_url = reverse("uploader:update", kwargs={"friendly_token": media.friendly_token})
+    update_url = reverse("uploader:tus_update", kwargs={"friendly_token": media.friendly_token})
 
     return {
         "csrfToken": get_token(request),
         "editUrl": request.get_full_path(),
         "uploadEndpoint": update_url,
-        "uploadCompleteEndpoint": f"{update_url}?{settings.CHUNKS_DONE_PARAM_NAME}",
         "uploadCancelEndpoint": reverse("uploader:cancel", kwargs={"friendly_token": media.friendly_token}),
         "uploadMaxSize": settings.UPLOAD_MAX_SIZE,
         "allowedExtensions": video_extensions,
@@ -1143,7 +1142,7 @@ def edit_media(request):
             media = form.save()
             apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
 
-            # Check if a new media file was uploaded via Fine Uploader
+            # Check if a new media file was uploaded through the tus endpoints
             session_key = f"media_file_updated_{media.friendly_token}"
             media_update_info = request.session.get(session_key, {})
 
@@ -1919,6 +1918,19 @@ class MediaActions(APIView):
                 return self._handle_like_dislike(request, media, action)
 
             user_or_session = get_user_or_session(request)
+            if action == "report":
+                # Stored before the response so a retraction that follows cannot
+                # overtake a queued report.
+                saved = save_user_action(
+                    user_or_session,
+                    friendly_token=media.friendly_token,
+                    action=action,
+                    extra_info=extra,
+                )
+                if not saved:
+                    return Response({"detail": "action already performed"}, status=status.HTTP_200_OK)
+                return Response({"detail": "action received"}, status=status.HTTP_201_CREATED)
+
             save_user_action.delay(
                 user_or_session,
                 friendly_token=media.friendly_token,
@@ -2017,12 +2029,39 @@ class MediaActions(APIView):
             status=status.HTTP_200_OK,
         )
 
+    def _handle_report_retraction(self, request, media):
+        """Remove the signed-in viewer's own report and its count."""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "action allowed on logged in users only"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        deleted_count, _ = MediaAction.objects.filter(media=media, action="report", user=request.user).delete()
+        if not deleted_count:
+            return Response({"detail": "no report to retract"}, status=status.HTTP_200_OK)
+
+        # Racing reports can leave one viewer with several rows, so the count
+        # drops by what was deleted.
+        Media.objects.filter(pk=media.pk).update(reported_times=Greatest(F("reported_times") - deleted_count, 0))
+        invalidate_media_cache(media.friendly_token)
+        return Response({"detail": "report retracted"}, status=status.HTTP_200_OK)
+
     def delete(self, request, friendly_token, format=None):
+        action = request.data.get("type")
+        if action == "retract_report":
+            # Reports can make the media private. The viewer must still be able
+            # to withdraw theirs, so this lookup skips the private-media guard.
+            # The retraction only touches rows owned by the signed-in viewer.
+            media = Media.objects.filter(friendly_token=friendly_token).first()
+            if not media:
+                return Response({"detail": "media file does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return self._handle_report_retraction(request, media)
+
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
 
-        action = request.data.get("type")
         if action in ("like", "dislike"):
             return self._handle_like_dislike_removal(request, media, action)
 

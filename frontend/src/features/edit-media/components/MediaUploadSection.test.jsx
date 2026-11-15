@@ -1,7 +1,14 @@
+const tus = vi.hoisted(() => ({ create: null }));
+vi.mock('../../shared/utils/tusUpload', async (importOriginal) => ({
+	...(await importOriginal()),
+	createTusUploader: (options) => tus.create(options),
+}));
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MediaUploadSection } from './MediaUploadSection';
+
 import { REPLACEMENT_UPLOAD_QUERY_KEY } from '../hooks/useReplacementUploadState';
 
 const CONFIG = {
@@ -14,7 +21,6 @@ const CONFIG = {
 		},
 	},
 	uploadCancelEndpoint: '/upload/cancel/media-token/',
-	uploadCompleteEndpoint: '/upload/complete/',
 	uploadEndpoint: '/upload/',
 	uploadMaxSize: 1000,
 };
@@ -70,37 +76,34 @@ describe('MediaUploadSection', () => {
 		beforeEach(() => {
 			vi.spyOn(window, 'fetch').mockResolvedValue({ ok: true });
 			window.CinemataAnalytics = { uploadEvent: vi.fn() };
-			window.qq = {
-				FineUploaderBasic: function FineUploaderBasic(options) {
-					uploader = this;
-					this.callbacks = options.callbacks;
-					// Mirrors Fine Uploader's itemLimit: 1 bookkeeping.
-					this.itemCount = 0;
-					this.nextId = 0;
-					this.addFiles = ([file]) => {
-						if (this.itemCount >= 1) return;
-						const id = this.nextId++;
-						this.itemCount += 1;
-						this.callbacks.onSubmit(id, file.name);
-						this.callbacks.onSubmitted(id);
-					};
-					this.cancel = vi.fn((id) => {
-						this.itemCount -= 1;
-						this.callbacks.onCancel(id);
-					});
-					this.reset = vi.fn(() => {
-						this.itemCount = 0;
-					});
-					this.getFile = () => ({ size: 512 });
-					this.getUuid = (id) => `00000000-0000-4000-8000-00000000000${id}`;
-					this.setCustomHeaders = vi.fn();
-				},
+			tus.create = ({ callbacks }) => {
+				// Mirrors the engine's itemLimit: 1 bookkeeping.
+				let itemCount = 0;
+				let nextId = 0;
+				uploader = {
+					callbacks,
+					addFiles([file]) {
+						if (itemCount >= 1) return;
+						const id = nextId++;
+						itemCount += 1;
+						callbacks.onSubmitted(id, file.name);
+					},
+					cancel: vi.fn((id) => {
+						itemCount -= 1;
+						callbacks.onCancel(id);
+					}),
+					reset: vi.fn(() => {
+						itemCount = 0;
+					}),
+					getSize: () => 512,
+				};
+				return uploader;
 			};
 		});
 
 		afterEach(() => {
 			delete window.CinemataAnalytics;
-			delete window.qq;
+			tus.create = null;
 		});
 
 		async function startReplacement(user) {
@@ -115,23 +118,10 @@ describe('MediaUploadSection', () => {
 			return window.CinemataAnalytics.uploadEvent.mock.calls.map(([action]) => action);
 		}
 
-		it('sends the file uuid with the CSRF token as the headers of that upload', async () => {
-			const user = userEvent.setup();
-			await startReplacement(user);
-
-			expect(uploader.setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
-				expect.objectContaining({
-					'X-CSRFToken': expect.any(String),
-					'X-Upload-Id': '00000000-0000-4000-8000-000000000000',
-				}),
-				0
-			);
-		});
-
 		it('does not count a finished upload as cancelled', async () => {
 			const user = userEvent.setup();
 			await startReplacement(user);
-			act(() => uploader.callbacks.onComplete(0, 'replacement.mp4', { success: true }));
+			act(() => uploader.callbacks.onComplete(0, 'replacement.mp4', { media_url: '/view?m=token' }));
 
 			await user.click(await screen.findByRole('button', { name: 'Delete' }));
 
@@ -143,7 +133,7 @@ describe('MediaUploadSection', () => {
 		it('accepts a new file after a finished upload is deleted', async () => {
 			const user = userEvent.setup();
 			await startReplacement(user);
-			act(() => uploader.callbacks.onComplete(0, 'replacement.mp4', { success: true }));
+			act(() => uploader.callbacks.onComplete(0, 'replacement.mp4', { media_url: '/view?m=token' }));
 
 			await user.click(await screen.findByRole('button', { name: 'Delete' }));
 			await user.upload(

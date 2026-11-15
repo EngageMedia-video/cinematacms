@@ -9,23 +9,15 @@ import { TabContent, TabView } from '../shared/components/TabView';
 import { Text } from '../shared/components/Text';
 import { QuickPreview } from '../upload-quick-preview';
 import { cn } from '../shared/utils/classNames';
-import { createResumableUploader } from '../shared/utils/resumableUpload';
-import { sendUploadIdHeader } from '../shared/utils/uploadId';
+import { UploadMediaItem } from '../shared/components/UploadMediaItem';
+import { UPLOAD_STATUS, createTusUploader } from '../shared/utils/tusUpload';
 import UserContext from '../../static/js/contexts/UserContext';
 import { deleteRequest } from '../../static/js/functions';
 import { config as mediacmsConfig } from '../../static/js/mediacms/config.js';
 import { Page } from '../../static/js/pages/_Page';
 import { SingleUploadPage } from './single-upload/SingleUploadPage';
-import { AddMediaUploadTemplate } from './components/AddMediaUploadTemplate';
 import { CannotUploadMessage } from './components/CannotUploadMessage';
-import {
-	getAddMediaConfig,
-	getCSRFToken,
-	getStatusLabel,
-	getUploadStatus,
-	getUploadedMediaDetails,
-	updateUploadItemStatus,
-} from './utils/helpers';
+import { getAddMediaConfig, getCSRFToken, getUploadedMediaDetails } from './utils/helpers';
 import BulkUploadPage from './bulk-upload/components/BulkUploadPage.jsx';
 import { BulkStepperSlot } from './bulk-upload/components/BulkStepperSlot';
 import useBulkUploadStore from './bulk-upload/useBulkUploadStore';
@@ -39,6 +31,18 @@ const EMPTY_SINGLE_PREVIEW = {
 	thumbnailFrame: null,
 };
 
+// How each transfer status shows in the upload list. An upload that waits for the user to sign
+// in again shows as paused, so Continue resumes it; an expired one shows as failed, so Retry
+// sends the file again.
+const ITEM_STATUS = {
+	[UPLOAD_STATUS.UPLOADING]: 'uploading',
+	[UPLOAD_STATUS.PAUSED]: 'paused',
+	[UPLOAD_STATUS.AWAITING_SIGN_IN]: 'paused',
+	[UPLOAD_STATUS.EXPIRED]: 'failed',
+	[UPLOAD_STATUS.FAILED]: 'failed',
+	[UPLOAD_STATUS.COMPLETE]: 'complete',
+};
+
 // Mobile + tablet: below Tailwind's `lg` (1024px) viewport breakpoint.
 const NARROW_VIEWPORT_QUERY = '(max-width: 1023px)';
 
@@ -48,7 +52,6 @@ export class AddMediaPage extends Page {
 	constructor(props) {
 		super(props, 'add-media');
 		this.config = getAddMediaConfig();
-		this.uploaderRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
 		this.completedTokens = {};
@@ -63,6 +66,10 @@ export class AddMediaPage extends Page {
 			selectedTab: 'single-film-upload',
 			uploadedMedia: null,
 			externalMedia: null,
+			// Files in the single-upload list: { id, name, size, status, statusText, progress }.
+			uploadItems: [],
+			// Why a selected file was refused, shown in a notice dialog.
+			noticeMessage: '',
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 			bulkConfig: null,
 			bulkStep: 1,
@@ -82,7 +89,6 @@ export class AddMediaPage extends Page {
 				canUseAdminSettings: !!this.context.is.admin,
 				maxFiles: this.config.maxBulkFiles,
 				uploadEndpoint: this.config.uploadEndpoint || undefined,
-				chunksDoneParam: this.config.chunksDoneParam || undefined,
 				userName: this.config.userName || '',
 				onMoveSingle: this.moveBulkMediaToSingle,
 			},
@@ -109,84 +115,71 @@ export class AddMediaPage extends Page {
 			}
 		});
 
-		if (!window.qq || !window.qq.FineUploader || !this.uploaderRef.current) {
-			console.warn('FineUploader is not available for the add media page.');
-			return;
-		}
-
-		this.uploaderRef.current.addEventListener('click', this.handleUploaderClick);
-		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() };
-		this.uploader = createResumableUploader(window.qq.FineUploader, {
-			debug: false,
-			element: this.uploaderRef.current,
-			classes: {
-				hide: 'hidden',
-			},
-			request: {
-				endpoint: this.config.uploadEndpoint,
-				customHeaders: uploadHeaders,
-			},
+		this.uploader = createTusUploader({
+			endpoint: this.config.uploadEndpoint,
+			getHeaders: () => ({ 'X-CSRFToken': getCSRFToken() }),
 			messages: {
-				tooManyItemsError:
-					"You've attempted to upload {netItems} files, which exceeds your limit. Non-trusted users can only upload one video at a time.",
-			},
-			text: {
-				formatProgress: '{percent}% ({total_size})',
-				failUpload: 'Upload failed',
-				waitingForResponse: 'Processing...',
-				paused: 'Paused',
+				tooManyItems: (count) =>
+					`You've attempted to upload ${count} files, which exceeds your limit. Non-trusted users can only upload one video at a time.`,
 			},
 			validation: {
 				itemLimit: this.config.uploadMaxFilesNumber,
 				sizeLimit: this.config.uploadMaxSize,
 				allowedExtensions: this.config.allowedExtensions || [],
-				acceptFiles: 'video/*',
-			},
-			chunking: {
-				enabled: true,
-				concurrent: {
-					enabled: true,
-				},
-				success: {
-					endpoint: this.config.uploadCompleteEndpoint,
-				},
 			},
 			callbacks: {
-				onStatusChange: function (id, _oldStatus, newStatus) {
-					if (newStatus === 'paused') window.CinemataAnalytics?.uploadEvent('pause', id);
-					if (_oldStatus === 'paused' && newStatus === 'uploading')
-						window.CinemataAnalytics?.uploadEvent('resume', id);
-					if (newStatus === 'retrying upload') window.CinemataAnalytics?.uploadEvent('retry', id);
-					const status = getUploadStatus(newStatus);
-					updateUploadItemStatus(id, status, getStatusLabel(status));
-				},
-				onSubmitted: (id) => {
-					sendUploadIdHeader(this.uploader, id, uploadHeaders);
+				onSubmitted: (id, name) => {
 					window.CinemataAnalytics?.uploadEvent('start', id);
-					this.setState({ hasSelectedMedia: true, uploadedMedia: null, externalMedia: null });
+					const item = { id, name, size: this.uploader.getSize(id), status: 'uploading', progress: 0 };
+					this.setState((state) => ({
+						hasSelectedMedia: true,
+						uploadedMedia: null,
+						externalMedia: null,
+						uploadItems: [...state.uploadItems, item],
+					}));
 				},
-				onError: function (id, name, errorReason) {
+				onProgress: (id, _name, sentBytes, totalBytes) => {
+					const progress = totalBytes > 0 ? Math.round((sentBytes / totalBytes) * 100) : 0;
+					// Once every byte is sent the server is creating the media.
+					this.updateUploadItem(id, (item) => ({
+						progress,
+						status: ['uploading', 'processing'].includes(item.status)
+							? progress >= 100
+								? 'processing'
+								: 'uploading'
+							: item.status,
+					}));
+				},
+				onStatusChange: (id, status, message) => {
+					this.updateUploadItem(id, () => ({
+						status: ITEM_STATUS[status],
+						statusText: message || undefined,
+					}));
+				},
+				onError: (id, name, errorReason) => {
 					window.CinemataAnalytics?.uploadEvent('error', id);
-					updateUploadItemStatus(id, 'failed', 'Upload failed');
-					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
+					if (id === null) {
+						this.setState((state) => ({
+							noticeMessage: errorReason,
+							hasSelectedMedia: state.uploadItems.length > 0,
+						}));
+						return;
+					}
+					console.warn(`Error on file number ${id} - ${name}.  Reason: ${errorReason}`);
 				},
 				onCancel: (id) => {
 					window.CinemataAnalytics?.uploadEvent('cancel', id);
-					// FineUploader's built-in cancel button removes the item element after
-					// this callback returns, so defer the state sync to the next tick. When
-					// the list empties, reset hasSelectedMedia so the dropzone reappears.
-					window.setTimeout(() => this.syncUploaderState(), 0);
+					this.dropUploadItem(id);
 				},
-				onComplete: (id, _name, response) => {
-					window.CinemataAnalytics?.uploadEvent(response.success ? 'complete' : 'error', id);
-					if (!response.success) {
-						updateUploadItemStatus(id, 'failed', 'Upload failed');
+				onComplete: (id, name, response) => {
+					if (!response.media_url) {
+						window.CinemataAnalytics?.uploadEvent('error', id);
+						this.updateUploadItem(id, () => ({ status: 'failed', statusText: undefined }));
 						return;
 					}
+					window.CinemataAnalytics?.uploadEvent('complete', id);
 
-					updateUploadItemStatus(id, 'complete', 'Complete');
-
-					const details = getUploadedMediaDetails(response, _name);
+					const details = getUploadedMediaDetails(response, name);
 					this.completedTokens[id] = details.friendlyToken;
 
 					if (this.config.uploadMaxFilesNumber >= 1) {
@@ -199,9 +192,6 @@ export class AddMediaPage extends Page {
 	}
 
 	componentWillUnmount() {
-		if (this.uploaderRef.current) {
-			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
-		}
 		this.unsubscribeBulkStep?.();
 		this.narrowQuery?.removeEventListener('change', this.handleNarrowChange);
 	}
@@ -218,17 +208,42 @@ export class AddMediaPage extends Page {
 		});
 	};
 
-	getFileIdFromElement(element) {
-		const item = element.closest('[class*="qq-file-id-"]');
-
-		if (!item) {
-			return null;
-		}
-
-		const match = item.className.match(/qq-file-id-(\d+)/);
-
-		return match ? Number(match[1]) : null;
+	updateUploadItem(id, change) {
+		this.setState((state) => ({
+			uploadItems: state.uploadItems.map((item) => (item.id === id ? { ...item, ...change(item) } : item)),
+		}));
 	}
+
+	// Removes a file from the list. When the list empties, hasSelectedMedia resets so the
+	// dropzone reappears.
+	dropUploadItem(id) {
+		this.setState((state) => {
+			const uploadItems = state.uploadItems.filter((item) => item.id !== id);
+			return { uploadItems, hasSelectedMedia: uploadItems.length > 0, uploadedMedia: null };
+		});
+	}
+
+	pauseUpload = (id) => {
+		if (this.uploader.pauseUpload(id)) window.CinemataAnalytics?.uploadEvent('pause', id);
+	};
+
+	continueUpload = (id) => {
+		if (this.uploader.continueUpload(id)) window.CinemataAnalytics?.uploadEvent('resume', id);
+	};
+
+	retryUpload = (id) => {
+		if (this.uploader.retry(id)) window.CinemataAnalytics?.uploadEvent('retry', id);
+	};
+
+	replaceUpload = (id) => {
+		this.pendingReplaceId = id;
+		this.openFilePicker();
+	};
+
+	requestDelete = (id) => {
+		const item = this.state.uploadItems.find((candidate) => candidate.id === id);
+		this.setState({ confirmDeleteOpen: true, pendingDeleteId: id, pendingDeleteName: item?.name || '' });
+	};
 
 	openFilePicker() {
 		const input = document.createElement('input');
@@ -311,67 +326,15 @@ export class AddMediaPage extends Page {
 
 		this.deleteUploadedMedia(id);
 
-		try {
+		const finished = ['complete', 'failed'].includes(this.state.uploadItems.find((item) => item.id === id)?.status);
+		if (finished) {
+			// Only an unfinished transfer counts as cancelled.
+			this.uploader.remove(id);
+			this.dropUploadItem(id);
+		} else {
 			this.uploader.cancel(id);
-		} catch (error) {
-			console.warn('Unable to cancel upload ' + id, error);
 		}
-
-		const itemEl = document.querySelector('.qq-file-id-' + id);
-
-		if (itemEl) {
-			itemEl.remove();
-		}
-
-		this.syncUploaderState();
 	}
-
-	syncUploaderState() {
-		const listEl = this.uploaderRef.current && this.uploaderRef.current.querySelector('.qq-upload-list-selector');
-		const hasRemainingItems = !!listEl?.children.length;
-
-		if (listEl && !hasRemainingItems) {
-			try {
-				this.uploader.reset();
-			} catch (error) {
-				console.warn('Unable to reset uploader', error);
-			}
-		}
-
-		this.setState({ hasSelectedMedia: hasRemainingItems, uploadedMedia: null });
-	}
-
-	handleUploaderClick = (event) => {
-		const reuploadButton = event.target.closest('.reupload-media-upload-item');
-
-		if (reuploadButton) {
-			event.preventDefault();
-			this.pendingReplaceId = this.getFileIdFromElement(reuploadButton);
-			this.openFilePicker();
-			return;
-		}
-
-		const deleteButton = event.target.closest('.qq-upload-delete-selector');
-
-		if (deleteButton) {
-			event.preventDefault();
-			event.stopPropagation();
-
-			const id = this.getFileIdFromElement(deleteButton);
-
-			if (id == null) {
-				return;
-			}
-
-			const nameEl = document.querySelector('.qq-file-id-' + id + ' .qq-upload-file-selector');
-
-			this.setState({
-				confirmDeleteOpen: true,
-				pendingDeleteId: id,
-				pendingDeleteName: nameEl ? nameEl.textContent.trim() : '',
-			});
-		}
-	};
 
 	closeDeleteDialog = () => {
 		this.setState({ confirmDeleteOpen: false, pendingDeleteId: null, pendingDeleteName: '' });
@@ -441,6 +404,7 @@ export class AddMediaPage extends Page {
 			hasSelectedMedia: false,
 			uploadedMedia: null,
 			externalMedia: null,
+			uploadItems: [],
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 			confirmTabSwitchOpen: false,
 			pendingTab: null,
@@ -549,8 +513,8 @@ export class AddMediaPage extends Page {
 			return;
 		}
 
-		if (!this.uploader || typeof this.uploader.addFiles !== 'function') {
-			console.warn('FineUploader is not ready to receive selected media files.');
+		if (!this.uploader) {
+			console.warn('The uploader is not ready to receive selected media files.');
 			return;
 		}
 
@@ -572,10 +536,12 @@ export class AddMediaPage extends Page {
 			externalMedia,
 			hasSelectedMedia,
 			isNarrow,
+			noticeMessage,
 			pendingDeleteName,
 			pendingTab,
 			selectedTab,
 			singlePreview,
+			uploadItems,
 			uploadedMedia,
 		} = this.state;
 
@@ -637,8 +603,6 @@ export class AddMediaPage extends Page {
 								isBulk && '@5xl/page:col-end-4'
 							)}
 						>
-							<AddMediaUploadTemplate />
-
 							<TabView
 								tabMode="wrap"
 								triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger"
@@ -668,10 +632,26 @@ export class AddMediaPage extends Page {
 											showUploader={hasSelectedMedia || !!uploadedMedia}
 											uploadedMedia={uploadedMedia}
 											uploader={
-												<div
-													className="media-uploader add-media-uploader-mount"
-													ref={this.uploaderRef}
-												></div>
+												<ul className="add-media-upload-items media-upload-items-list m-0 list-none overflow-clip p-0">
+													{uploadItems.map((item) => (
+														<li key={item.id}>
+															<UploadMediaItem
+																className="media-upload-item-main"
+																title={item.name}
+																fileSize={item.size}
+																status={item.status}
+																statusText={item.statusText}
+																progress={item.progress}
+																onPause={() => this.pauseUpload(item.id)}
+																onContinue={() => this.continueUpload(item.id)}
+																onCancel={() => this.removeUploadItem(item.id)}
+																onRetry={() => this.retryUpload(item.id)}
+																onReupload={() => this.replaceUpload(item.id)}
+																onDelete={() => this.requestDelete(item.id)}
+															/>
+														</li>
+													))}
+												</ul>
 											}
 											onSubmitSuccess={this.clearSubmittedToken}
 										/>
@@ -727,6 +707,19 @@ export class AddMediaPage extends Page {
 									Delete
 								</Button>
 							</>
+						}
+					/>
+				</Dialog>
+
+				<Dialog open={!!noticeMessage} onOpenChange={(open) => !open && this.setState({ noticeMessage: '' })}>
+					<ConfirmationDialogContent
+						title="Notice"
+						subtitle={noticeMessage}
+						aria-label="Upload notice"
+						actions={
+							<Button variant="primary" onClick={() => this.setState({ noticeMessage: '' })}>
+								Close
+							</Button>
 						}
 					/>
 				</Dialog>

@@ -4,8 +4,7 @@ import { Text } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { UploadMediaItem } from '../../shared/components/UploadMediaItem';
 import { getCSRFToken } from '../../add-media/utils/helpers';
-import { createResumableUploader } from '../../shared/utils/resumableUpload';
-import { sendUploadIdHeader } from '../../shared/utils/uploadId';
+import { UPLOAD_STATUS, createTusUploader } from '../../shared/utils/tusUpload';
 import { useReplacementUploadState } from '../hooks/useReplacementUploadState';
 
 function CurrentFileLink({ file }) {
@@ -24,8 +23,7 @@ export function MediaUploadSection({ config, disabled, ref }) {
 	const uploaderRef = useRef(null);
 	const { status, setStatus, resetStatus } = useReplacementUploadState();
 
-	// Leaving stops the transfer anyway. Pausing it first keeps Fine Uploader's own
-	// beforeunload prompt from asking again, and the upload can continue if the page stays.
+	// Leaving stops the transfer anyway. Pausing it first lets the upload continue if the page stays.
 	useImperativeHandle(ref, () => ({
 		pauseBeforeLeave() {
 			if (status.phase !== 'uploading' || !uploaderRef.current?.pauseUpload?.(status.id)) return;
@@ -38,72 +36,46 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			return uploaderRef.current;
 		}
 
-		if (!window.qq?.FineUploaderBasic) {
-			setStatus({ phase: 'error', name: '', progress: 0, error: 'FineUploader is not available.', size: null });
-			return null;
-		}
-
-		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() || config.csrfToken || '' };
-		uploaderRef.current = createResumableUploader(window.qq.FineUploaderBasic, {
-			debug: false,
-			request: {
-				endpoint: config.uploadEndpoint,
-				customHeaders: uploadHeaders,
-			},
+		uploaderRef.current = createTusUploader({
+			endpoint: config.uploadEndpoint,
+			getHeaders: () => ({ 'X-CSRFToken': getCSRFToken() || config.csrfToken || '' }),
 			validation: {
 				itemLimit: 1,
 				sizeLimit: config.uploadMaxSize,
 				allowedExtensions: config.allowedExtensions || [],
-				acceptFiles: 'video/*',
-			},
-			chunking: {
-				enabled: true,
-				concurrent: { enabled: true },
-				success: { endpoint: config.uploadCompleteEndpoint },
 			},
 			callbacks: {
-				onSubmit: (id, name) => {
+				onSubmitted: (id, name) => {
 					setStatus({ phase: 'uploading', name, progress: 0, error: '', size: null, id });
-				},
-				onSubmitted: (id) => {
-					sendUploadIdHeader(uploaderRef.current, id, uploadHeaders);
 					window.CinemataAnalytics?.uploadEvent('start', id);
+				},
+				onStatusChange: (id, uploadStatus, message) => {
+					if (uploadStatus === UPLOAD_STATUS.AWAITING_SIGN_IN) {
+						// Signing in again and pressing Continue resumes from the server's offset.
+						setStatus((current) => ({ ...current, phase: 'paused', error: message }));
+					} else if (uploadStatus === UPLOAD_STATUS.EXPIRED) {
+						setStatus((current) => ({ ...current, phase: 'error', error: message }));
+					}
 				},
 				onProgress: (id, name, uploadedBytes, totalBytes) => {
 					const progress = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
 					setStatus((current) => ({ ...current, id, name, progress }));
 				},
-				onComplete: (id, name, response) => {
-					window.CinemataAnalytics?.uploadEvent(response?.success ? 'complete' : 'error', id);
-					if (response?.success) {
-						let size = null;
-						try {
-							size = uploaderRef.current?.getFile(id)?.size ?? null;
-						} catch (_error) {
-							size = null;
-						}
-						setStatus({ phase: 'complete', name, progress: 100, error: '', size, id });
-					} else {
-						setStatus({
-							phase: 'error',
-							name,
-							progress: 0,
-							error: 'Upload failed. Please try again.',
-							size: null,
-							id,
-						});
-					}
+				onComplete: (id, name) => {
+					window.CinemataAnalytics?.uploadEvent('complete', id);
+					const size = uploaderRef.current?.getSize(id) ?? null;
+					setStatus({ phase: 'complete', name, progress: 100, error: '', size, id });
 				},
 				onError: (id, name, errorReason) => {
 					window.CinemataAnalytics?.uploadEvent('error', id);
-					setStatus({
+					// A refused file has no id and never became an upload item.
+					setStatus((current) => ({
+						...current,
 						phase: 'error',
 						name,
-						progress: 0,
 						error: errorReason || 'Upload failed.',
-						size: null,
-						id,
-					});
+						...(id === null ? { progress: 0, size: null, id: undefined } : { id }),
+					}));
 				},
 				onCancel: (id) => {
 					window.CinemataAnalytics?.uploadEvent('cancel', id);
@@ -147,7 +119,7 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			}
 		}
 
-		// Fine Uploader still counts a finished file against itemLimit until reset.
+		// A finished file still counts against itemLimit until reset.
 		uploaderRef.current?.reset();
 		resetStatus();
 		window.CinemataAnalytics?.uploadEvent('discard', status.id);
@@ -159,8 +131,12 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			return;
 		}
 
-		setStatus((current) => ({ ...current, phase: 'uploading', error: '' }));
-		if (uploaderRef.current.retry(status.id)) window.CinemataAnalytics?.uploadEvent('retry', status.id);
+		if (uploaderRef.current.retry(status.id)) {
+			window.CinemataAnalytics?.uploadEvent('retry', status.id);
+			setStatus((current) => ({ ...current, phase: 'uploading', error: '' }));
+		} else {
+			resetStatus();
+		}
 	}
 
 	function pauseUpload() {
@@ -197,7 +173,11 @@ export function MediaUploadSection({ config, disabled, ref }) {
 					? 'paused'
 					: 'uploading';
 	const uploadItemStatusText =
-		status.phase === 'complete' ? 'Ready' : status.phase === 'error' ? status.error || 'Upload failed' : undefined;
+		status.phase === 'complete'
+			? 'Ready'
+			: status.phase === 'error'
+				? status.error || 'Upload failed'
+				: status.error || undefined;
 
 	return (
 		<FieldGroup

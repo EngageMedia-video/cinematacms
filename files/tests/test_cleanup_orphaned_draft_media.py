@@ -167,7 +167,7 @@ class MediaCreationContractTests(TestCase):
         self.user = create_test_user()
 
     def test_uploader_created_media_has_null_metadata_saved_at(self):
-        # Mirrors FineUploaderView.form_valid, which creates the row before the
+        # Mirrors uploader.views.create_media_from_upload, which creates the row before the
         # metadata form is submitted and never stamps metadata_saved_at.
         with patch.object(Media, "media_init", return_value=None):
             media = Media.objects.create(title="uploaded", user=self.user, media_type="video")

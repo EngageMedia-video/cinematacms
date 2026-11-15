@@ -33,7 +33,7 @@ CORS_ALLOW_HEADERS = default_headers + (
     "cache-control",  # Add Cache-Control
     "content-type",  # Add Content-Type (important for application/json etc.)
     "range",  # Add Range
-    "x-upload-id",  # Fine Uploader's per-file id, logged by nginx and the app
+    "x-upload-id",  # the browser's per-upload id, logged by nginx and the app
     "dnt",  # Generally not needed as DNT is safelisted
     "user-agent",  # Generally not needed as User-Agent is safelisted
 )
@@ -558,6 +558,9 @@ RUNNING_STATE_STALE = 60 * 60 * 2
 # how many times an item need be reported
 # to get to private state automatically
 REPORTED_TIMES_THRESHOLD = 10
+# how many seconds must pass before the same viewer reporting the same media
+# again sends moderators another email. The report itself is always stored.
+REPORT_NOTIFICATION_WINDOW_SECONDS = 60 * 60 * 24
 
 MEDIA_IS_REVIEWED = True  # whether an admin needs to review a media file.
 # By default consider this is not needed.
@@ -638,7 +641,7 @@ ADMINS_NOTIFICATIONS = {
 
 MAX_CHARS_FOR_COMMENT = 10000  # so that it doesn't end up huge
 
-# this is for fineuploader - media uploads
+# media uploads: the tus endpoints (uploader/tus.py)
 UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
 # Hours after which orphaned upload files/chunks are considered stale and removed
@@ -650,18 +653,13 @@ ORPHANED_DRAFT_CLEANUP_HOURS = 168
 ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = env_int("UPLOAD_MAX_SIZE", 800 * 1024 * 1000 * 5)
-# bytes per chunk of a chunked upload; must match UPLOAD_PART_SIZE in
-# frontend/src/features/shared/utils/resumableUpload.js
-UPLOAD_PART_SIZE = 2_000_000
 
-# Default file count for the single-upload page's FineUploader. NOTE: this value
+# Default file count for the single-upload page. NOTE: this value
 # is overridden per-user in files/context_processors.py (advanced users -> 10,
 # everyone else -> 1), so the 100 here is only a ceiling/fallback. The dedicated
 # bulk-upload flow (issue #524) uses its own per-role limits instead — see
 # BULK_UPLOAD_MAX_FILES_* below and cms.permissions.max_bulk_upload_files.
 UPLOAD_MAX_FILES_NUMBER = env_int("UPLOAD_MAX_FILES_NUMBER", 100)
-CONCURRENT_UPLOADS = True
-CHUNKS_DONE_PARAM_NAME = "done"
 
 # Per-batch file limits for the bulk-upload flow (issue #524). Trusted uploaders
 # (superuser/manager/editor/advancedUser, see cms.permissions.is_trusted_uploader)
@@ -671,7 +669,6 @@ CHUNKS_DONE_PARAM_NAME = "done"
 # above, which governs the legacy single-upload page.
 BULK_UPLOAD_MAX_FILES_REGULAR = 2
 BULK_UPLOAD_MAX_FILES_TRUSTED = 10
-FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 
 
 # valid options: content, author

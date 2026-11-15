@@ -149,19 +149,25 @@ A 4xx response on the `upload_transfer` route group logs
 `cinematacms.http.request.denied` with `route_group`, `operation`, `method`,
 `status_code`, a bounded `reason_code`, `trace_id`, and `actor_ref` when the
 session is authenticated. `reason_code` is `missing_credentials` or `forbidden`
-for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
-`rate_limited` for 429, and `other` otherwise. The event never carries the
+for 401 and 403, `bad_request` for 400, `conflict` for 409, `gone` for 410,
+`payload_too_large` for 413, `locked` for 423, `rate_limited` for 429, and
+`other` otherwise. On the tus endpoints 409, 410 and 423 are ordinary answers (a
+stale offset after a lost response, an expired upload, a second writer or a
+completion in progress), so these three reasons are retries and expiries, not
+refusals. The event never carries the
 path, query string, address, cookie, or email. nginx answers some upload errors
 (408, 413, 499) before Django runs; those appear only in the nginx access log.
 
 ### Upload correlation: `upload_ref`
 
 `upload_ref` joins an nginx upload line to the application events of the same
-upload, and through them to `actor_ref` and `trace_id`. It is Fine Uploader's
-per-file `qquuid`, a random version-4 UUID that the browser already sends in the
-chunk body. The upload pages also send it as the `X-Upload-Id` header on every
-chunk and on the chunks-done request, because nginx does not parse the body and
-can log a header. It carries no personal data and grants no access; it only
+upload, and through them to `actor_ref` and `trace_id`. It is the id the server
+gives the upload, a random version-4 UUID. The upload pages send it as the
+`X-Upload-Id` header on every request after the creation (offset check and each
+`PATCH`), because nginx can log a header, and they send the same id again when
+an upload continues after a reload or a new sign-in. The creation request has no
+server id yet, so it carries an id the browser creates; a creation that fails is
+found by that id only. It carries no personal data and grants no access; it only
 attributes log lines. `config/observability/coverage.json` (`log_correlation`)
 holds the one definition: header, pattern, maximum length (36), and the events
 that carry it. `scripts/validate_observability_coverage.py` checks it, and it is
@@ -179,10 +185,10 @@ never a metric label.
 - Django: `cms.http_telemetry.upload_reference` applies the same pattern to
   `X-Upload-Id` and returns an empty string for anything else. On the
   `upload_transfer` route group, `cinematacms.http.request.denied`, `.failed`,
-  and `.slow` carry `upload_ref`, and `uploader.views` logs
-  `cinematacms.upload.started` (first chunk, part 0) and
-  `cinematacms.upload.finished` (media created), both with `upload_ref` and
-  `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
+  and `.slow` carry the `upload_ref` of the header, and `uploader.views` logs
+  `cinematacms.upload.started` (upload created) and
+  `cinematacms.upload.finished` (media created), both with the server's upload
+  id as `upload_ref` and with `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
   attribution key and not as proof of ownership.
 - CORS: `x-upload-id` is in `CORS_ALLOW_HEADERS`. It matters only when
   `UPLOAD_HOST` is a different origin from the site: without it the browser

@@ -292,6 +292,9 @@ DOMAIN_REASON_CODES = frozenset(
         "bad_request",
         "forbidden",
         "payload_too_large",
+        "conflict",
+        "gone",
+        "locked",
         "other",
     }
 )

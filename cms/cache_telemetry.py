@@ -51,6 +51,7 @@ CACHE_FAMILIES = frozenset(
         "restricted_media_token",
         "restricted_media_rate_limit",
         "incident_lookup_rate_limit",
+        "report_notification",
         "cache_probe",
     }
 )
