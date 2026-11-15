@@ -56,6 +56,7 @@ export function MediaReportButton() {
 		}
 
 		MediaPageStore.on('reported_media', onReported);
+		MediaPageStore.on('media_report_already_stored', onReported);
 		MediaPageStore.on('media_report_failed', onRequestFailed);
 		MediaPageStore.on('media_report_retracted', onRetracted);
 		MediaPageStore.on('media_report_retract_failed', onRequestFailed);
@@ -63,6 +64,7 @@ export function MediaReportButton() {
 
 		return () => {
 			MediaPageStore.removeListener('reported_media', onReported);
+			MediaPageStore.removeListener('media_report_already_stored', onReported);
 			MediaPageStore.removeListener('media_report_failed', onRequestFailed);
 			MediaPageStore.removeListener('media_report_retracted', onRetracted);
 			MediaPageStore.removeListener('media_report_retract_failed', onRequestFailed);

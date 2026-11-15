@@ -100,6 +100,22 @@ describe('MediaPageStore reportMedia', () => {
 		expect(track).toHaveBeenCalledExactlyOnceWith('media_report_success');
 	});
 
+	it('marks the media as reported without counting it when the server already held the report', () => {
+		const alreadyStored = vi.fn();
+		MediaPageStore.on('media_report_already_stored', alreadyStored);
+		loadMedia();
+
+		MediaPageActions.reportMedia('Spam');
+		reportRequests()[0].onSuccess({ status: 200, data: { detail: 'action already performed' } });
+		MediaPageStore.removeListener('media_report_already_stored', alreadyStored);
+
+		expect(alreadyStored).toHaveBeenCalledTimes(1);
+		expect(reported).not.toHaveBeenCalled();
+		expect(failed).not.toHaveBeenCalled();
+		expect(MediaPageStore.get('user-reported-media')).toBe(true);
+		expect(track).not.toHaveBeenCalled();
+	});
+
 	it('still sends a report for media that other viewers reported before', () => {
 		loadMedia({ reported_times: 3 });
 

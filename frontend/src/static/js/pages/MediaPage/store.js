@@ -903,7 +903,9 @@ class MediaPageStore extends EventEmitter {
 			response.data
 		) {
 			MediaPageStoreData[this.id].reportedByViewer = true;
-			this.emit('reported_media');
+			// Only 201 stores a new report. Any other success means the server
+			// already held this viewer's report, so analytics must not count it.
+			this.emit(201 === response.status ? 'reported_media' : 'media_report_already_stored');
 		} else {
 			this.emit('media_report_failed');
 		}

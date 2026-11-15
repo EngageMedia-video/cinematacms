@@ -113,6 +113,18 @@ describe('MediaReportButton', () => {
 		expect(screen.getAllByRole('button', { name: 'Reported' })[0]).toHaveFocus();
 	});
 
+	it('marks the media as reported when the server already held the report', async () => {
+		render(<MediaReportButton />);
+		await openReportDialog();
+		await submitDescription('Spam');
+
+		act(() => mocks.mediaPageStore.emit('media_report_already_stored'));
+
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+		expect(mocks.addNotification).toHaveBeenCalledExactlyOnceWith('Film reported', 'reportedMedia');
+		expect(screen.getAllByRole('button', { name: 'Reported' })[0]).toHaveFocus();
+	});
+
 	it('keeps the form open with an error when the report fails, and allows a retry', async () => {
 		render(<MediaReportButton />);
 		await openReportDialog();
