@@ -20,6 +20,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
+from django.db.models.functions import Greatest
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -2041,9 +2042,9 @@ class MediaActions(APIView):
         if not deleted_count:
             return Response({"detail": "no report to retract"}, status=status.HTTP_200_OK)
 
-        Media.objects.filter(pk=media.pk).update(
-            reported_times=Case(When(reported_times__gt=0, then=F("reported_times") - 1), default=0)
-        )
+        # Racing reports can leave one viewer with several rows, so the count
+        # drops by what was deleted.
+        Media.objects.filter(pk=media.pk).update(reported_times=Greatest(F("reported_times") - deleted_count, 0))
         invalidate_media_cache(media.friendly_token)
         return Response({"detail": "report retracted"}, status=status.HTTP_200_OK)
 
