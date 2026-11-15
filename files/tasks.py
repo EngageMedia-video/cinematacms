@@ -73,6 +73,7 @@ from .sprites import generate_sprite_for_media
 
 hls_coordination_cache = owned_cache.bind("hls_coordination")
 popular_media_cache = owned_cache.bind("popular_media")
+report_notification_cache = owned_cache.bind("report_notification")
 scheduled_task_lock_cache = owned_cache.bind("scheduled_task_lock")
 
 logger = get_task_logger(__name__)
@@ -1191,6 +1192,26 @@ def clear_sessions():
     return {"outcome": "succeeded"}
 
 
+def _claim_report_notification(user, session_key, media):
+    """Return True when this report should email moderators.
+
+    A viewer can withdraw a report and send it again, and each stored report
+    would otherwise email every moderator. The claim outlives the withdrawal,
+    so one viewer triggers one email per media per window.
+    """
+    reporter = f"user:{user.pk}" if user else f"session:{session_key}"
+    key = f"report-notified:{media.friendly_token}:{reporter}"
+    try:
+        return report_notification_cache.add(
+            key, 1, timeout=settings.REPORT_NOTIFICATION_WINDOW_SECONDS, raise_on_error=True
+        )
+    except Exception as error:
+        # An unreachable cache must not hide a report from moderators.
+        logger.warning("Report notification claim failed for media %s", media.friendly_token)
+        capture_unexpected_exception(error)
+        return True
+
+
 @task(name="save_user_action", queue="short_tasks")
 def save_user_action(user_or_session, friendly_token=None, action="watch", extra_info=None):
     if action not in VALID_USER_ACTIONS:
@@ -1248,11 +1269,12 @@ def save_user_action(user_or_session, friendly_token=None, action="watch", extra
             media.state = "private"
             media.save(update_fields=["state"])
 
-        notify_users(
-            friendly_token=media.friendly_token,
-            action="media_reported",
-            extra=extra_info,
-        )
+        if _claim_report_notification(user, session_key, media):
+            notify_users(
+                friendly_token=media.friendly_token,
+                action="media_reported",
+                extra=extra_info,
+            )
     elif action == "like":
         Media.objects.filter(friendly_token=media.friendly_token).update(likes=F("likes") + 1)
     elif action == "dislike":

@@ -1,6 +1,8 @@
 import json
+from unittest.mock import patch
 
-from django.test import Client, TestCase
+from django.core.cache import cache
+from django.test import Client, TestCase, override_settings
 
 from actions.models import MediaAction
 from files.tests.helpers import create_test_media, create_test_user
@@ -190,3 +192,73 @@ class MediaReportActionsTests(TestCase):
         self.assertFalse(MediaAction.objects.filter(media=self.media, action="report").exists())
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 0)
+
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+class MediaReportNotificationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.owner = create_test_user(username="notify_owner")
+        self.viewer = create_test_user(username="notify_viewer")
+        self.media = create_test_media(self.owner)
+        self.url = f"/api/v1/media/{self.media.friendly_token}/actions"
+
+    def _send(self, method, payload):
+        return getattr(self.client, method)(self.url, data=json.dumps(payload), content_type="application/json")
+
+    def _report(self, reason="Shows a private address"):
+        return self._send("post", {"type": "report", "extra_info": reason})
+
+    def _retract(self):
+        return self._send("delete", {"type": "retract_report"})
+
+    def test_reporting_again_after_retracting_does_not_notify_moderators_twice(self):
+        self.client.force_login(self.viewer)
+
+        with patch("files.tasks.notify_users") as notify_users:
+            self._report()
+            self._retract()
+            response = self._report("Second thoughts")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(notify_users.call_count, 1)
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 1)
+
+    def test_each_viewer_notifies_moderators_once(self):
+        other_viewer = create_test_user(username="notify_other_viewer")
+
+        with patch("files.tasks.notify_users") as notify_users:
+            self.client.force_login(self.viewer)
+            self._report()
+            self.client.force_login(other_viewer)
+            self._report()
+
+        self.assertEqual(notify_users.call_count, 2)
+
+    def test_report_after_the_window_notifies_moderators_again(self):
+        self.client.force_login(self.viewer)
+
+        with patch("files.tasks.notify_users") as notify_users:
+            self._report()
+            self._retract()
+            # Sessions share the cache, so clearing it also signs the viewer out.
+            cache.clear()
+            self.client.force_login(self.viewer)
+            self._report()
+
+        self.assertEqual(notify_users.call_count, 2)
+
+    def test_unreachable_cache_still_notifies_moderators(self):
+        self.client.force_login(self.viewer)
+
+        with (
+            patch("files.tasks.notify_users") as notify_users,
+            patch("files.tasks.report_notification_cache.add", side_effect=ConnectionError("cache down")),
+            patch("files.tasks.capture_unexpected_exception"),
+        ):
+            response = self._report()
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(notify_users.call_count, 1)
