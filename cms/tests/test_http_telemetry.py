@@ -169,11 +169,11 @@ class UploadDenialLogTests(SimpleTestCase):
 
     def _upload_request(self, *, authenticated):
         request = self.factory.post(
-            "/fu/upload/?qquuid=private-upload-id",
+            "/fu/tus/?upload=private-upload-id",
             HTTP_COOKIE="sessionid=private-session-cookie",
             REMOTE_ADDR="203.0.113.9",
         )
-        request.resolver_match = SimpleNamespace(namespace="uploader", url_name="upload", route="fu/upload/")
+        request.resolver_match = SimpleNamespace(namespace="uploader", url_name="tus", route="fu/tus/")
         request.user = SimpleNamespace(is_authenticated=authenticated, email="person@example.org")
         return request
 
@@ -205,7 +205,15 @@ class UploadDenialLogTests(SimpleTestCase):
         self.assertEqual(record.actor_ref, "v1:" + "a" * 64)
 
     def test_other_upload_client_errors_use_bounded_reason_codes(self):
-        expected = {400: "bad_request", 413: "payload_too_large", 429: "rate_limited", 418: "other"}
+        expected = {
+            400: "bad_request",
+            409: "conflict",
+            410: "gone",
+            413: "payload_too_large",
+            423: "locked",
+            429: "rate_limited",
+            418: "other",
+        }
         for status_code, reason_code in expected.items():
             with self.subTest(status_code=status_code):
                 self.collector.records.clear()
@@ -224,7 +232,7 @@ class UploadDenialLogTests(SimpleTestCase):
             "203.0.113.9",
             "private-session-cookie",
             "private-upload-id",
-            "/fu/upload",
+            "/fu/tus",
         ):
             self.assertNotIn(secret, serialized)
 
@@ -252,9 +260,9 @@ class UploadCorrelationLogTests(SimpleTestCase):
         middleware_logger.addHandler(self.collector)
         self.addCleanup(middleware_logger.removeHandler, self.collector)
 
-    def _upload_request(self, upload_id=UPLOAD_ID, *, route="fu/upload/", namespace="uploader", url_name="upload"):
+    def _upload_request(self, upload_id=UPLOAD_ID, *, route="fu/tus/", namespace="uploader", url_name="tus"):
         extra = {} if upload_id is None else {"HTTP_X_UPLOAD_ID": upload_id}
-        request = self.factory.post("/fu/upload/", **extra)
+        request = self.factory.post("/fu/tus/", **extra)
         request.resolver_match = SimpleNamespace(namespace=namespace, url_name=url_name, route=route)
         request.user = SimpleNamespace(is_authenticated=True, email="person@example.org")
         return request

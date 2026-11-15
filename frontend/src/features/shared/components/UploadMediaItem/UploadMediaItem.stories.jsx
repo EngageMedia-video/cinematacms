@@ -40,10 +40,6 @@ const meta = {
 			control: 'text',
 			description: 'File size as bytes or a preformatted string.',
 		},
-		includeFineUploaderSelectors: {
-			control: 'boolean',
-			description: 'Adds legacy Fine Uploader selector classes for integration templates.',
-		},
 		onCancel: { action: 'cancel', table: { disable: true } },
 		onContinue: { action: 'continue', table: { disable: true } },
 		onDelete: { action: 'delete', table: { disable: true } },

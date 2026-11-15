@@ -1,7 +1,6 @@
-import uuid
+import base64
 from unittest.mock import patch
 
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -152,21 +151,21 @@ class AutoDraftUploadTests(TestCase):
 
     def _upload(self, extra=None):
         content = b"\x00\x00\x00\x20ftypmp41\x00\x00\x00\x00mp41isom" + b"\x00" * 64
-        data = {
-            "qqfilename": "v.mp4",
-            "qquuid": str(uuid.uuid4()),
-            "qqtotalparts": 1,
-            "qqpartindex": 0,
-            "qqfile": SimpleUploadedFile("v.mp4", content, content_type="video/mp4"),
-        }
-        if extra:
-            data.update(extra)
-        return self.client.post(reverse("uploader:upload"), data=data)
+        values = {"filename": "v.mp4", **(extra or {})}
+        metadata = ",".join(f"{key} {base64.b64encode(value.encode()).decode()}" for key, value in values.items())
+        tus = {"HTTP_TUS_RESUMABLE": "1.0.0"}
+        created = self.client.post(
+            reverse("uploader:tus"), HTTP_UPLOAD_LENGTH=str(len(content)), HTTP_UPLOAD_METADATA=metadata, **tus
+        )
+        # The request that carries the last byte creates the media.
+        return self.client.patch(
+            created["Location"], content, content_type="application/offset+octet-stream", HTTP_UPLOAD_OFFSET="0", **tus
+        )
 
     @patch.object(Media, "media_init", return_value=None)
     def test_bulk_upload_creates_private_draft(self, _mock_init):
         response = self._upload({"is_draft": "1"})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertTrue(media.is_draft)
         self.assertEqual(media.state, "private")
@@ -174,7 +173,7 @@ class AutoDraftUploadTests(TestCase):
     @patch.object(Media, "media_init", return_value=None)
     def test_single_upload_is_not_draft(self, _mock_init):
         response = self._upload()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertFalse(media.is_draft)
 
@@ -183,7 +182,7 @@ class AutoDraftUploadTests(TestCase):
     @patch.object(Media, "media_init", return_value=None)
     def test_single_upload_is_hidden_from_other_users_until_its_details_are_saved(self, _mock_init):
         response = self._upload()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
 
         self.client.force_login(self.regular)
@@ -227,7 +226,7 @@ class AutoDraftUploadTests(TestCase):
         with patch.object(Media, "media_init", autospec=True, side_effect=record_stored_state):
             response = self._upload()
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         self.assertEqual(stored_states, ["private"])
 
     @patch.object(Media, "media_init", return_value=None)
@@ -256,7 +255,7 @@ class AutoDraftUploadTests(TestCase):
     @override_settings(MEDIA_IS_REVIEWED=False)
     def test_trusted_upload_is_reviewed_even_when_global_default_requires_review(self, _mock_init):
         response = self._upload()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertTrue(media.is_reviewed)
 
@@ -266,6 +265,6 @@ class AutoDraftUploadTests(TestCase):
         self.client.force_login(self.regular)
 
         response = self._upload()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         media = Media.objects.filter(user=self.regular).latest("add_date")
         self.assertFalse(media.is_reviewed)

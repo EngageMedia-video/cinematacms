@@ -255,8 +255,8 @@ The deployment files split nginx ownership as follows:
 - `deploy/nginx/cinematacms-http.conf` owns settings that the release updater
   installs into `/etc/nginx/conf.d/` on both new and existing servers. It defines
   the public-site log format and waits up to 300 seconds between reads from a
-  client request body. The five-minute idle window supports slow 2 MB
-  FineUploader chunks without leaving dead client connections open
+  client request body. The five-minute idle window supports slow upload
+  requests (8 MiB tus chunks) without leaving dead client connections open
   indefinitely.
 - `deploy/mediacms.io` owns the public HTTP and HTTPS servers. Each user-facing
   uWSGI location waits up to 300 seconds between writes to the local uWSGI
@@ -285,7 +285,7 @@ The deployment files split nginx ownership as follows:
   installed when the deployment uses `--proxy cloudflare`.
 
 The public uWSGI locations explicitly keep `uwsgi_request_buffering on`.
-Nginx therefore receives each FineUploader chunk before assigning a uWSGI
+Nginx therefore receives each upload request (one tus `PATCH`) before assigning a uWSGI
 worker and can retry an upstream that has not received the request body. Turning
 buffering off would occupy an application worker for the duration of a slow
 client upload and would prevent retry after nginx starts sending the body.
