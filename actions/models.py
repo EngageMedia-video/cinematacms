@@ -83,8 +83,13 @@ class MediaReport(MediaAction):
 
 def recount_reported_times(media_ids):
     """Set each media's reported_times to the number of its Reports."""
+    reported_media = Media.objects.filter(pk__in=media_ids)
     report_count = MediaReport.objects.filter(media=OuterRef("pk")).values("media").annotate(total=Count("pk"))
-    Media.objects.filter(pk__in=media_ids).update(reported_times=Coalesce(Subquery(report_count.values("total")), 0))
+    with transaction.atomic():
+        # An UPDATE that waits on another recount counts from its stale snapshot,
+        # so wait on the lock first. no_key leaves MediaAction inserts unblocked.
+        list(reported_media.order_by("pk").select_for_update(no_key=True).values_list("pk", flat=True))
+        reported_media.update(reported_times=Coalesce(Subquery(report_count.values("total")), 0))
 
 
 @receiver(pre_delete, sender=User)
