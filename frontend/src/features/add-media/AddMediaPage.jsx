@@ -725,7 +725,11 @@ export class AddMediaPage extends Page {
 					/>
 				</Dialog>
 
-				<Dialog open={!!noticeMessage} onOpenChange={(open) => !open && this.setState({ noticeMessage: '' })}>
+				{/* An open dialog makes every other dialog inert, so this one waits for the resume notice. */}
+				<Dialog
+					open={!!noticeMessage && resumeNotices.length === 0}
+					onOpenChange={(open) => !open && this.setState({ noticeMessage: '' })}
+				>
 					<ConfirmationDialogContent
 						title="Notice"
 						subtitle={noticeMessage}

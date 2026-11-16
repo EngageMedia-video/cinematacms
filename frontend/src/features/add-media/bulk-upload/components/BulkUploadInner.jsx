@@ -409,7 +409,8 @@ export function BulkUploadInner() {
 			/>
 			<ResumeUploadDialog uploads={resumeNotices} onConfirm={uploadActions.confirmResumes} />
 			<RedirectNoticeDialog
-				open={showRedirect}
+				// An open dialog makes every other dialog inert, so this one waits for the resume notice.
+				open={showRedirect && resumeNotices.length === 0}
 				onContinue={() => {
 					// Move the remaining uploaded file into the single tab (no re-upload).
 					const file = files.find((item) => item.friendlyToken) || files[0];

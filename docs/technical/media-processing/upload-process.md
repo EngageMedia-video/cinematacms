@@ -84,6 +84,9 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   dialog (`ResumeUploadDialog`) with the amount that is saved, and the upload waits. **OK**, or any
   other way of closing the dialog, sends the rest. The progress bar shows the saved amount while the
   upload waits. The dialog does not appear for a new file, or when the server holds the whole file.
+  Cancelling the upload while it waits deletes the stored part, as cancelling a running upload does.
+  The bulk page opens its single-upload notice only after this dialog is answered, because an open
+  dialog makes every other dialog inert.
 - **Stopped progress:** while a chunk is sent, the progress bar counts the bytes that left the
   browser. When an upload is paused, waits for sign-in or fails, the bar returns to the server's
   offset, because a refused or interrupted chunk stores nothing.
