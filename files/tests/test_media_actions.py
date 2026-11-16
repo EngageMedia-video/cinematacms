@@ -1,8 +1,10 @@
 import json
+import uuid
 from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
+from django.utils.deprecation import RemovedInDjango60Warning
 
 from actions.models import MediaAction
 from files.models import Media
@@ -287,13 +289,13 @@ class MediaReportActionsTests(TestCase):
         self.assertEqual((self.media.reported_times, other_media.reported_times), (1, 0))
         self.assertTrue(self._reports(self.owner).exists())
 
-    def _retitle_media_loaded_before_a_report(self, media_rows):
+    def _retitle_media_loaded_before_a_report(self, media_rows, save=Media.save):
         loaded_before_report = media_rows.get(pk=self.media.pk)
         self.client.force_login(self.viewer)
         self.assertEqual(self._report().status_code, 201)
 
         loaded_before_report.title = "Retitled after the report"
-        loaded_before_report.save()
+        save(loaded_before_report)
 
         self.media.refresh_from_db()
         return self.media.title, self.media.reported_times
@@ -307,6 +309,40 @@ class MediaReportActionsTests(TestCase):
         saved = self._retitle_media_loaded_before_a_report(Media.objects.defer("description"))
 
         self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_a_positional_full_save_of_a_media_loaded_before_a_report_keeps_the_count(self):
+        def save_positionally(media):
+            with self.assertWarns(RemovedInDjango60Warning):
+                media.save(False)
+
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.all(), save=save_positionally)
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_a_positional_update_fields_save_writes_only_the_named_columns(self):
+        loaded = Media.objects.get(pk=self.media.pk)
+        loaded.title = "Retitled"
+        loaded.description = "Never saved"
+
+        with self.assertWarns(RemovedInDjango60Warning):
+            loaded.save(False, False, None, ["title"])
+
+        stored = Media.objects.get(pk=self.media.pk)
+        self.assertEqual((stored.title, stored.description), ("Retitled", self.media.description))
+
+    def test_a_forced_insert_of_a_loaded_media_stores_a_new_row(self):
+        copy = Media.objects.get(pk=self.media.pk)
+        copy.pk = Media.objects.order_by("-pk").values_list("pk", flat=True).first() + 1
+        copy.uid = uuid.uuid4()
+        copy.title = "Copy"
+
+        with patch.object(Media, "media_init", return_value=None):
+            copy.save(force_insert=True)
+
+        self.assertEqual(
+            dict(Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list("pk", "title")),
+            {self.media.pk: self.media.title, copy.pk: "Copy"},
+        )
 
     def test_a_new_media_is_stored_with_no_reports(self):
         ensure_media_insert_defaults()
