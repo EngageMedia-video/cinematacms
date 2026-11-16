@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.postgres.operations import AddIndexConcurrently
 from django.db import migrations, models
 from django.db.models import Count, Min, OuterRef, Subquery
 from django.db.models.functions import Coalesce
@@ -23,6 +22,19 @@ def recount_reported_times(apps, schema_editor):
         .values("total")
     )
     Media.objects.update(reported_times=Coalesce(Subquery(report_count), 0))
+
+
+def build_index_concurrently(name, create_sql, state_operation):
+    """Build an index without blocking writes, replacing any left by a failed run.
+
+    A failed concurrent build leaves its index behind, sometimes invalid, and
+    the next run would stop on the name.
+    """
+    drop_sql = f'DROP INDEX CONCURRENTLY IF EXISTS "{name}"'
+    return migrations.SeparateDatabaseAndState(
+        database_operations=[migrations.RunSQL(sql=[drop_sql, create_sql], reverse_sql=drop_sql)],
+        state_operations=[state_operation],
+    )
 
 
 class Migration(migrations.Migration):
@@ -50,38 +62,34 @@ class Migration(migrations.Migration):
             bases=("actions.mediaaction",),
         ),
         migrations.RunPython(delete_duplicate_reports, migrations.RunPython.noop),
-        AddIndexConcurrently(
-            model_name="mediaaction",
-            index=models.Index(
-                condition=models.Q(("action", "report")),
-                fields=["media"],
-                name="mediaaction_report_media_idx",
+        build_index_concurrently(
+            "mediaaction_report_media_idx",
+            'CREATE INDEX CONCURRENTLY "mediaaction_report_media_idx" '
+            'ON "actions_mediaaction" ("media_id") WHERE "action" = \'report\'',
+            migrations.AddIndex(
+                model_name="mediaaction",
+                index=models.Index(
+                    condition=models.Q(("action", "report")),
+                    fields=["media"],
+                    name="mediaaction_report_media_idx",
+                ),
             ),
         ),
-        # Django has no concurrent AddConstraint. On PostgreSQL a conditional
-        # unique constraint is a partial unique index, so build that index
-        # concurrently and record the constraint in the migration state.
-        migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        'CREATE UNIQUE INDEX CONCURRENTLY "mediaaction_one_report_per_user" '
-                        'ON "actions_mediaaction" ("media_id", "user_id") '
-                        'WHERE ("action" = \'report\' AND "user_id" IS NOT NULL)'
-                    ),
-                    reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "mediaaction_one_report_per_user"',
+        # On PostgreSQL a conditional unique constraint is a partial unique
+        # index, which Django's AddConstraint cannot build concurrently.
+        build_index_concurrently(
+            "mediaaction_one_report_per_user",
+            'CREATE UNIQUE INDEX CONCURRENTLY "mediaaction_one_report_per_user" '
+            'ON "actions_mediaaction" ("media_id", "user_id") '
+            'WHERE ("action" = \'report\' AND "user_id" IS NOT NULL)',
+            migrations.AddConstraint(
+                model_name="mediaaction",
+                constraint=models.UniqueConstraint(
+                    condition=models.Q(("action", "report"), ("user__isnull", False)),
+                    fields=("media", "user"),
+                    name="mediaaction_one_report_per_user",
                 ),
-            ],
-            state_operations=[
-                migrations.AddConstraint(
-                    model_name="mediaaction",
-                    constraint=models.UniqueConstraint(
-                        condition=models.Q(("action", "report"), ("user__isnull", False)),
-                        fields=("media", "user"),
-                        name="mediaaction_one_report_per_user",
-                    ),
-                ),
-            ],
+            ),
         ),
         migrations.RunPython(recount_reported_times, migrations.RunPython.noop),
     ]

@@ -10,11 +10,12 @@ from django.contrib.auth.models import Permission
 from django.core.checks import Tags, run_checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.recorder import MigrationRecorder
 from django.db.models import Case, CharField, F, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -492,6 +493,60 @@ class MediaReportMigrationTests(TestCase):
                 public_media.pk: (0, "public"),
             },
         )
+
+
+class MediaReportMigrationResumeTests(TransactionTestCase):
+    report_index_names = ("mediaaction_report_media_idx", "mediaaction_one_report_per_user")
+
+    def _report_indexes(self):
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT c.relname, pg_get_indexdef(i.indexrelid), i.indisvalid FROM pg_index i "
+                "JOIN pg_class c ON c.oid = i.indexrelid WHERE c.relname = ANY(%s)",
+                [list(self.report_index_names)],
+            )
+            return {name: (definition, valid) for name, definition, valid in cursor.fetchall()}
+
+    def _restore_migrated_schema(self):
+        if ("actions", "0007_media_report") in MigrationRecorder(connection).applied_migrations():
+            return
+        with connection.cursor() as cursor:
+            for name in self.report_index_names:
+                cursor.execute(f'DROP INDEX CONCURRENTLY IF EXISTS "{name}"')
+        call_command("migrate", "actions", verbosity=0)
+
+    def test_migration_resumes_after_a_run_that_failed_building_the_unique_index(self):
+        migrated_indexes = self._report_indexes()
+        call_command("migrate", "actions", "0006", verbosity=0)
+        self.addCleanup(self._restore_migrated_schema)
+        media = create_test_media(create_test_user())
+        reporter = create_test_user()
+        for _ in range(2):
+            MediaAction.objects.create(media=media, user=reporter, action="report")
+        # The earlier run built the first index, then lost a race with a
+        # duplicate Report while building the unique one.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'CREATE INDEX CONCURRENTLY "mediaaction_report_media_idx" '
+                'ON "actions_mediaaction" ("media_id") WHERE "action" = \'report\''
+            )
+            with self.assertRaises(IntegrityError):
+                cursor.execute(
+                    'CREATE UNIQUE INDEX CONCURRENTLY "mediaaction_one_report_per_user" '
+                    'ON "actions_mediaaction" ("media_id", "user_id") '
+                    'WHERE ("action" = \'report\' AND "user_id" IS NOT NULL)'
+                )
+        self.assertFalse(self._report_indexes()["mediaaction_one_report_per_user"][1])
+
+        call_command("migrate", "actions", verbosity=0)
+
+        self.assertEqual(self._report_indexes(), migrated_indexes)
+        self.assertEqual(
+            {name: valid for name, (_, valid) in migrated_indexes.items()},
+            dict.fromkeys(self.report_index_names, True),
+        )
+        media.refresh_from_db()
+        self.assertEqual(media.reported_times, 1)
 
 
 @override_settings(MFA_REQUIRED_ROLES=[])
