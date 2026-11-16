@@ -3,6 +3,7 @@ import logging
 
 from django import forms
 from django.contrib import admin
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from tinymce.widgets import TinyMCE
@@ -55,6 +56,7 @@ class MediaAdmin(admin.ModelAdmin):
         "get_file_size",
         "add_date",
         "views",
+        "reported_times_link",
         "year_produced",
         "media_type",
         "duration",
@@ -93,6 +95,11 @@ class MediaAdmin(admin.ModelAdmin):
     @admin.display(description="Comments count")
     def get_comments_count(self, obj):
         return obj.comments.count()
+
+    @admin.display(description="Reported times", ordering="reported_times")
+    def reported_times_link(self, obj):
+        reports_url = reverse("admin:actions_mediareport_changelist")
+        return format_html('<a href="{}?media__id__exact={}">{}</a>', reports_url, obj.pk, obj.reported_times)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(MediaAdmin, self).get_form(request, obj, **kwargs)

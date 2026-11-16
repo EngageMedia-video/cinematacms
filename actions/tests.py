@@ -6,6 +6,7 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.apps import apps
+from django.contrib.auth.models import Permission
 from django.core.checks import Tags, run_checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
@@ -14,6 +15,7 @@ from django.db.models import Case, CharField, F, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from actions.models import MediaAction
@@ -490,3 +492,91 @@ class MediaReportMigrationTests(TestCase):
                 public_media.pk: (0, "public"),
             },
         )
+
+
+@override_settings(MFA_REQUIRED_ROLES=[])
+class MediaReportAdminTests(TestCase):
+    changelist_url = reverse("admin:actions_mediareport_changelist")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.superuser = create_test_user(is_superuser=True, is_staff=True)
+        cls.media = create_test_media(create_test_user())
+        cls.reporter = create_test_user(username="report_admin_reporter")
+        cls.report = MediaAction.objects.create(
+            media=cls.media,
+            user=cls.reporter,
+            action="report",
+            extra_info="Shows a private address",
+            session_key="reportersessionkey0123456789abcd",
+            remote_ip="198.51.100.77",
+        )
+        cls.report.refresh_from_db()
+        MediaAction.objects.create(media=cls.media, action="report", extra_info="Anonymous reason", session_key="anon")
+        for action in ("like", "dislike", "watch"):
+            MediaAction.objects.create(media=cls.media, user=cls.reporter, action=action, extra_info=f"{action} row")
+
+    def _staff_user(self, *permissions):
+        user = create_test_user(is_staff=True)
+        user.user_permissions.set(
+            Permission.objects.filter(content_type__app_label="actions", codename__in=permissions)
+        )
+        return user
+
+    def test_changelist_lists_reports_and_no_other_action(self):
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(self.changelist_url)
+
+        self.assertContains(response, "Shows a private address")
+        self.assertContains(response, "Anonymous reason")
+        self.assertContains(response, "report_admin_reporter")
+        self.assertContains(response, "Anonymous")
+        for action in ("like", "dislike", "watch"):
+            self.assertNotContains(response, f"{action} row")
+        self.assertContains(response, reverse("admin:files_media_change", args=[self.media.pk]))
+
+    def test_report_page_offers_no_add_change_or_delete(self):
+        self.client.force_login(self.superuser)
+        change_url = reverse("admin:actions_mediareport_change", args=[self.report.pk])
+
+        self.assertNotContains(self.client.get(self.changelist_url), "delete_selected")
+        self.assertEqual(self.client.get(reverse("admin:actions_mediareport_add")).status_code, 403)
+        self.assertEqual(self.client.post(change_url, {"extra_info": "Edited"}).status_code, 403)
+        self.assertEqual(
+            self.client.post(reverse("admin:actions_mediareport_delete", args=[self.report.pk])).status_code, 403
+        )
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.extra_info, "Shows a private address")
+
+    def test_view_permission_decides_who_opens_the_page(self):
+        self.client.force_login(self._staff_user())
+        self.assertEqual(self.client.get(self.changelist_url).status_code, 403)
+
+        self.client.force_login(self._staff_user("view_mediareport"))
+        self.assertEqual(self.client.get(self.changelist_url).status_code, 200)
+
+    def test_report_page_shows_the_reason_but_not_the_reporters_ip_or_session(self):
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(reverse("admin:actions_mediareport_change", args=[self.report.pk]))
+
+        self.assertContains(response, "Shows a private address")
+        self.assertNotContains(response, self.report.remote_ip)
+        self.assertNotContains(response, self.report.session_key)
+
+    def test_media_admin_links_each_count_to_that_medias_reports(self):
+        other_media = create_test_media(create_test_user())
+        MediaAction.objects.create(media=other_media, action="report", extra_info="Other film reason", session_key="x")
+        self.client.force_login(self.superuser)
+        reports_link = f"{self.changelist_url}?media__id__exact={self.media.pk}"
+
+        media_changelist = self.client.get(reverse("admin:files_media_changelist"))
+        self.assertContains(media_changelist, f'href="{reports_link}"')
+        self.assertContains(media_changelist, "sortable column-reported_times_link")
+
+        response = self.client.get(reports_link)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Shows a private address")
+        self.assertNotContains(response, "Other film reason")
