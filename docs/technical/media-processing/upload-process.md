@@ -88,8 +88,12 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   The bulk page opens its single-upload notice only after this dialog is answered, because an open
   dialog makes every other dialog inert.
 - **Stopped progress:** while a chunk is sent, the progress bar counts the bytes that left the
-  browser. When an upload is paused, waits for sign-in or fails, the bar returns to the server's
-  offset, because a refused or interrupted chunk stores nothing.
+  browser, and the server may hold fewer. When an upload waits for sign-in or fails, the bar returns
+  to the last offset the server reported, because a refused chunk stores nothing. When an upload is
+  paused, the engine asks the server for its offset with `HEAD` and shows that. The amount of an
+  interrupted chunk that stays depends on the deployment: the application keeps the bytes it read,
+  and a proxy that buffers the request passes it none. If the `HEAD` gets no answer, the bar shows
+  the last offset the server reported.
 - **Failed completion:** if creating the media fails after the last byte, the upload ends as failed
   and later requests get `410` with `X-Upload-Result: unknown`. The media may already exist, so the
   browser shows the upload as expired with a message to check the media first, the same as for a

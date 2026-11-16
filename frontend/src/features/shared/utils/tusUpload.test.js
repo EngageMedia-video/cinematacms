@@ -639,6 +639,52 @@ describe('createTusUploader', () => {
 			expect(progress.at(-1)).toEqual([26, 26]);
 		});
 
+		// A server that reads the body as it arrives keeps the part of an interrupted chunk it read.
+		it('asks the server what it holds when the upload is paused during a chunk', async () => {
+			const { server, uploader, progress, settled, storedText } = setup();
+			server.intercept = (request) => {
+				if (request.method !== 'PATCH' || request.headers['Upload-Offset'] !== '10') return null;
+				server.uploads.get(new URL(request.url, 'http://localhost').pathname).text += CONTENT.slice(10, 14);
+				uploader.pauseUpload(0);
+				return { networkError: true };
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.PAUSED);
+			await vi.waitFor(() => expect(progress.at(-1)).toEqual([14, 26]));
+
+			// After the chunk left the browser, the bar never drops to the 10 bytes of the last answered
+			// chunk, which is less than the server holds.
+			const sentInFull = progress.findLastIndex(([sent]) => sent === 20);
+			expect(progress.slice(sentInFull)).toEqual([
+				[20, 26],
+				[14, 26],
+			]);
+			const check = server.requests.at(-1);
+			expect(check.method).toBe('HEAD');
+			expect(check.headers).toMatchObject({ 'Tus-Resumable': '1.0.0', 'X-CSRFToken': 'token-1' });
+
+			server.intercept = () => null;
+			uploader.continueUpload(0);
+			await settled(UPLOAD_STATUS.COMPLETE);
+			expect(storedText()).toEqual([CONTENT]);
+		});
+
+		it('shows the last offset the server reported when it cannot be asked after a pause', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) => {
+				if (request.method === 'HEAD') return { status: 503 };
+				if (request.method !== 'PATCH' || request.headers['Upload-Offset'] !== '10') return null;
+				uploader.pauseUpload(0);
+				return { networkError: true };
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.PAUSED);
+
+			await vi.waitFor(() => expect(progress.at(-1)).toEqual([10, 26]));
+		});
+
 		it('shows the bytes the server holds when the upload fails', async () => {
 			const { server, uploader, progress, settled } = setup();
 			server.intercept = (request) =>

@@ -9,7 +9,7 @@
 // the media of an upload whose final response was lost.
 
 // The package's default entry is its Node build, which cannot read a browser File.
-import { DetailedError, Upload } from 'tus-js-client/lib.esm/browser/index.js';
+import { DefaultHttpStack, DetailedError, Upload } from 'tus-js-client/lib.esm/browser/index.js';
 import { formatBytes } from './formatBytes';
 import { UPLOAD_ID_HEADER } from './uploadId';
 
@@ -202,16 +202,22 @@ export function createTusUploader({
 
 	const notify = (name, ...args) => callbacks[name]?.(...args);
 
-	// While a chunk is on its way, tus-js-client reports the bytes that left the browser. A chunk
-	// that is refused or interrupted stores nothing, so a stopped upload shows the server's offset.
-	const STOPPED_STATUSES = [UPLOAD_STATUS.PAUSED, UPLOAD_STATUS.AWAITING_SIGN_IN, UPLOAD_STATUS.FAILED];
+	// While a chunk is on its way, tus-js-client reports the bytes that left the browser, and the
+	// server may hold fewer. A stopped upload shows the server's offset instead. A refused chunk
+	// stores nothing, so these statuses show the last offset the server reported. A paused upload
+	// is different: see reportStoredBytesAfterPause.
+	const STOPPED_STATUSES = [UPLOAD_STATUS.AWAITING_SIGN_IN, UPLOAD_STATUS.FAILED];
+
+	function reportStoredBytes(item) {
+		if (item.acceptedBytes != null) {
+			notify('onProgress', item.id, item.file.name, item.acceptedBytes, item.file.size);
+		}
+	}
 
 	function setStatus(item, status, message = '') {
 		item.status = status;
 		// Before the status, so a caller that derives a status from the progress ends on the real one.
-		if (STOPPED_STATUSES.includes(status) && item.acceptedBytes != null) {
-			notify('onProgress', item.id, item.file.name, item.acceptedBytes, item.file.size);
-		}
+		if (STOPPED_STATUSES.includes(status)) reportStoredBytes(item);
 		notify('onStatusChange', item.id, status, message);
 	}
 
@@ -362,6 +368,35 @@ export function createTusUploader({
 		});
 	}
 
+	// How much of an interrupted chunk the server keeps depends on what sits in front of it: a
+	// proxy that buffers the request stores nothing, and a server that reads the body as it arrives
+	// keeps what it read. Only the server knows, so a paused upload asks it. Without an answer the
+	// bar shows the last offset the server reported.
+	async function reportStoredBytesAfterPause(item, aborted) {
+		const upload = item.upload;
+		const stale = () =>
+			items.get(item.id) !== item || item.upload !== upload || item.status !== UPLOAD_STATUS.PAUSED;
+		try {
+			// The server stops writing the interrupted chunk once the request is gone.
+			await aborted;
+			if (upload?.url && !stale()) {
+				const request = (httpStack ?? new DefaultHttpStack()).createRequest('HEAD', upload.url);
+				const headers = {
+					'Tus-Resumable': '1.0.0',
+					...getHeaders(),
+					...(item.uuid ? { [UPLOAD_ID_HEADER]: item.uuid } : {}),
+				};
+				Object.entries(headers).forEach(([name, value]) => request.setHeader(name, value));
+				const response = await request.send();
+				const offset = Number.parseInt(response.getHeader('Upload-Offset'), 10);
+				if (response.getStatus() < 400 && !Number.isNaN(offset) && !stale()) item.acceptedBytes = offset;
+			}
+		} catch {
+			// Continue asks the server again before it sends anything.
+		}
+		if (!stale()) reportStoredBytes(item);
+	}
+
 	async function begin(item) {
 		// Cancelling, pausing, or beginning again while the fingerprint and the lookup run makes
 		// this start stale, so a file never ends up with two transfers.
@@ -445,8 +480,9 @@ export function createTusUploader({
 			const item = items.get(id);
 			if (item?.status !== UPLOAD_STATUS.UPLOADING) return false;
 			item.startToken = null;
-			item.upload?.abort();
+			const aborted = item.upload?.abort();
 			setStatus(item, UPLOAD_STATUS.PAUSED);
+			reportStoredBytesAfterPause(item, aborted);
 			return true;
 		},
 		/** Continues a paused upload, or one waiting for the user to sign in again. */
