@@ -144,26 +144,9 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
-    def test_retracting_duplicate_reports_lowers_the_count_by_each_one(self):
-        other_viewer = create_test_user(username="report_other_duplicate")
-        MediaAction.objects.create(media=self.media, user=other_viewer, action="report")
-        # Two racing requests can each store a report for the same viewer.
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        Media.objects.filter(pk=self.media.pk).update(reported_times=3)
-        self.client.force_login(self.viewer)
-
-        response = self._retract()
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(self._reports(self.viewer).exists())
-        self.media.refresh_from_db()
-        self.assertEqual(self.media.reported_times, 1)
-
     def test_retracting_does_not_lower_the_count_below_zero(self):
         MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        Media.objects.filter(pk=self.media.pk).update(reported_times=1)
+        Media.objects.filter(pk=self.media.pk).update(reported_times=0)
         self.client.force_login(self.viewer)
 
         self._retract()

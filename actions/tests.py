@@ -1,9 +1,11 @@
+import importlib
 import json
 from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import patch
 
+from django.apps import apps
 from django.core.checks import Tags, run_checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
@@ -16,8 +18,11 @@ from django.utils import timezone
 
 from actions.models import MediaAction
 from files.helpers import mask_ip
+from files.models import Media
 from files.tasks import save_user_action
 from files.tests.helpers import create_test_media, create_test_user
+
+media_report_migration = importlib.import_module("actions.migrations.0007_media_report")
 
 MASKED_IP = "b2bf3fb7f6fa9ada2eed90c09545ae95cdc046aea1bffb465e3a8c0c1811d451"
 
@@ -433,3 +438,55 @@ class IPCleanupTests(TestCase):
         self.assertIsNone(action.remote_ip)
         self.assertNotIn("invalid-private-value", output.getvalue())
         self.assertIn("1 invalid cleared", output.getvalue())
+
+
+class MediaReportMigrationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.media = create_test_media(create_test_user())
+        cls.reporter = create_test_user()
+
+    def _allow_duplicate_reports(self):
+        # Duplicates from before the migration can no longer be inserted.
+        constraint = next(c for c in MediaAction._meta.constraints if c.name == "mediaaction_one_report_per_user")
+        with connection.schema_editor() as editor:
+            editor.remove_constraint(MediaAction, constraint)
+
+    def _report(self, media, user=None, reason="", session_key=None):
+        return MediaAction.objects.create(
+            media=media, user=user, session_key=session_key, action="report", extra_info=reason
+        )
+
+    def test_dedupe_keeps_each_users_earliest_report_and_every_anonymous_report(self):
+        self._allow_duplicate_reports()
+        other_reporter = create_test_user()
+        earliest = self._report(self.media, self.reporter, "first")
+        self._report(self.media, self.reporter, "second")
+        self._report(self.media, self.reporter, "third")
+        other = self._report(self.media, other_reporter, "other reporter")
+        anonymous = [self._report(self.media, session_key=f"session-{n}", reason="anonymous") for n in range(2)]
+        likes = [MediaAction.objects.create(media=self.media, user=self.reporter, action="like") for _ in range(2)]
+
+        media_report_migration.delete_duplicate_reports(apps, schema_editor=None)
+
+        remaining = set(MediaAction.objects.values_list("pk", flat=True))
+        self.assertEqual(remaining, {earliest.pk, other.pk, *(row.pk for row in anonymous), *(row.pk for row in likes)})
+
+    def test_backfill_fixes_drifted_counters_without_changing_visibility(self):
+        private_media = create_test_media(create_test_user(), state="private", reported_times=7)
+        public_media = create_test_media(create_test_user(), state="public", reported_times=3)
+        self._report(private_media, self.reporter)
+        self._report(private_media, session_key="anonymous-session")
+        MediaAction.objects.create(media=public_media, user=self.reporter, action="like")
+        MediaAction.objects.create(media=public_media, user=self.reporter, action="watch")
+
+        media_report_migration.recount_reported_times(apps, schema_editor=None)
+
+        self.assertEqual(
+            {media.pk: (media.reported_times, media.state) for media in Media.objects.all()},
+            {
+                self.media.pk: (0, "public"),
+                private_media.pk: (2, "private"),
+                public_media.pk: (0, "public"),
+            },
+        )

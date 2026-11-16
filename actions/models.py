@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 from files.models import Media
 from users.models import User
@@ -47,4 +48,30 @@ class MediaAction(models.Model):
                 condition=models.Q(remote_ip__isnull=False),
                 name="mediaaction_ip_expiry_idx",
             ),
+            models.Index(
+                fields=["media"],
+                condition=Q(action="report"),
+                name="mediaaction_report_media_idx",
+            ),
         ]
+        constraints = [
+            # Anonymous Reports have no user and stay outside the constraint.
+            models.UniqueConstraint(
+                fields=["media", "user"],
+                condition=Q(action="report", user__isnull=False),
+                name="mediaaction_one_report_per_user",
+            ),
+        ]
+
+
+class ReportManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(action="report")
+
+
+class MediaReport(MediaAction):
+    objects = ReportManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "report"
