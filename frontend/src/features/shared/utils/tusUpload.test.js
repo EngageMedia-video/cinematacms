@@ -522,6 +522,77 @@ describe('createTusUploader', () => {
 		});
 	});
 
+	describe('telling the page about a partly stored file', () => {
+		const url = `${ENDPOINT}upload-9/`;
+
+		function partlyStored(offset = 10) {
+			const found = [];
+			const context = setup({
+				lookup: { uploads: [{ url, size: 26, offset }] },
+				callbacks: {
+					onResumeFound: (...args) => found.push(args),
+					onStatusChange: (id, status) => context.statuses.push([id, status]),
+					onProgress: (id, name, sentBytes, totalBytes) => context.progress.push([sentBytes, totalBytes]),
+				},
+			});
+			context.server.uploads.set(url, { length: 26, text: CONTENT.slice(0, offset) });
+			return { ...context, found };
+		}
+
+		it('waits for the page to confirm before it sends the rest', async () => {
+			const { server, uploader, found, progress, settled, patches, storedText } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toEqual([[0, 'clip.mp4', 10, 26]]));
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			expect(server.requests).toEqual([]);
+			expect(progress).toEqual([[10, 26]]);
+
+			uploader.confirmResume(0);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(patches().map((request) => request.headers['Upload-Offset'])).toEqual(['10', '20']);
+			expect(storedText()).toEqual([CONTENT]);
+		});
+
+		it('sends nothing when the upload is cancelled before the page confirms', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.cancel(0);
+			uploader.confirmResume(0);
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			expect(server.requests.filter((request) => request.method === 'PATCH')).toEqual([]);
+		});
+
+		it('does not wait when the server holds the whole file', async () => {
+			const { uploader, found, settled } = partlyStored(26);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(found).toEqual([]);
+		});
+
+		it('does not wait for a new file', async () => {
+			const found = [];
+			const context = setup({
+				callbacks: {
+					onResumeFound: (...args) => found.push(args),
+					onStatusChange: (id, status) => context.statuses.push([id, status]),
+				},
+			});
+
+			context.uploader.addFiles([makeFile()]);
+			await context.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(found).toEqual([]);
+		});
+	});
+
 	describe('progress of an upload that stops', () => {
 		it('shows the bytes the server holds when the last chunk is refused for a sign-in', async () => {
 			const { server, uploader, progress, settled, storedText } = setup();

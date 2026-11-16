@@ -4,6 +4,7 @@
 // bytes it holds (HEAD) and continues from there. Before a file is sent, the server is asked for
 // the caller's unfinished upload of the same file (name, size and a content fingerprint), so
 // selecting the file again after a reload, or after signing in again, continues that upload.
+// A page that passes onResumeFound is told first, and the upload waits for confirmResume.
 // The browser also remembers the URL of an upload until it sees that upload end, which recovers
 // the media of an upload whose final response was lost.
 
@@ -121,9 +122,10 @@ function serverMessage(error) {
  * Creates the upload engine for one page.
  *
  * `callbacks` (all optional): onSubmitted(id, name), onProgress(id, name, sentBytes, totalBytes),
- * onStatusChange(id, status, message), onComplete(id, name, { media_url }), onError(id, name, message)
- * and onCancel(id). `onError` runs once an upload has failed for good, and with a null id when a
- * selected file is refused. `getHeaders` is read before every request, so a CSRF token issued by a
+ * onStatusChange(id, status, message), onComplete(id, name, { media_url }), onError(id, name, message),
+ * onCancel(id) and onResumeFound(id, name, storedBytes, totalBytes). `onError` runs once an upload
+ * has failed for good, and with a null id when a selected file is refused. `onResumeFound` runs when
+ * the server already holds part of a selected file; the upload then waits for `confirmResume(id)`. `getHeaders` is read before every request, so a CSRF token issued by a
  * new sign-in is picked up.
  */
 export function createTusUploader({
@@ -231,7 +233,8 @@ export function createTusUploader({
 		return '';
 	}
 
-	async function findUploadUrl(item) {
+	/** The caller's unfinished upload of this file on the server: `{ url, offset }`, or null. */
+	async function findUpload(item) {
 		if (!item.fingerprint) return null;
 		const query = new URLSearchParams({
 			filename: item.file.name,
@@ -255,7 +258,8 @@ export function createTusUploader({
 		if (!response.ok) return null;
 		try {
 			const found = (await response.json())?.uploads?.[0];
-			return found?.url ? new URL(found.url, globalThis.location?.href).toString() : null;
+			if (!found?.url) return null;
+			return { url: new URL(found.url, globalThis.location?.href).toString(), offset: Number(found.offset) || 0 };
 		} catch {
 			return null;
 		}
@@ -366,9 +370,9 @@ export function createTusUploader({
 
 		item.fingerprint = item.fingerprint ?? (await fileFingerprint(item.file).catch(() => null));
 		item.pendingKey = item.pendingKey ?? (await pendingKeyOf(item).catch(() => null));
-		let uploadUrl;
+		let unfinished;
 		try {
-			uploadUrl = await findUploadUrl(item);
+			unfinished = await findUpload(item);
 		} catch {
 			// The lookup needs a sign-in; Continue repeats it, so the unfinished upload is still found.
 			if (!stale()) setStatus(item, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE);
@@ -377,9 +381,21 @@ export function createTusUploader({
 		if (stale()) return;
 		// The same file selected again while its first copy is still here is sent as its own upload.
 		const free = (url) => (url && !drivenByAnotherItem(item, url) ? url : null);
-		const found = free(uploadUrl);
+		const found = free(unfinished?.url);
 		const remembered = found ? null : free(pendingUrl(item));
 		item.recalled = Boolean(remembered);
+		const partlyStored = found && unfinished.offset > 0 && unfinished.offset < item.file.size;
+		if (partlyStored && callbacks.onResumeFound) {
+			// The page tells the user that part of the file is stored, and starts the rest on their answer.
+			item.acceptedBytes = unfinished.offset;
+			notify('onProgress', item.id, item.file.name, unfinished.offset, item.file.size);
+			await new Promise((resolve) => {
+				item.confirmResume = resolve;
+				notify('onResumeFound', item.id, item.file.name, unfinished.offset, item.file.size);
+			});
+			item.confirmResume = null;
+			if (stale()) return;
+		}
 		adoptUploadIdOf(item, found ?? remembered);
 		item.upload = buildUpload(item, found ?? remembered);
 		item.upload.start();
@@ -426,6 +442,10 @@ export function createTusUploader({
 			if (item.upload) item.upload.start();
 			else begin(item);
 			return true;
+		},
+		/** Starts an upload that waits after onResumeFound. */
+		confirmResume(id) {
+			items.get(id)?.confirmResume?.();
 		},
 		/** Retries a failed upload from the server's offset, or sends an expired one again. */
 		retry(id) {
