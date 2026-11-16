@@ -479,8 +479,10 @@ class MediaReportMigrationTests(TestCase):
 
     @patch.object(media_report_migration, "RECOUNT_BATCH_SIZE", 2)
     def test_backfill_fixes_drifted_counters_without_changing_visibility(self):
-        private_media = create_test_media(create_test_user(), state="private", reported_times=7)
-        public_media = create_test_media(create_test_user(), state="public", reported_times=3)
+        private_media = create_test_media(create_test_user(), state="private")
+        public_media = create_test_media(create_test_user(), state="public")
+        Media.objects.filter(pk=private_media.pk).update(reported_times=7)
+        Media.objects.filter(pk=public_media.pk).update(reported_times=3)
         self._report(private_media, self.reporter)
         self._report(private_media, session_key="anonymous-session")
         MediaAction.objects.create(media=public_media, user=self.reporter, action="like")

@@ -907,6 +907,10 @@ class Media(models.Model):
             written_fields = self._columns_except_report_count()
         else:
             written_fields = None
+        is_insert = force_insert or self._state.adding or not self.pk
+        if is_insert:
+            # A new row has no Reports yet, even when copied from a loaded media.
+            self.reported_times = 0
         django_save_options = {
             "force_insert": force_insert,
             "force_update": force_update,

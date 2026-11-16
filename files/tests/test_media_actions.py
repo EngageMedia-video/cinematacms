@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 from django.utils.deprecation import RemovedInDjango60Warning
 
-from actions.models import MediaAction
+from actions.models import MediaAction, recount_reported_times
 from files.models import Media
 from files.tests.helpers import create_test_media, create_test_user, ensure_media_insert_defaults
 
@@ -330,7 +330,9 @@ class MediaReportActionsTests(TestCase):
         stored = Media.objects.get(pk=self.media.pk)
         self.assertEqual((stored.title, stored.description), ("Retitled", self.media.description))
 
-    def test_a_forced_insert_of_a_loaded_media_stores_a_new_row(self):
+    def test_a_forced_insert_of_a_loaded_media_stores_a_new_row_with_no_reports(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
         copy = Media.objects.get(pk=self.media.pk)
         copy.pk = Media.objects.order_by("-pk").values_list("pk", flat=True).first() + 1
         copy.uid = uuid.uuid4()
@@ -340,8 +342,13 @@ class MediaReportActionsTests(TestCase):
             copy.save(force_insert=True)
 
         self.assertEqual(
-            dict(Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list("pk", "title")),
-            {self.media.pk: self.media.title, copy.pk: "Copy"},
+            {
+                pk: (title, reported_times)
+                for pk, title, reported_times in Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list(
+                    "pk", "title", "reported_times"
+                )
+            },
+            {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
         )
 
     def test_a_new_media_is_stored_with_no_reports(self):
