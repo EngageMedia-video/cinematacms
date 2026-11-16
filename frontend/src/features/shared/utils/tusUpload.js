@@ -200,8 +200,16 @@ export function createTusUploader({
 
 	const notify = (name, ...args) => callbacks[name]?.(...args);
 
+	// While a chunk is on its way, tus-js-client reports the bytes that left the browser. A chunk
+	// that is refused or interrupted stores nothing, so a stopped upload shows the server's offset.
+	const STOPPED_STATUSES = [UPLOAD_STATUS.PAUSED, UPLOAD_STATUS.AWAITING_SIGN_IN, UPLOAD_STATUS.FAILED];
+
 	function setStatus(item, status, message = '') {
 		item.status = status;
+		// Before the status, so a caller that derives a status from the progress ends on the real one.
+		if (STOPPED_STATUSES.includes(status) && item.acceptedBytes != null) {
+			notify('onProgress', item.id, item.file.name, item.acceptedBytes, item.file.size);
+		}
 		notify('onStatusChange', item.id, status, message);
 	}
 
@@ -296,6 +304,8 @@ export function createTusUploader({
 				const mediaUrl = response.getHeader(MEDIA_URL_HEADER);
 				if (mediaUrl) item.mediaUrl = mediaUrl;
 				if (status === 401) throw new SignInRequired();
+				const offset = Number.parseInt(response.getHeader('Upload-Offset'), 10);
+				if (status < 400 && !Number.isNaN(offset)) item.acceptedBytes = offset;
 				// tus-js-client answers any failed HEAD except 423 by silently creating a new upload,
 				// which would send the whole file again and could create a second media.
 				if (request.getMethod() === 'HEAD' && status >= 400 && status !== 423) {
@@ -331,6 +341,7 @@ export function createTusUploader({
 				} else if (cause instanceof UploadGone) {
 					setPendingUrl(item, null);
 					item.upload = null;
+					item.acceptedBytes = null;
 					// A remembered upload the server no longer has, or one whose completion failed,
 					// may have created its media. Sending the file again is the user's decision, through Retry.
 					const unknown = item.recalled || cause.resultUnknown;

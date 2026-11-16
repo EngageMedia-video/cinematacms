@@ -58,6 +58,7 @@ function createTusServer() {
 		getName: () => 'FakeTusServer',
 		createRequest(method, url) {
 			const request = { method, url, headers: {} };
+			let reportSent = () => {};
 			return {
 				getMethod: () => method,
 				getURL: () => url,
@@ -65,11 +66,15 @@ function createTusServer() {
 					request.headers[name] = value;
 				},
 				getHeader: (name) => request.headers[name],
-				setProgressHandler: () => {},
+				setProgressHandler: (handler) => {
+					reportSent = handler;
+				},
 				abort: () => Promise.resolve(),
 				getUnderlyingObject: () => null,
 				async send(body) {
 					request.body = body;
+					// Like a browser, the whole body counts as sent before the server answers.
+					if (body) reportSent(body.size);
 					const response = await server.handle(request);
 					if (response.networkError) throw new Error('network error');
 					return {
@@ -106,6 +111,7 @@ function memoryStorage() {
 function setup({ lookup = { uploads: [] }, server = createTusServer(), storage = memoryStorage(), ...options } = {}) {
 	const events = [];
 	const statuses = [];
+	const progress = [];
 	const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, json: async () => lookup }));
 	const uploader = createTusUploader({
 		endpoint: ENDPOINT,
@@ -117,6 +123,7 @@ function setup({ lookup = { uploads: [] }, server = createTusServer(), storage =
 		getHeaders: () => ({ 'X-CSRFToken': 'token-1' }),
 		callbacks: {
 			onSubmitted: (id, name) => events.push(['submitted', id, name]),
+			onProgress: (id, name, sentBytes, totalBytes) => progress.push([sentBytes, totalBytes]),
 			onStatusChange: (id, status, message) => statuses.push([id, status, message]),
 			onComplete: (id, name, response) => events.push(['complete', id, response]),
 			onError: (id, name, message) => events.push(['error', id, message]),
@@ -127,7 +134,7 @@ function setup({ lookup = { uploads: [] }, server = createTusServer(), storage =
 	const settled = (status) => vi.waitFor(() => expect(statuses.map((entry) => entry[1])).toContain(status));
 	const patches = () => server.requests.filter((request) => request.method === 'PATCH');
 	const storedText = () => [...server.uploads.values()].map((upload) => upload.text);
-	return { server, uploader, events, statuses, fetchImpl, settled, patches, storedText, storage };
+	return { server, uploader, events, statuses, progress, fetchImpl, settled, patches, storedText, storage };
 }
 
 describe('createTusUploader', () => {
@@ -512,6 +519,55 @@ describe('createTusUploader', () => {
 			expect(failures).toBe(2);
 			expect(server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
 			expect(storedText()).toEqual([CONTENT]);
+		});
+	});
+
+	describe('progress of an upload that stops', () => {
+		it('shows the bytes the server holds when the last chunk is refused for a sign-in', async () => {
+			const { server, uploader, progress, settled, storedText } = setup();
+			let signedIn = false;
+			server.intercept = (request) =>
+				!signedIn && request.method === 'PATCH' && request.headers['Upload-Offset'] === '20'
+					? { status: 401 }
+					: null;
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			// The refused chunk left the browser in full, and none of it was stored.
+			expect(progress).toContainEqual([26, 26]);
+			expect(progress.at(-1)).toEqual([20, 26]);
+
+			signedIn = true;
+			expect(uploader.continueUpload(0)).toBe(true);
+			await settled(UPLOAD_STATUS.COMPLETE);
+			expect(storedText()).toEqual([CONTENT]);
+			expect(progress.at(-1)).toEqual([26, 26]);
+		});
+
+		it('shows the bytes the server holds when the upload fails', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) =>
+				request.method === 'PATCH' && request.headers['Upload-Offset'] === '10' ? { status: 503 } : null;
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.FAILED);
+
+			expect(progress.at(-1)).toEqual([10, 26]);
+		});
+
+		it('shows the offset of a resumed upload whose first chunk is refused', async () => {
+			const url = `${ENDPOINT}upload-9/`;
+			const { server, uploader, progress, settled } = setup({
+				lookup: { uploads: [{ url, size: 26, offset: 10 }] },
+			});
+			server.uploads.set(url, { length: 26, text: CONTENT.slice(0, 10) });
+			server.intercept = (request) => (request.method === 'PATCH' ? { status: 401 } : null);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			expect(progress.at(-1)).toEqual([10, 26]);
 		});
 	});
 
