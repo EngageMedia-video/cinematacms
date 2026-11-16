@@ -267,6 +267,26 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 0)
 
+    def test_deleting_a_reporters_account_lowers_the_count_of_each_media_they_reported(self):
+        other_media = create_test_media(self.owner)
+        self.client.force_login(self.owner)
+        self._report("Owner report")
+        self.client.force_login(self.viewer)
+        self._report()
+        self.client.post(
+            f"/api/v1/media/{other_media.friendly_token}/actions",
+            data=json.dumps({"type": "report", "extra_info": "Other film"}),
+            content_type="application/json",
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.viewer.delete()
+
+        self.media.refresh_from_db()
+        other_media.refresh_from_db()
+        self.assertEqual((self.media.reported_times, other_media.reported_times), (1, 0))
+        self.assertTrue(self._reports(self.owner).exists())
+
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
 class MediaReportNotificationTests(TestCase):

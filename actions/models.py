@@ -1,8 +1,11 @@
-from django.db import models
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db import models, transaction
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 from files.models import Media
+from files.query_cache import invalidate_media_cache
 from users.models import User
 
 from .fields import MaskedIPField
@@ -51,7 +54,7 @@ class MediaAction(models.Model):
             ),
             models.Index(
                 fields=["media"],
-                condition=Q(action="report"),
+                condition=models.Q(action="report"),
                 name="mediaaction_report_media_idx",
             ),
         ]
@@ -59,7 +62,7 @@ class MediaAction(models.Model):
             # Anonymous Reports have no user and stay outside the constraint.
             models.UniqueConstraint(
                 fields=["media", "user"],
-                condition=Q(action="report", user__isnull=False),
+                condition=models.Q(action="report", user__isnull=False),
                 name="mediaaction_one_report_per_user",
             ),
         ]
@@ -82,3 +85,22 @@ def recount_reported_times(media_ids):
     """Set each media's reported_times to the number of its Reports."""
     report_count = MediaReport.objects.filter(media=OuterRef("pk")).values("media").annotate(total=Count("pk"))
     Media.objects.filter(pk__in=media_ids).update(reported_times=Coalesce(Subquery(report_count.values("total")), 0))
+
+
+@receiver(pre_delete, sender=User)
+def withdraw_reports_of_deleted_account(sender, instance, **kwargs):
+    # Runs inside the account deletion's transaction. A receiver on MediaAction
+    # would instead turn off Django's fast delete for every watch row.
+    reports = MediaReport.objects.filter(user=instance)
+    reported_media = list(reports.values_list("media_id", "media__friendly_token"))
+    if not reported_media:
+        return
+
+    reports.delete()
+    recount_reported_times([media_id for media_id, _ in reported_media])
+
+    def invalidate_reported_media():
+        for _, friendly_token in reported_media:
+            invalidate_media_cache(friendly_token)
+
+    transaction.on_commit(invalidate_reported_media)
