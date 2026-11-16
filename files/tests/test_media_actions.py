@@ -120,6 +120,32 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
+    def test_racing_duplicate_report_is_refused_and_not_counted(self):
+        self.client.force_login(self.viewer)
+        self._report()
+
+        # A racing request passes the duplicate check before the first Report commits.
+        with patch("files.tasks.pre_save_action", return_value=True):
+            response = self._report("Again")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["detail"], "action already performed")
+        self.assertEqual(
+            list(self._reports(self.viewer).values_list("extra_info", flat=True)), ["Shows a private address"]
+        )
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 1)
+
+    def test_report_recounts_a_drifted_counter(self):
+        MediaAction.objects.create(media=self.media, user=self.owner, action="report")
+        Media.objects.filter(pk=self.media.pk).update(reported_times=0)
+        self.client.force_login(self.viewer)
+
+        self._report()
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 2)
+
     def test_viewer_can_retract_their_report(self):
         self.client.force_login(self.viewer)
         self._report()
@@ -144,15 +170,16 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
-    def test_retracting_does_not_lower_the_count_below_zero(self):
+    def test_retracting_recounts_a_drifted_counter(self):
+        MediaAction.objects.create(media=self.media, user=self.owner, action="report")
         MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        Media.objects.filter(pk=self.media.pk).update(reported_times=0)
+        Media.objects.filter(pk=self.media.pk).update(reported_times=5)
         self.client.force_login(self.viewer)
 
         self._retract()
 
         self.media.refresh_from_db()
-        self.assertEqual(self.media.reported_times, 0)
+        self.assertEqual(self.media.reported_times, 1)
 
     def test_viewer_can_retract_after_reports_made_the_media_private(self):
         self.client.force_login(self.viewer)

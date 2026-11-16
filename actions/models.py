@@ -1,5 +1,6 @@
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 
 from files.models import Media
 from users.models import User
@@ -75,3 +76,9 @@ class MediaReport(MediaAction):
     class Meta:
         proxy = True
         verbose_name = "report"
+
+
+def recount_reported_times(media_ids):
+    """Set each media's reported_times to the number of its Reports."""
+    report_count = MediaReport.objects.filter(media=OuterRef("pk")).values("media").annotate(total=Count("pk"))
+    Media.objects.filter(pk__in=media_ids).update(reported_times=Coalesce(Subquery(report_count.values("total")), 0))

@@ -18,12 +18,12 @@ from celery.signals import task_revoked, worker_shutting_down
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files import File
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.urls import reverse
 from django.utils import timezone
 
-from actions.models import USER_MEDIA_ACTIONS, MediaAction
+from actions.models import USER_MEDIA_ACTIONS, MediaAction, recount_reported_times
 from cms.cache_telemetry import owned_cache
 from cms.error_tracking import capture_unexpected_exception
 from cms.observability import inject_trace_headers, media_reference, start_span
@@ -1257,12 +1257,17 @@ def save_user_action(user_or_session, friendly_token=None, action="watch", extra
         extra_info=extra_info,
         remote_ip=remote_ip,
     )
-    ma.save()
+    try:
+        with transaction.atomic():
+            ma.save()
+    except IntegrityError:
+        # A racing request from the same Reporter already stored the Report.
+        return False
 
     if action == "watch":
         Media.objects.filter(friendly_token=media.friendly_token).update(views=F("views") + 1)
     elif action == "report":
-        Media.objects.filter(friendly_token=media.friendly_token).update(reported_times=F("reported_times") + 1)
+        recount_reported_times([media.pk])
         # Need to refresh to check the threshold
         media.refresh_from_db()
         if media.reported_times >= settings.REPORTED_TIMES_THRESHOLD:

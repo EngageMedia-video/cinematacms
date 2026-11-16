@@ -20,7 +20,6 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
-from django.db.models.functions import Greatest
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -40,7 +39,7 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from actions.models import USER_MEDIA_ACTIONS, MediaAction
+from actions.models import USER_MEDIA_ACTIONS, MediaAction, recount_reported_times
 from cms.custom_pagination import FastPaginationWithoutCount, SmallPreviewPagination
 from cms.error_tracking import capture_unexpected_exception
 from cms.permissions import (
@@ -2041,9 +2040,7 @@ class MediaActions(APIView):
         if not deleted_count:
             return Response({"detail": "no report to retract"}, status=status.HTTP_200_OK)
 
-        # Racing reports can leave one viewer with several rows, so the count
-        # drops by what was deleted.
-        Media.objects.filter(pk=media.pk).update(reported_times=Greatest(F("reported_times") - deleted_count, 0))
+        recount_reported_times([media.pk])
         invalidate_media_cache(media.friendly_token)
         return Response({"detail": "report retracted"}, status=status.HTTP_200_OK)
 
@@ -2071,8 +2068,8 @@ class MediaActions(APIView):
         if action:
             if action == "report":  # delete reported actions
                 MediaAction.objects.filter(media=media, action="report").delete()
-                media.reported_times = 0
-                media.save(update_fields=["reported_times"])
+                recount_reported_times([media.pk])
+                invalidate_media_cache(media.friendly_token)
                 return Response(
                     {"detail": "reset reported times counter"},
                     status=status.HTTP_201_CREATED,
