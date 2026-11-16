@@ -16,6 +16,13 @@ class MediaReportAdmin(admin.ModelAdmin):
     # remote_ip and session_key identify the Reporter and must stay off the page.
     fields = ["media_link", "reporter", "action_date", "extra_info", "media_visibility"]
     readonly_fields = fields
+    # Django allows URL lookups on every local field, which would let the row
+    # counts reveal remote_ip and session_key. These are the lookups sent by
+    # the MediaAdmin link and the date filter.
+    url_lookups = frozenset({"media__id__exact", "action_date__gte", "action_date__lt"})
+
+    def lookup_allowed(self, lookup, value, request=None):
+        return lookup in self.url_lookups
 
     def has_add_permission(self, request):
         return False

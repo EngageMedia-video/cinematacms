@@ -611,6 +611,34 @@ class MediaReportAdminTests(TestCase):
         self.client.force_login(self._staff_user("view_mediareport"))
         self.assertEqual(self.client.get(self.changelist_url).status_code, 200)
 
+    def test_page_refuses_filtering_by_any_field_it_does_not_offer(self):
+        self.client.force_login(self._staff_user("view_mediareport"))
+        unoffered_lookups = {
+            "session_key__startswith": self.report.session_key[:4],
+            "remote_ip__exact": self.report.remote_ip,
+            "user__password__startswith": "pbkdf2",
+            "user__email__icontains": "@",
+            "extra_info__icontains": "private",
+            "action": "like",
+            "media__title__startswith": "T",
+        }
+
+        for lookup, value in unoffered_lookups.items():
+            with self.subTest(lookup=lookup):
+                self.assertEqual(self.client.get(self.changelist_url, {lookup: value}).status_code, 400)
+
+    def test_page_date_filter_search_and_media_link_still_work(self):
+        self.client.force_login(self._staff_user("view_mediareport"))
+        changelist = self.client.get(self.changelist_url).context["cl"]
+        date_filter_queries = [
+            choice["query_string"] for spec in changelist.filter_specs for choice in spec.choices(changelist)
+        ]
+        page_queries = [*date_filter_queries, f"?q={self.reporter.username}", f"?media__id__exact={self.media.pk}"]
+
+        for query in page_queries:
+            with self.subTest(query=query):
+                self.assertContains(self.client.get(f"{self.changelist_url}{query}"), "Shows a private address")
+
     def test_report_page_shows_the_reason_but_not_the_reporters_ip_or_session(self):
         self.client.force_login(self.superuser)
 
