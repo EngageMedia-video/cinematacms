@@ -6,7 +6,7 @@ from django.test import Client, TestCase, override_settings
 
 from actions.models import MediaAction
 from files.models import Media
-from files.tests.helpers import create_test_media, create_test_user
+from files.tests.helpers import create_test_media, create_test_user, ensure_media_insert_defaults
 
 
 class MediaActionsTests(TestCase):
@@ -286,6 +286,37 @@ class MediaReportActionsTests(TestCase):
         other_media.refresh_from_db()
         self.assertEqual((self.media.reported_times, other_media.reported_times), (1, 0))
         self.assertTrue(self._reports(self.owner).exists())
+
+    def _retitle_media_loaded_before_a_report(self, media_rows):
+        loaded_before_report = media_rows.get(pk=self.media.pk)
+        self.client.force_login(self.viewer)
+        self.assertEqual(self._report().status_code, 201)
+
+        loaded_before_report.title = "Retitled after the report"
+        loaded_before_report.save()
+
+        self.media.refresh_from_db()
+        return self.media.title, self.media.reported_times
+
+    def test_saving_a_media_loaded_before_a_report_keeps_the_count(self):
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.all())
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_saving_a_partly_loaded_media_loaded_before_a_report_keeps_the_count(self):
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.defer("description"))
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_a_new_media_is_stored_with_no_reports(self):
+        ensure_media_insert_defaults()
+        new_media = Media(title="New upload", user=self.owner, media_type="video")
+
+        with patch.object(Media, "media_init", return_value=None):
+            new_media.save()
+
+        stored = Media.objects.get(pk=new_media.pk)
+        self.assertEqual((stored.title, stored.reported_times), ("New upload", 0))
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})

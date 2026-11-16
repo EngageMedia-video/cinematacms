@@ -704,6 +704,20 @@ class Media(models.Model):
     # is a CharField with its own version (hls_version), so it is not listed.
     FILE_FIELDS = frozenset({"media_file", "thumbnail", "poster", "uploaded_thumbnail", "uploaded_poster", "sprites"})
 
+    def _columns_except_report_count(self):
+        """Name the loaded columns a full save writes, leaving out reported_times.
+
+        recount_reported_times() is the only writer of the count. A full save from an
+        instance loaded before a Report arrived would write the old count back. Deferred
+        columns stay out, as in Django's own deferred save.
+        """
+        deferred = self.get_deferred_fields()
+        return frozenset(
+            field.name
+            for field in self._meta.concrete_fields
+            if not field.primary_key and field.attname not in deferred and field.name != "reported_times"
+        )
+
     def save(self, *args, update_fields=None, initial_state=None, **kwargs):
         # A deferred load left these originals unrecorded. The stored row holds
         # them; without it a publish would not notify and an unchanged state
@@ -870,6 +884,10 @@ class Media(models.Model):
             if self.FILE_FIELDS & set(update_fields):
                 update_fields = frozenset(update_fields) | {"edit_date"}
             kwargs["update_fields"] = update_fields
+        # Django's deprecated positional form may carry update_fields in args, and a
+        # keyword beside it raises TypeError, so that form keeps Django's handling.
+        elif self.pk and not self._state.adding and not args:
+            kwargs["update_fields"] = self._columns_except_report_count()
 
         # ensure_encryption_key() can commit a key between an unlocked re-read and
         # this save, and the write would then still carry the stale blank. Take the
