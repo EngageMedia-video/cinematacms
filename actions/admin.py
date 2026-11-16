@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth import get_permission_codename
 from django.urls import reverse
 from django.utils.html import format_html
 
@@ -23,6 +24,10 @@ class MediaReportAdmin(admin.ModelAdmin):
 
     def lookup_allowed(self, lookup, value, request=None):
         return lookup in self.url_lookups
+
+    def has_view_permission(self, request, obj=None):
+        # Django's default also accepts change_mediareport.
+        return request.user.has_perm(f"{self.opts.app_label}.{get_permission_codename('view', self.opts)}")
 
     def has_add_permission(self, request):
         return False

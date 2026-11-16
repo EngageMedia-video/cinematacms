@@ -611,6 +611,19 @@ class MediaReportAdminTests(TestCase):
         self.client.force_login(self._staff_user("view_mediareport"))
         self.assertEqual(self.client.get(self.changelist_url).status_code, 200)
 
+    def test_change_permission_alone_does_not_open_the_page(self):
+        self.client.force_login(self._staff_user("change_mediareport"))
+        report_pages = {
+            "list": self.changelist_url,
+            "detail": reverse("admin:actions_mediareport_change", args=[self.report.pk]),
+            "history": reverse("admin:actions_mediareport_history", args=[self.report.pk]),
+        }
+
+        self.assertEqual(
+            {page: self.client.get(url).status_code for page, url in report_pages.items()},
+            dict.fromkeys(report_pages, 403),
+        )
+
     def test_page_refuses_filtering_by_any_field_it_does_not_offer(self):
         self.client.force_login(self._staff_user("view_mediareport"))
         unoffered_lookups = {
