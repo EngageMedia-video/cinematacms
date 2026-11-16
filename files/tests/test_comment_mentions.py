@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
 from files.models import Comment, Media
-from notifications.models import Notification, NotificationType
+from notifications.models import Notification, NotificationChannel, NotificationPreference, NotificationType
 
 User = get_user_model()
 
@@ -233,3 +233,90 @@ class CommentMentionNotificationTest(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertNotIn("Secret Film", self._mentions_for(self.mentioned).get().message)
+
+
+@patch("notifications.tasks.send_notification_email.delay")
+class CommentMentionPreferenceTest(TestCase):
+    """Issue #864: the Mentions switch on the settings panel decides what a mention sends."""
+
+    def setUp(self):
+        self.author = _create_user("comment_author")
+        self.owner = _create_user("media_owner")
+        self.mentioned = _create_user("mentioned_user")
+        self.media = _create_media(self.owner)
+        self.url = f"/api/v1/media/{self.media.friendly_token}/comments"
+        self.client = Client()
+        self.client.login(username="comment_author", password=PASSWORD)
+
+    def _post(self, text):
+        # Run on_commit callbacks so a queued email is visible to the assertions.
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.url, data=json.dumps({"text": text}), content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def _set_preferences(self, user, **channels):
+        NotificationPreference.objects.create(user=user, **channels)
+
+    def _emailed_recipients(self, send_email):
+        notification_ids = [call.args[0] for call in send_email.call_args_list]
+        return list(Notification.objects.filter(id__in=notification_ids).values_list("recipient__username", flat=True))
+
+    def test_mentions_off_sends_neither_a_notification_nor_an_email(self, send_email):
+        self._set_preferences(self.mentioned, on_mention=NotificationChannel.NONE)
+
+        self._post("hey @mentioned_user look at this")
+
+        self.assertFalse(Notification.objects.filter(recipient=self.mentioned).exists())
+        self.assertNotIn("mentioned_user", self._emailed_recipients(send_email))
+
+    def test_mentions_on_app_sends_the_notification_without_an_email(self, send_email):
+        self._set_preferences(self.mentioned, on_mention=NotificationChannel.IN_APP)
+
+        self._post("hey @mentioned_user look at this")
+
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.mentioned, notification_type=NotificationType.MENTION).count(),
+            1,
+        )
+        self.assertNotIn("mentioned_user", self._emailed_recipients(send_email))
+
+    def test_mentions_on_email_sends_the_notification_and_an_email(self, send_email):
+        self._set_preferences(self.mentioned, on_mention=NotificationChannel.EMAIL)
+
+        self._post("hey @mentioned_user look at this")
+
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.mentioned, notification_type=NotificationType.MENTION).count(),
+            1,
+        )
+        self.assertIn("mentioned_user", self._emailed_recipients(send_email))
+
+    def test_owner_with_mentions_off_still_hears_about_the_comment(self, send_email):
+        """The comment switch still covers a comment on the owner's own film."""
+        self._set_preferences(
+            self.owner,
+            on_mention=NotificationChannel.NONE,
+            on_comment=NotificationChannel.EMAIL,
+        )
+
+        self._post("thanks @media_owner")
+
+        owner_notifications = Notification.objects.filter(recipient=self.owner)
+        self.assertEqual(
+            list(owner_notifications.values_list("notification_type", flat=True)),
+            [NotificationType.COMMENT],
+        )
+        self.assertEqual(self._emailed_recipients(send_email), ["media_owner"])
+
+    def test_owner_with_mentions_and_comments_off_hears_nothing(self, send_email):
+        self._set_preferences(
+            self.owner,
+            on_mention=NotificationChannel.NONE,
+            on_comment=NotificationChannel.NONE,
+        )
+
+        self._post("thanks @media_owner")
+
+        self.assertFalse(Notification.objects.filter(recipient=self.owner).exists())
+        send_email.assert_not_called()

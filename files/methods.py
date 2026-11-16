@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import Exists, OuterRef, Q
-from django.utils import timezone
+from django.utils import dateformat, timezone
 
 from cms import celery_app
 from cms.cache_telemetry import owned_cache
@@ -163,6 +163,20 @@ def pre_save_action(media, user, session_key, action, remote_ip):
     return False
 
 
+VISIBILITY_ENDED_STATE_TEXT = {
+    "private": "private, so it is hidden from public view",
+    "unlisted": "unlisted, so only people with the link can see it",
+}
+
+
+def visibility_window_last_day(expires_at):
+    """The last local day a window was open, as the filmmaker entered it in the edit form.
+
+    The form stores an end date as local midnight at the start of the next day.
+    """
+    return timezone.localtime(expires_at - timedelta(microseconds=1)).date()
+
+
 def notify_users(friendly_token=None, action=None, extra=None):
     notify_items = []
     media = None
@@ -246,6 +260,27 @@ The %s Team
             d["msg"] = msg
             d["to"] = [media.user.email]
             notify_items.append(d)
+
+    if action == "media_visibility_ended" and media:
+        if settings.USERS_NOTIFICATIONS.get("MEDIA_VISIBILITY_ENDED", False):
+            ended_on = dateformat.format(visibility_window_last_day(extra["expires_at"]), "j F Y")
+            state_text = VISIBILITY_ENDED_STATE_TEXT.get(extra["state"], extra["state"])
+            title = f"[{settings.PORTAL_NAME}] - The visibility window for your film has ended"
+            msg = f"""
+Dear {media.user.username},
+
+The visibility window you set for "{media.title}" ended on {ended_on}. As scheduled, your film is now {state_text}.
+
+URL: {media_url}
+
+To make it visible again, open the film's edit page and change its status or set a new visibility window.
+
+If you have questions, write to us at {settings.CURATOR_CONTACT_EMAIL}.
+
+Best regards,
+The {settings.PORTAL_NAME} Team
+"""
+            notify_items.append({"title": title, "msg": msg, "to": [media.user.email]})
 
     if action == "media_auto_transcription" and media:
         title = f"[{settings.PORTAL_NAME}] - Auto-generated Transcription Completed"
