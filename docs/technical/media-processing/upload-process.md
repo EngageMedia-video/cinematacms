@@ -80,6 +80,13 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   time, and first and last MiB. On a match the upload continues from the server's offset; a different
   file, account or target never matches. A draft (bulk) upload and a non-draft (single) upload of one
   file are separate uploads: the lookup sends `is_draft` and matches only the same mode.
+- **Resume notice:** when the lookup finds an upload that holds part of the file, the page shows a
+  dialog (`ResumeUploadDialog`) with the amount that is saved, and the upload waits. **OK**, or any
+  other way of closing the dialog, sends the rest. The progress bar shows the saved amount while the
+  upload waits. The dialog does not appear for a new file, or when the server holds the whole file.
+- **Stopped progress:** while a chunk is sent, the progress bar counts the bytes that left the
+  browser. When an upload is paused, waits for sign-in or fails, the bar returns to the server's
+  offset, because a refused or interrupted chunk stores nothing.
 - **Failed completion:** if creating the media fails after the last byte, the upload ends as failed
   and later requests get `410` with `X-Upload-Result: unknown`. The media may already exist, so the
   browser shows the upload as expired with a message to check the media first, the same as for a

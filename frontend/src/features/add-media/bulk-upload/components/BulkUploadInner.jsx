@@ -12,7 +12,14 @@ import { EnterDetails } from './step2/EnterDetails';
 import { PreviewSubmit } from './step3/PreviewSubmit';
 import { RedirectNoticeDialog } from './RedirectNoticeDialog';
 import { SubmitForReviewDialog } from './SubmitForReviewDialog';
-import { Button, ConfirmationDialogContent, Dialog, TextAlert, UnsavedChangesDialog } from '../../../shared/components';
+import {
+	Button,
+	ConfirmationDialogContent,
+	Dialog,
+	ResumeUploadDialog,
+	TextAlert,
+	UnsavedChangesDialog,
+} from '../../../shared/components';
 import { useUnsavedChangesGuard } from '../../../shared/hooks/useUnsavedChangesGuard';
 
 const SUB_STEP_ORDER = ['basic', 'thumbnail', 'other', 'final'];
@@ -89,6 +96,7 @@ export function BulkUploadInner() {
 	const removeSubmittedFiles = useBulkUploadStore((state) => state.removeSubmittedFiles);
 
 	const uploadActions = useBulkUpload();
+	const resumeNotices = useBulkUploadStore((state) => state.resumeNotices);
 	// A completed upload already exists, so leaving loses only the details typed for it (#1010).
 	const leaveGuard = useUnsavedChangesGuard(files.some((file) => file.friendlyToken));
 	const { options } = useTaxonomies(config.optionsEndpoint);
@@ -399,6 +407,7 @@ export function BulkUploadInner() {
 					leaveGuard.confirmLeave();
 				}}
 			/>
+			<ResumeUploadDialog uploads={resumeNotices} onConfirm={uploadActions.confirmResumes} />
 			<RedirectNoticeDialog
 				open={showRedirect}
 				onContinue={() => {

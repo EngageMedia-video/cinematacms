@@ -1,6 +1,6 @@
-import { useImperativeHandle, useRef } from 'react';
+import { useImperativeHandle, useRef, useState } from 'react';
 import { FieldGroup } from '../../add-media/single-upload/components/FieldGroup';
-import { Text } from '../../shared/components';
+import { ResumeUploadDialog, Text } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { UploadMediaItem } from '../../shared/components/UploadMediaItem';
 import { getCSRFToken } from '../../add-media/utils/helpers';
@@ -22,6 +22,8 @@ function CurrentFileLink({ file }) {
 export function MediaUploadSection({ config, disabled, ref }) {
 	const uploaderRef = useRef(null);
 	const { status, setStatus, resetStatus } = useReplacementUploadState();
+	// The selected file, when the server already holds part of it: { id, name, storedBytes, totalBytes }.
+	const [resumeNotices, setResumeNotices] = useState([]);
 
 	// Leaving stops the transfer anyway. Pausing it first lets the upload continue if the page stays.
 	useImperativeHandle(ref, () => ({
@@ -48,6 +50,9 @@ export function MediaUploadSection({ config, disabled, ref }) {
 				onSubmitted: (id, name) => {
 					setStatus({ phase: 'uploading', name, progress: 0, error: '', size: null, id });
 					window.CinemataAnalytics?.uploadEvent('start', id);
+				},
+				onResumeFound: (id, name, storedBytes, totalBytes) => {
+					setResumeNotices([{ id, name, storedBytes, totalBytes }]);
 				},
 				onStatusChange: (id, uploadStatus, message) => {
 					if (uploadStatus === UPLOAD_STATUS.AWAITING_SIGN_IN) {
@@ -91,6 +96,11 @@ export function MediaUploadSection({ config, disabled, ref }) {
 		if (!files.length) return;
 		const uploader = ensureUploader();
 		uploader?.addFiles(files.slice(0, 1));
+	}
+
+	function confirmResumes() {
+		resumeNotices.forEach(({ id }) => uploaderRef.current?.confirmResume(id));
+		setResumeNotices([]);
 	}
 
 	async function clearReplacementUpload() {
@@ -228,6 +238,8 @@ export function MediaUploadSection({ config, disabled, ref }) {
 					/>
 				)}
 			</div>
+
+			<ResumeUploadDialog uploads={resumeNotices} onConfirm={confirmResumes} />
 		</FieldGroup>
 	);
 }
