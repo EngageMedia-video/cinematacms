@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import migrations, models, transaction
-from django.db.models import Count, Min, OuterRef, Subquery
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 
 
@@ -8,8 +8,14 @@ def delete_duplicate_reports(apps, schema_editor):
     """Keep each user's earliest Report per media so the constraint can apply."""
     MediaAction = apps.get_model("actions", "MediaAction")
     user_reports = MediaAction.objects.filter(action="report", user__isnull=False)
-    earliest = user_reports.values("media", "user").annotate(first_id=Min("id")).values("first_id")
-    user_reports.exclude(id__in=earliest).delete()
+    # action_date is set before the INSERT, so racing requests can store ids out of
+    # date order. Earliest by date, with id breaking a tie.
+    earliest_of_pair = (
+        user_reports.filter(media=OuterRef("media"), user=OuterRef("user"))
+        .order_by("action_date", "id")
+        .values("id")[:1]
+    )
+    user_reports.exclude(id=Subquery(earliest_of_pair)).delete()
 
 
 RECOUNT_BATCH_SIZE = 1000

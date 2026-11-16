@@ -477,6 +477,18 @@ class MediaReportMigrationTests(TestCase):
         remaining = set(MediaAction.objects.values_list("pk", flat=True))
         self.assertEqual(remaining, {earliest.pk, other.pk, *(row.pk for row in anonymous), *(row.pk for row in likes)})
 
+    def test_dedupe_keeps_the_report_with_the_earliest_date_when_ids_disagree(self):
+        self._allow_duplicate_reports()
+        stored_first = self._report(self.media, self.reporter, "stored first, dated later")
+        stored_second = self._report(self.media, self.reporter, "stored second, dated earlier")
+        MediaAction.objects.filter(pk=stored_second.pk).update(
+            action_date=stored_first.action_date - timedelta(seconds=1)
+        )
+
+        media_report_migration.delete_duplicate_reports(apps, schema_editor=None)
+
+        self.assertEqual(list(MediaAction.objects.values_list("pk", flat=True)), [stored_second.pk])
+
     @patch.object(media_report_migration, "RECOUNT_BATCH_SIZE", 2)
     def test_backfill_fixes_drifted_counters_without_changing_visibility(self):
         private_media = create_test_media(create_test_user(), state="private")
