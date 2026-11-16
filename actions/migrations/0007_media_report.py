@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import migrations, models
+from django.db import migrations, models, transaction
 from django.db.models import Count, Min, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 
@@ -12,7 +12,15 @@ def delete_duplicate_reports(apps, schema_editor):
     user_reports.exclude(id__in=earliest).delete()
 
 
+RECOUNT_BATCH_SIZE = 1000
+
+
 def recount_reported_times(apps, schema_editor):
+    """Recount every media the way actions.models.recount_reported_times() does.
+
+    An UPDATE that waits on a Report's recount counts from its stale snapshot,
+    so each batch takes the media locks first and counts in a later statement.
+    """
     Media = apps.get_model("files", "Media")
     MediaAction = apps.get_model("actions", "MediaAction")
     report_count = (
@@ -21,7 +29,19 @@ def recount_reported_times(apps, schema_editor):
         .annotate(total=Count("id"))
         .values("total")
     )
-    Media.objects.update(reported_times=Coalesce(Subquery(report_count), 0))
+    last_recounted_pk = 0
+    while True:
+        with transaction.atomic():
+            batch = list(
+                Media.objects.filter(pk__gt=last_recounted_pk)
+                .order_by("pk")
+                .select_for_update(no_key=True)
+                .values_list("pk", flat=True)[:RECOUNT_BATCH_SIZE]
+            )
+            if not batch:
+                return
+            Media.objects.filter(pk__in=batch).update(reported_times=Coalesce(Subquery(report_count), 0))
+        last_recounted_pk = batch[-1]
 
 
 def build_index_concurrently(name, create_sql, state_operation):

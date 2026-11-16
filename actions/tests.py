@@ -1,5 +1,7 @@
 import importlib
 import json
+import threading
+import time
 from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
@@ -475,6 +477,7 @@ class MediaReportMigrationTests(TestCase):
         remaining = set(MediaAction.objects.values_list("pk", flat=True))
         self.assertEqual(remaining, {earliest.pk, other.pk, *(row.pk for row in anonymous), *(row.pk for row in likes)})
 
+    @patch.object(media_report_migration, "RECOUNT_BATCH_SIZE", 2)
     def test_backfill_fixes_drifted_counters_without_changing_visibility(self):
         private_media = create_test_media(create_test_user(), state="private", reported_times=7)
         public_media = create_test_media(create_test_user(), state="public", reported_times=3)
@@ -547,6 +550,63 @@ class MediaReportMigrationResumeTests(TransactionTestCase):
         )
         media.refresh_from_db()
         self.assertEqual(media.reported_times, 1)
+
+
+class MediaReportBackfillRaceTests(TransactionTestCase):
+    def _wait_for_a_blocked_query(self):
+        deadline = time.monotonic() + 10
+        with connection.cursor() as cursor:
+            while time.monotonic() < deadline:
+                cursor.execute(
+                    "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'"
+                )
+                if cursor.fetchone()[0]:
+                    return
+                time.sleep(0.05)
+        self.fail("the backfill never waited on the Report")
+
+    def test_backfill_run_while_a_report_commits_counts_that_report(self):
+        media = create_test_media(create_test_user())
+        reporter = create_test_user()
+        report_recounted = threading.Event()
+        release_report = threading.Event()
+        errors = []
+
+        def report_and_hold_the_media_lock():
+            try:
+                with transaction.atomic():
+                    save_user_action({"user_id": reporter.pk}, media.friendly_token, "report", "Spam")
+                    report_recounted.set()
+                    release_report.wait(timeout=30)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        def run_backfill():
+            try:
+                media_report_migration.recount_reported_times(apps, schema_editor=None)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        report = threading.Thread(target=report_and_hold_the_media_lock)
+        backfill = threading.Thread(target=run_backfill)
+        report.start()
+        try:
+            self.assertTrue(report_recounted.wait(timeout=10), "the Report never recounted")
+            backfill.start()
+            self._wait_for_a_blocked_query()
+        finally:
+            release_report.set()
+            report.join(timeout=30)
+            if backfill.ident is not None:
+                backfill.join(timeout=30)
+
+        self.assertEqual(errors, [])
+        media.refresh_from_db()
+        self.assertEqual((media.reported_times, MediaAction.objects.filter(action="report").count()), (1, 1))
 
 
 @override_settings(MFA_REQUIRED_ROLES=[])
