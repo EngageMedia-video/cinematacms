@@ -11,6 +11,7 @@ export { EditorField } from './EditorField';
 export { Dialog, DialogClose, DialogContent, DialogTrigger } from './Dialog';
 export { ConfirmationDialogContent } from './ConfirmationDialog';
 export { UnsavedChangesDialog } from './UnsavedChangesDialog';
+export { ResumeUploadDialog } from './ResumeUploadDialog';
 export { Dropdown } from './Dropdown';
 export { MediaDropzone } from './MediaDropzone';
 export { SegmentButton } from './SegmentButton';
