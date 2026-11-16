@@ -718,6 +718,14 @@ class Media(models.Model):
             if not field.primary_key and field.attname not in deferred and field.name != "reported_times"
         )
 
+    def _updates_stored_row(self, force_insert):
+        if force_insert or not self.pk:
+            return False
+        if not self._state.adding:
+            return True
+        # Django updates, rather than inserts, an instance built with a stored row's pk.
+        return Media.objects.filter(pk=self.pk).exists()
+
     def save(
         self,
         *args,
@@ -902,15 +910,12 @@ class Media(models.Model):
             if self.FILE_FIELDS & set(update_fields):
                 update_fields = frozenset(update_fields) | {"edit_date"}
             written_fields = update_fields
-        # A forced insert stores a new row from every column, as in Django.
-        elif self.pk and not self._state.adding and not force_insert:
+        elif self._updates_stored_row(force_insert):
             written_fields = self._columns_except_report_count()
         else:
-            written_fields = None
-        is_insert = force_insert or self._state.adding or not self.pk
-        if is_insert:
             # A new row has no Reports yet, even when copied from a loaded media.
             self.reported_times = 0
+            written_fields = None
         django_save_options = {
             "force_insert": force_insert,
             "force_update": force_update,

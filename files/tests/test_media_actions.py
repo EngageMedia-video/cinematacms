@@ -351,6 +351,18 @@ class MediaReportActionsTests(TestCase):
             {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
         )
 
+    def test_saving_a_media_rebuilt_from_its_stored_row_keeps_the_count(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
+        stored_values = Media.objects.values().get(pk=self.media.pk)
+        rebuilt = Media(**{**stored_values, "title": "Rebuilt"})
+
+        rebuilt.save()
+
+        self.assertEqual(
+            Media.objects.filter(pk=self.media.pk).values_list("title", "reported_times").get(), ("Rebuilt", 1)
+        )
+
     def test_a_new_media_is_stored_with_no_reports(self):
         ensure_media_insert_defaults()
         new_media = Media(title="New upload", user=self.owner, media_type="video")
