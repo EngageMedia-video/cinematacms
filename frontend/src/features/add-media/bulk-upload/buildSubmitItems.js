@@ -73,9 +73,6 @@ export function buildEditFormData({
 		if (metadata.endDate) data.set('visibility_end', metadata.endDate);
 	}
 
-	// Admin fields: reported_times is always sent (single sends a hidden 0 for
-	// non-admins; MediaForm drops it for non-editors), featured only when set.
-	data.set('reported_times', metadata.reported_times ?? '0');
 	if (metadata.featured) {
 		data.set('featured', 'on');
 	}

@@ -81,10 +81,14 @@ describe('buildEditFormData', () => {
 		expect(on.get('is_encrypted')).toBe('on');
 	});
 
-	it('always sends reported_times and attaches a chosen poster file', () => {
+	it('never sends reported_times and attaches a chosen poster file', () => {
 		const poster = new File(['x'], 'poster.png', { type: 'image/png' });
-		const data = buildEditFormData({ metadata: createDefaultMetadata(), posterFile: poster });
-		expect(data.get('reported_times')).toBe('0');
+		const data = buildEditFormData({
+			metadata: { ...createDefaultMetadata(), featured: true },
+			posterFile: poster,
+		});
+		expect(data.has('reported_times')).toBe(false);
+		expect(data.get('featured')).toBe('on');
 		expect(data.get('uploaded_poster')).toBeInstanceOf(File);
 		expect(data.get('thumbnail_time')).toBeNull();
 	});

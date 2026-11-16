@@ -149,7 +149,7 @@ describe('SingleUploadPage', () => {
 		expect(screen.getByRole('checkbox', { name: 'Allow Download' })).toBeChecked();
 	});
 
-	it('keeps admin settings hidden for non-admin uploads and submits reported times as zero', async () => {
+	it('keeps admin settings hidden for non-admin uploads and submits no reported times', async () => {
 		const user = userEvent.setup();
 		const fetchMock = vi.fn().mockResolvedValue({
 			ok: false,
@@ -168,11 +168,11 @@ describe('SingleUploadPage', () => {
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
 		const submittedBody = fetchMock.mock.calls[0][1].body;
-		expect(submittedBody.get('reported_times')).toBe('0');
+		expect(submittedBody.has('reported_times')).toBe(false);
 		expect(submittedBody.get('featured')).toBeNull();
 	});
 
-	it('shows admin settings for admins and submits featured and reported times', async () => {
+	it('shows admin settings for admins and submits featured but no reported times', async () => {
 		const user = userEvent.setup();
 		const fetchMock = vi.fn().mockResolvedValue({
 			ok: false,
@@ -184,17 +184,16 @@ describe('SingleUploadPage', () => {
 		renderUploadedPage({ canUseAdminSettings: true });
 
 		expect(screen.getByRole('heading', { name: 'Admin Settings' })).toBeInTheDocument();
+		expect(screen.queryByText('Reported Times')).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole('checkbox', { name: 'Featured' }));
-		await user.clear(screen.getByLabelText('Reported Times'));
-		await user.type(screen.getByLabelText('Reported Times'), '3');
 		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
 
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 		const submittedBody = fetchMock.mock.calls[0][1].body;
 
 		expect(submittedBody.get('featured')).toBe('on');
-		expect(submittedBody.get('reported_times')).toBe('3');
+		expect(submittedBody.has('reported_times')).toBe(false);
 	});
 
 	it('renders the stream protection checkbox unchecked by default', () => {

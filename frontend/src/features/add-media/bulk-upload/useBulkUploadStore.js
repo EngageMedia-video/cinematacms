@@ -38,10 +38,8 @@ export function createDefaultMetadata() {
 		endDate: '',
 		// Stream Protection (HLS encryption) is off by default, matching single-upload.
 		is_encrypted: false,
-		// Admin-only fields (shown only to admins); reported_times mirrors the
-		// hidden "0" the single-upload form posts for non-admins.
+		// Admin-only field, shown only to admins.
 		featured: false,
-		reported_times: '0',
 	};
 }
 

@@ -271,12 +271,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 						</div>
 					) : null}
 					{subStep === 'admin' && canUseAdminSettings ? (
-						<AdminSettingsFields
-							featured={meta.featured}
-							reportedTimes={meta.reported_times}
-							onChange={(next) => patch(next)}
-							idPrefix={`file-${file.id}`}
-						/>
+						<AdminSettingsFields featured={meta.featured} onChange={(next) => patch(next)} />
 					) : null}
 				</div>
 			</Card>

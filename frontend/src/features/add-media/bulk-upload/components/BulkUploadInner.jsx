@@ -50,7 +50,6 @@ const FIELD_SUB_STEP = {
 	password: 'final',
 	is_encrypted: 'final',
 	featured: 'admin',
-	reported_times: 'admin',
 };
 
 const VALIDATION_BANNER = 'Please complete the required fields highlighted below.';

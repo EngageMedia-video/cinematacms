@@ -41,7 +41,6 @@ function createEditMediaState(config) {
 		endDate: media.visibilityEnd || '',
 		featured: media.featured ?? false,
 		isReviewed: media.isReviewed ?? false,
-		reportedTimes: media.reportedTimes || '0',
 		addDate: media.addDate || '',
 		allowWhisperTranslate: media.allowWhisperTranslate ?? false,
 		selectedThumbnailFile: null,
@@ -151,7 +150,6 @@ export function useEditMediaState(config) {
 		setEndDate: (endDate) => patch({ endDate }),
 		setFeatured: (featured) => patch({ featured }),
 		setIsReviewed: (isReviewed) => patch({ isReviewed }),
-		setReportedTimes: (reportedTimes) => patch({ reportedTimes }),
 		setAddDate: (addDate) => patch({ addDate }),
 		setAllowWhisperTranslate: (allowWhisperTranslate) => patch({ allowWhisperTranslate }),
 		setSelectedThumbnailFile: (selectedThumbnailFile) =>
