@@ -556,16 +556,39 @@ describe('createTusUploader', () => {
 			expect(storedText()).toEqual([CONTENT]);
 		});
 
-		it('sends nothing when the upload is cancelled before the page confirms', async () => {
+		it('deletes the stored part and sends nothing when cancelled before the page confirms', async () => {
 			const { server, uploader, found } = partlyStored();
 
 			uploader.addFiles([makeFile()]);
 			await vi.waitFor(() => expect(found).toHaveLength(1));
 			uploader.cancel(0);
 			uploader.confirmResume(0);
+			await vi.waitFor(() => expect(server.uploads.has(url)).toBe(false));
+
+			expect(server.requests.map((request) => request.method)).toEqual(['DELETE']);
+			expect(server.requests[0].headers['X-CSRFToken']).toBe('token-1');
+		});
+
+		it('deletes the stored part of every waiting file when all uploads are cancelled', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.cancelAll();
+
+			await vi.waitFor(() => expect(server.uploads.has(url)).toBe(false));
+		});
+
+		it('keeps the stored part when the upload is paused before the page confirms', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.pauseUpload(0);
 			await new Promise((resolve) => setTimeout(resolve, 5));
 
-			expect(server.requests.filter((request) => request.method === 'PATCH')).toEqual([]);
+			expect(server.requests).toEqual([]);
+			expect(server.uploads.get(url).text).toBe(CONTENT.slice(0, 10));
 		});
 
 		it('does not wait when the server holds the whole file', async () => {
@@ -625,6 +648,17 @@ describe('createTusUploader', () => {
 			await settled(UPLOAD_STATUS.FAILED);
 
 			expect(progress.at(-1)).toEqual([10, 26]);
+		});
+
+		it('shows nothing stored when the first chunk of a new upload is refused', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) => (request.method === 'PATCH' ? { status: 401 } : null);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			expect(progress).toContainEqual([10, 26]);
+			expect(progress.at(-1)).toEqual([0, 26]);
 		});
 
 		it('shows the offset of a resumed upload whose first chunk is refused', async () => {

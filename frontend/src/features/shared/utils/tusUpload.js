@@ -308,6 +308,8 @@ export function createTusUploader({
 				const mediaUrl = response.getHeader(MEDIA_URL_HEADER);
 				if (mediaUrl) item.mediaUrl = mediaUrl;
 				if (status === 401) throw new SignInRequired();
+				// A created upload holds nothing yet, and its response carries no offset.
+				if (request.getMethod() === 'POST' && status < 400) item.acceptedBytes = 0;
 				const offset = Number.parseInt(response.getHeader('Upload-Offset'), 10);
 				if (status < 400 && !Number.isNaN(offset)) item.acceptedBytes = offset;
 				// tus-js-client answers any failed HEAD except 423 by silently creating a new upload,
@@ -388,6 +390,8 @@ export function createTusUploader({
 		if (partlyStored && callbacks.onResumeFound) {
 			// The page tells the user that part of the file is stored, and starts the rest on their answer.
 			item.acceptedBytes = unfinished.offset;
+			// No transfer exists during the wait, so discard() needs the URL to delete the stored bytes.
+			item.resumeUrl = found;
 			notify('onProgress', item.id, item.file.name, unfinished.offset, item.file.size);
 			await new Promise((resolve) => {
 				item.confirmResume = resolve;
@@ -395,6 +399,7 @@ export function createTusUploader({
 			});
 			item.confirmResume = null;
 			if (stale()) return;
+			item.resumeUrl = null;
 		}
 		adoptUploadIdOf(item, found ?? remembered);
 		item.upload = buildUpload(item, found ?? remembered);
@@ -408,6 +413,16 @@ export function createTusUploader({
 		if (item.upload && item.status !== UPLOAD_STATUS.COMPLETE) {
 			// Terminating deletes the bytes the server holds for the unfinished upload.
 			item.upload.abort(true).catch(() => {});
+		} else if (item.resumeUrl) {
+			// Discarded while the page had not confirmed the resume: the found upload has no transfer to abort.
+			Upload.terminate(item.resumeUrl, {
+				retryDelays: [...retryDelays],
+				...(httpStack ? { httpStack } : {}),
+				onBeforeRequest(request) {
+					Object.entries(getHeaders()).forEach(([name, value]) => request.setHeader(name, value));
+				},
+			}).catch(() => {});
+			item.resumeUrl = null;
 		}
 	}
 
