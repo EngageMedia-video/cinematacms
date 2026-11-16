@@ -846,7 +846,7 @@ def _edit_media_page_config(request, form, media, licenses_dict, video_extension
         "allowedExtensions": video_extensions,
         "permissions": {
             "canReplaceMedia": "media_file" in form_fields,
-            "canUseAdminSettings": bool({"featured", "reported_times", "is_reviewed", "add_date"} & form_fields),
+            "canUseAdminSettings": bool({"featured", "is_reviewed", "add_date"} & form_fields),
             "canUseEncryption": "is_encrypted" in form_fields,
             "canUseWhisperTranslate": "allow_whisper_transcribe_and_translate" in form_fields,
         },
@@ -883,7 +883,7 @@ def _edit_media_page_config(request, form, media, licenses_dict, video_extension
             "hasPassword": bool(media.password),
             "featured": bool(_field_value(form, "featured")),
             "isReviewed": bool(_field_value(form, "is_reviewed")),
-            "reportedTimes": _field_value(form, "reported_times"),
+            "reportedTimes": media.reported_times,
             "addDate": _datetime_field_value(form, "add_date"),
             "allowWhisperTranslate": bool(_field_value(form, "allow_whisper_transcribe_and_translate")),
             "visibilityStart": _field_value(form, "visibility_start"),

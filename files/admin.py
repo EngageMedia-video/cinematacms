@@ -69,7 +69,7 @@ class MediaAdmin(admin.ModelAdmin):
     ]
     list_filter = ["state", "is_reviewed", "encoding_status", "featured", "category"]
     ordering = ("-add_date",)
-    readonly_fields = ("tags", "category", "channel")
+    readonly_fields = ("tags", "category", "channel", "reported_times")
 
     @admin.display(
         description="File Size",
