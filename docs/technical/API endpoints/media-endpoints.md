@@ -509,6 +509,8 @@ requests store one report. The media detail response carries
 
 `reported_times` is the number of stored reports on the media. A report, a
 retraction, a reset and the deletion of a reporter's account each recount it.
+The edit page, the upload forms and the Django admin show the count but cannot
+change it. A reset is the only way to clear every report on a media.
 
 A stored report emails the moderators. A viewer who withdraws a report and
 reports the same media again within `REPORT_NOTIFICATION_WINDOW_SECONDS`
