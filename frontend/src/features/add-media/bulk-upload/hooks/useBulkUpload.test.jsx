@@ -20,6 +20,7 @@ describe('useBulkUpload engine bookkeeping', () => {
 				remove: vi.fn(),
 				cancel: vi.fn(),
 				cancelAll: vi.fn(),
+				confirmResume: vi.fn(),
 				getFile: (id) => new File(['video'], `film-${id}.mp4`),
 				getSize: () => 5,
 			};
@@ -66,6 +67,24 @@ describe('useBulkUpload engine bookkeeping', () => {
 		act(() => useBulkUploadStore.getState().reset());
 
 		expect(uploader.remove.mock.calls).toEqual([[0], [1]]);
+	});
+
+	it('lists the files the server already holds part of, and starts them all on confirm', () => {
+		const { result } = startTwoUploads();
+		act(() => {
+			callbacks.onResumeFound(0, 'film-0.mp4', 2, 5);
+			callbacks.onResumeFound(1, 'film-1.mp4', 3, 5);
+		});
+
+		expect(useBulkUploadStore.getState().resumeNotices).toEqual([
+			{ id: 0, name: 'film-0.mp4', storedBytes: 2, totalBytes: 5 },
+			{ id: 1, name: 'film-1.mp4', storedBytes: 3, totalBytes: 5 },
+		]);
+
+		act(() => result.current.confirmResumes());
+
+		expect(uploader.confirmResume.mock.calls).toEqual([[0], [1]]);
+		expect(useBulkUploadStore.getState().resumeNotices).toEqual([]);
 	});
 
 	it('releases the old file before a reupload adds its replacement', () => {

@@ -21,6 +21,8 @@ export function useBulkUpload() {
 	const updateFile = useBulkUploadStore((state) => state.updateFile);
 	const removeFile = useBulkUploadStore((state) => state.removeFile);
 	const setLastError = useBulkUploadStore((state) => state.setLastError);
+	const addResumeNotice = useBulkUploadStore((state) => state.addResumeNotice);
+	const clearResumeNotices = useBulkUploadStore((state) => state.clearResumeNotices);
 
 	useEffect(() => {
 		let disposing = false;
@@ -98,6 +100,9 @@ export function useBulkUpload() {
 					filesByIdRef.current.delete(id);
 					return true;
 				},
+				onResumeFound(id, name, storedBytes, totalBytes) {
+					addResumeNotice({ id, name, storedBytes, totalBytes });
+				},
 				onStatusChange(id, status, message) {
 					if (status === TRANSFER_STATUS.PAUSED) {
 						if (!pausingBeforeLeaveRef.current) window.CinemataAnalytics?.uploadEvent('pause', id);
@@ -134,8 +139,16 @@ export function useBulkUpload() {
 			uploaderRef.current?.cancelAll();
 			uploaderRef.current = null;
 			filesByIdRef.current.clear();
+			clearResumeNotices();
 		};
-	}, [config, addFile, updateFile, removeFile, setLastError]);
+	}, [config, addFile, updateFile, removeFile, setLastError, addResumeNotice, clearResumeNotices]);
+
+	// Starts the uploads that wait for the user's answer to the resume dialog.
+	const confirmResumes = useCallback(() => {
+		const { resumeNotices } = useBulkUploadStore.getState();
+		resumeNotices.forEach(({ id }) => uploaderRef.current?.confirmResume(id));
+		clearResumeNotices();
+	}, [clearResumeNotices]);
 
 	const addFiles = useCallback((fileList) => {
 		if (uploaderRef.current) {
@@ -208,7 +221,7 @@ export function useBulkUpload() {
 	// Stable action bag so consumers — and the context provider value built from
 	// it — don't get a brand-new reference on every render.
 	return useMemo(
-		() => ({ addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload }),
-		[addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload]
+		() => ({ addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload, confirmResumes }),
+		[addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload, confirmResumes]
 	);
 }

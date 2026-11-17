@@ -50,6 +50,8 @@ const useBulkUploadStore = create((set) => ({
 	currentStep: 1,
 	subStep: 'basic',
 	lastError: null,
+	// Selected files the server already holds part of: { id, name, storedBytes, totalBytes }.
+	resumeNotices: [],
 
 	addFile: ({ id, name, sizeBytes }) =>
 		set((state) => {
@@ -122,7 +124,9 @@ const useBulkUploadStore = create((set) => ({
 	setStep: (currentStep) => set({ currentStep }),
 	setSubStep: (subStep) => set({ subStep }),
 	setLastError: (lastError) => set({ lastError }),
-	reset: () => set({ files: [], currentStep: 1, subStep: 'basic', lastError: null }),
+	addResumeNotice: (notice) => set((state) => ({ resumeNotices: [...state.resumeNotices, notice] })),
+	clearResumeNotices: () => set({ resumeNotices: [] }),
+	reset: () => set({ files: [], currentStep: 1, subStep: 'basic', lastError: null, resumeNotices: [] }),
 }));
 
 export default useBulkUploadStore;

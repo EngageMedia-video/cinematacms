@@ -5,6 +5,7 @@ import React from 'react';
 import { Button } from '../shared/components/Button';
 import { ConfirmationDialogContent } from '../shared/components/ConfirmationDialog';
 import { Dialog } from '../shared/components/Dialog';
+import { ResumeUploadDialog } from '../shared/components/ResumeUploadDialog';
 import { TabContent, TabView } from '../shared/components/TabView';
 import { Text } from '../shared/components/Text';
 import { QuickPreview } from '../upload-quick-preview';
@@ -70,6 +71,8 @@ export class AddMediaPage extends Page {
 			uploadItems: [],
 			// Why a selected file was refused, shown in a notice dialog.
 			noticeMessage: '',
+			// Selected files the server already holds part of: { id, name, storedBytes, totalBytes }.
+			resumeNotices: [],
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 			bulkConfig: null,
 			bulkStep: 1,
@@ -148,6 +151,11 @@ export class AddMediaPage extends Page {
 								? 'processing'
 								: 'uploading'
 							: item.status,
+					}));
+				},
+				onResumeFound: (id, name, storedBytes, totalBytes) => {
+					this.setState((state) => ({
+						resumeNotices: [...state.resumeNotices, { id, name, storedBytes, totalBytes }],
 					}));
 				},
 				onStatusChange: (id, status, message) => {
@@ -335,6 +343,11 @@ export class AddMediaPage extends Page {
 			this.uploader.cancel(id);
 		}
 	}
+
+	confirmResumes = () => {
+		this.state.resumeNotices.forEach(({ id }) => this.uploader?.confirmResume(id));
+		this.setState({ resumeNotices: [] });
+	};
 
 	closeDeleteDialog = () => {
 		this.setState({ confirmDeleteOpen: false, pendingDeleteId: null, pendingDeleteName: '' });
@@ -537,6 +550,7 @@ export class AddMediaPage extends Page {
 			hasSelectedMedia,
 			isNarrow,
 			noticeMessage,
+			resumeNotices,
 			pendingDeleteName,
 			pendingTab,
 			selectedTab,
@@ -711,7 +725,11 @@ export class AddMediaPage extends Page {
 					/>
 				</Dialog>
 
-				<Dialog open={!!noticeMessage} onOpenChange={(open) => !open && this.setState({ noticeMessage: '' })}>
+				{/* An open dialog makes every other dialog inert, so this one waits for the resume notice. */}
+				<Dialog
+					open={!!noticeMessage && resumeNotices.length === 0}
+					onOpenChange={(open) => !open && this.setState({ noticeMessage: '' })}
+				>
 					<ConfirmationDialogContent
 						title="Notice"
 						subtitle={noticeMessage}
@@ -723,6 +741,8 @@ export class AddMediaPage extends Page {
 						}
 					/>
 				</Dialog>
+
+				<ResumeUploadDialog uploads={resumeNotices} onConfirm={this.confirmResumes} />
 
 				<Dialog open={confirmBulkUploadOpen} onOpenChange={(open) => !open && this.closeBulkUploadDialog()}>
 					<ConfirmationDialogContent
