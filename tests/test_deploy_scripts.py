@@ -1278,6 +1278,25 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertIn("die-on-term     = true", path.read_text())
 
+    def test_installed_celery_long_unit_sends_sigterm_only_to_celery(self):
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        unit = (self.deploy_root / "etc/systemd/system/celery_long.service").read_text()
+        # A shell left as the main process would take the SIGTERM and die, and
+        # systemd would then SIGKILL the encodes before they can retry.
+        self.assertRegex(unit, r"(?m)^ExecStart=/bin/sh -c 'exec \$\{CELERY_BIN\} ")
+        self.assertIn("\nKillMode=mixed\n", unit)
+        self.assertNotIn("ExecStop=", unit)
+
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
             "--domain",

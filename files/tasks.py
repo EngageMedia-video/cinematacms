@@ -5,6 +5,7 @@ import secrets
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import uuid
 from datetime import datetime, timedelta
@@ -1513,7 +1514,38 @@ def worker_shutdown_handler(sender=None, **kwargs):
 
     Processes match by executable name, not command line, because the
     worker's own argv can contain "ffmpeg" (`-n long@ffmpeg-node`).
+
+    A task that is still preparing when shutdown begins starts its ffmpeg
+    later, and the warm shutdown waits for that task. A daemon thread keeps
+    stopping such encoders until the worker exits, so the task can retry
+    before systemd's stop timeout kills it with its message already acked.
+    Celery runs this handler again on a second SIGTERM; one thread is enough.
     """
+    global _shutdown_sweep_started
+    worker_session = os.getsid(0)
+    owned = _session_encoders()
+    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
+    for pid in owned:
+        _graceful_kill(pid, label="(worker shutdown)")
+    if not _shutdown_sweep_started:
+        _shutdown_sweep_started = True
+        threading.Thread(target=_stop_encoders_until_exit, name="ffmpeg-shutdown-sweep", daemon=True).start()
+
+
+_shutdown_sweep_started = False
+SHUTDOWN_SWEEP_INTERVAL_SECONDS = 0.5
+
+
+def _stop_encoders_until_exit():
+    while True:
+        time.sleep(SHUTDOWN_SWEEP_INTERVAL_SECONDS)
+        for pid in _session_encoders():
+            logger.info(f"Worker shutting down, stopping ffmpeg {pid} started after shutdown began")
+            _graceful_kill(pid, label="(worker shutdown)")
+
+
+def _session_encoders():
+    """PIDs of the ffmpeg processes in this worker's session."""
     worker_pid = os.getpid()
     worker_session = os.getsid(0)
     encoder_name = os.path.basename(settings.FFMPEG_COMMAND)
@@ -1527,9 +1559,7 @@ def worker_shutdown_handler(sender=None, **kwargs):
                 owned.append(pid)
         except (ProcessLookupError, PermissionError):
             continue
-    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
-    for pid in owned:
-        _graceful_kill(pid, label="(worker shutdown)")
+    return owned
 
 
 def _graceful_kill(pid, label=""):
