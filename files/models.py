@@ -704,7 +704,46 @@ class Media(models.Model):
     # is a CharField with its own version (hls_version), so it is not listed.
     FILE_FIELDS = frozenset({"media_file", "thumbnail", "poster", "uploaded_thumbnail", "uploaded_poster", "sprites"})
 
-    def save(self, *args, update_fields=None, initial_state=None, **kwargs):
+    def _columns_except_report_count(self):
+        """Name the loaded columns a full save writes, leaving out reported_times.
+
+        recount_reported_times() is the only writer of the count. A full save from an
+        instance loaded before a Report arrived would write the old count back. Deferred
+        columns stay out, as in Django's own deferred save.
+        """
+        deferred = self.get_deferred_fields()
+        return frozenset(
+            field.name
+            for field in self._meta.concrete_fields
+            if not field.primary_key and field.attname not in deferred and field.name != "reported_times"
+        )
+
+    def _updates_stored_row(self, force_insert):
+        if force_insert or not self.pk:
+            return False
+        # Django updates the row with this pk if it exists and inserts otherwise,
+        # whether the instance was loaded, built from stored values, or given a new pk.
+        return Media.objects.filter(pk=self.pk).exists()
+
+    def save(
+        self,
+        *args,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
+        initial_state=None,
+    ):
+        # Read Django's deprecated positional parameters so every decision below sees them.
+        if args:
+            force_insert, force_update, using, update_fields = self._parse_save_params(
+                *args,
+                method_name="save",
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            )
         # A deferred load left these originals unrecorded. The stored row holds
         # them; without it a publish would not notify and an unchanged state
         # would read as changed. They stay skipped until the lookup succeeds, so
@@ -869,7 +908,19 @@ class Media(models.Model):
             # Django only sets auto_now on a field that update_fields includes.
             if self.FILE_FIELDS & set(update_fields):
                 update_fields = frozenset(update_fields) | {"edit_date"}
-            kwargs["update_fields"] = update_fields
+            written_fields = update_fields
+        elif self._updates_stored_row(force_insert):
+            written_fields = self._columns_except_report_count()
+        else:
+            # A new row has no Reports yet, even when copied from a loaded media.
+            self.reported_times = 0
+            written_fields = None
+        django_save_options = {
+            "force_insert": force_insert,
+            "force_update": force_update,
+            "using": using,
+            "update_fields": written_fields,
+        }
 
         # ensure_encryption_key() can commit a key between an unlocked re-read and
         # this save, and the write would then still carry the stale blank. Take the
@@ -898,9 +949,9 @@ class Media(models.Model):
                 stays_encrypted = self.is_encrypted if persists_encryption_state else (stored or {}).get("is_encrypted")
                 if stored and stays_encrypted and stored["encryption_key"]:
                     self.encryption_key = stored["encryption_key"]
-                super(Media, self).save(*args, **kwargs)
+                super(Media, self).save(**django_save_options)
         else:
-            super(Media, self).save(*args, **kwargs)
+            super(Media, self).save(**django_save_options)
         self._remove_replaced_files(replaced_thumbnail_files)
         # Notify user when video is published (state changed to public)
         if (

@@ -503,7 +503,14 @@ Perform actions on media such as liking, disliking, or reporting inappropriate c
 A `report` is stored before the response returns. The first report from a
 viewer answers `201 Created`. A repeated report from the same viewer answers
 `200 OK` with `"detail": "action already performed"` and is not counted again.
-The media detail response carries `user_has_reported` for the signed-in viewer.
+The database allows one report per signed-in viewer and media, so two racing
+requests store one report. The media detail response carries
+`user_has_reported` for the signed-in viewer.
+
+`reported_times` is the number of stored reports on the media. A report, a
+retraction, a reset and the deletion of a reporter's account each recount it.
+The edit page, the upload forms and the Django admin show the count but cannot
+change it. A reset is the only way to clear every report on a media.
 
 A stored report emails the moderators. A viewer who withdraws a report and
 reports the same media again within `REPORT_NOTIFICATION_WINDOW_SECONDS`
@@ -522,7 +529,7 @@ Remove an action from media.
 #### Body Parameters (JSON):
 | Name   | Type   | Required | Description |
 |--------|--------|----------|-------------|
-| `type` | string | ✅       | `"like"` or `"dislike"` removes the caller's own action. `"retract_report"` removes the caller's own report and lowers `reported_times` by one. `"report"` clears every report on the media. |
+| `type` | string | ✅       | `"like"` or `"dislike"` removes the caller's own action. `"retract_report"` removes the caller's own report. `"report"` clears every report on the media and sets `reported_times` to 0. |
 
 A retraction answers `200 OK` with `"detail": "report retracted"`, or
 `"detail": "no report to retract"` when the caller has no report on the media.

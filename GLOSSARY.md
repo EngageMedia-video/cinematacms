@@ -32,6 +32,24 @@ _Avoid_: Made public, went live
 A user's choice to hear about another user's new Media. The user who follows is a **Follower**.
 _Avoid_: Subscribe, subscription, subscriber
 
+## Reports
+
+**Report**:
+A viewer's statement to admins that a Media breaks the rules, with a reason. A Report exists until it is withdrawn or reset; it has no resolved state.
+_Avoid_: Flag, complaint, open report
+
+**Reporter**:
+The user who made a Report.
+_Avoid_: Flagger
+
+**Withdraw**:
+A Reporter removing their own Report.
+_Avoid_: Retract, cancel
+
+**Report reset**:
+A superuser removing every Report on a Media.
+_Avoid_: Clear, dismiss
+
 ## Changes and notifications
 
 **Domain event**:

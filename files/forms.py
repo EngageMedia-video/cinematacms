@@ -97,7 +97,6 @@ class MediaForm(forms.ModelForm):
             "custom_license",
             "no_license",
             "enable_comments",
-            "reported_times",
             "featured",
             "is_reviewed",
             "state",
@@ -151,7 +150,6 @@ class MediaForm(forms.ModelForm):
                 )
         self.fields["allow_download"].label = "Allow Download"
         self.fields["is_encrypted"].label = "Enable HLS Encryption"
-        self.fields["reported_times"].label = "Reported Times"
         self.fields["enable_comments"].label = "Enable Comments"
         self.fields["new_tags"].label = "Tags"
         self.fields["category"].help_text = "Hold the Shift or Command key to select multiple categories."
@@ -194,7 +192,6 @@ class MediaForm(forms.ModelForm):
             self.fields.pop("thumbnail_time", None)
         if not is_mediacms_editor(user):
             self.fields.pop("featured")
-            self.fields.pop("reported_times")
             self.fields.pop("is_reviewed")
             self.fields.pop("add_date")
 

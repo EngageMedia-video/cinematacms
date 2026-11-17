@@ -16,7 +16,7 @@ export const BULK_UPLOAD_CONFIG_DEFAULTS = {
 	isTrustedUser: false,
 	// Logged-in user's full name, shown as the uploader in each file's Quick Preview.
 	userName: '',
-	// Admin-only "Admin Settings" section (Featured / Reported Times). Provided by
+	// Admin-only "Admin Settings" section (Featured). Provided by
 	// the host add-media page; defaults off otherwise.
 	canUseAdminSettings: false,
 };

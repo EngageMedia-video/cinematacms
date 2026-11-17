@@ -17,10 +17,11 @@ from unittest.mock import patch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore
+from django.db import connection, transaction
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
-from actions.models import MediaAction
+from actions.models import MediaAction, MediaReport
 from files.methods import pre_save_action
 from files.models import Media
 from files.tasks import save_user_action
@@ -144,6 +145,79 @@ class RaceConditionTest(TransactionTestCase):
         )
 
         print(f"✅ SUCCESS: All {num_threads} concurrent views were recorded correctly!")
+
+
+class ReportRecountRaceTest(TransactionTestCase):
+    def _report(self, reporter, reason):
+        return save_user_action(
+            user_or_session={"user_id": reporter.id},
+            friendly_token=self.media.friendly_token,
+            action="report",
+            extra_info=reason,
+        )
+
+    def _wait_for_a_blocked_query(self):
+        deadline = time.monotonic() + 10
+        with connection.cursor() as cursor:
+            while time.monotonic() < deadline:
+                cursor.execute(
+                    "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'"
+                )
+                if cursor.fetchone()[0]:
+                    return
+                time.sleep(0.05)
+        self.fail("the second Report never waited on the account deletion")
+
+    def test_report_made_while_a_reporters_account_is_deleted_is_counted_once(self):
+        self.media = create_test_media(user=User.objects.create_user(username="report_race_owner"))
+        leaving_reporter = User.objects.create_user(username="report_race_leaving")
+        new_reporter = User.objects.create_user(username="report_race_new")
+        self._report(leaving_reporter, "First")
+        deletion_recounted = threading.Event()
+        release_deletion = threading.Event()
+        errors = []
+
+        def delete_leaving_reporter():
+            try:
+                with transaction.atomic():
+                    User.objects.get(pk=leaving_reporter.pk).delete()
+                    deletion_recounted.set()
+                    release_deletion.wait(timeout=30)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        def report_as_new_reporter():
+            try:
+                self._report(new_reporter, "Second")
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        deletion = threading.Thread(target=delete_leaving_reporter)
+        report = threading.Thread(target=report_as_new_reporter)
+        deletion.start()
+        try:
+            self.assertTrue(deletion_recounted.wait(timeout=10), "the account deletion never recounted")
+            report.start()
+            self._wait_for_a_blocked_query()
+        finally:
+            release_deletion.set()
+            deletion.join(timeout=30)
+            if report.ident is not None:
+                report.join(timeout=30)
+
+        self.assertEqual(errors, [])
+        self.media.refresh_from_db()
+        self.assertEqual(
+            (
+                self.media.reported_times,
+                list(MediaReport.objects.filter(media=self.media).values_list("user", flat=True)),
+            ),
+            (1, [new_reporter.pk]),
+        )
 
 
 class AnonymousNATTest(TestCase):

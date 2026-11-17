@@ -219,7 +219,6 @@ export function MediaDetailsForm({
 		>
 			<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 			{canPublishDirectly ? <input type="hidden" name="is_reviewed" value="on" /> : null}
-			{canUseAdminSettings ? null : <input type="hidden" name="reported_times" value="0" />}
 
 			<BasicDetailsForm singleUpload={singleUpload} />
 

@@ -1,23 +1,33 @@
+import importlib
 import json
+import threading
+import time
 from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import patch
 
+from django.apps import apps
+from django.contrib.auth.models import Permission
 from django.core.checks import Tags, run_checks
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.recorder import MigrationRecorder
 from django.db.models import Case, CharField, F, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from actions.models import MediaAction
 from files.helpers import mask_ip
+from files.models import Media
 from files.tasks import save_user_action
 from files.tests.helpers import create_test_media, create_test_user
+
+media_report_migration = importlib.import_module("actions.migrations.0007_media_report")
 
 MASKED_IP = "b2bf3fb7f6fa9ada2eed90c09545ae95cdc046aea1bffb465e3a8c0c1811d451"
 
@@ -433,3 +443,310 @@ class IPCleanupTests(TestCase):
         self.assertIsNone(action.remote_ip)
         self.assertNotIn("invalid-private-value", output.getvalue())
         self.assertIn("1 invalid cleared", output.getvalue())
+
+
+class MediaReportMigrationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.media = create_test_media(create_test_user())
+        cls.reporter = create_test_user()
+
+    def _allow_duplicate_reports(self):
+        # Duplicates from before the migration can no longer be inserted.
+        constraint = next(c for c in MediaAction._meta.constraints if c.name == "mediaaction_one_report_per_user")
+        with connection.schema_editor() as editor:
+            editor.remove_constraint(MediaAction, constraint)
+
+    def _report(self, media, user=None, reason="", session_key=None):
+        return MediaAction.objects.create(
+            media=media, user=user, session_key=session_key, action="report", extra_info=reason
+        )
+
+    def test_dedupe_keeps_each_users_earliest_report_and_every_anonymous_report(self):
+        self._allow_duplicate_reports()
+        other_reporter = create_test_user()
+        earliest = self._report(self.media, self.reporter, "first")
+        self._report(self.media, self.reporter, "second")
+        self._report(self.media, self.reporter, "third")
+        other = self._report(self.media, other_reporter, "other reporter")
+        anonymous = [self._report(self.media, session_key=f"session-{n}", reason="anonymous") for n in range(2)]
+        likes = [MediaAction.objects.create(media=self.media, user=self.reporter, action="like") for _ in range(2)]
+
+        media_report_migration.delete_duplicate_reports(apps, schema_editor=None)
+
+        remaining = set(MediaAction.objects.values_list("pk", flat=True))
+        self.assertEqual(remaining, {earliest.pk, other.pk, *(row.pk for row in anonymous), *(row.pk for row in likes)})
+
+    def test_dedupe_keeps_the_report_with_the_earliest_date_when_ids_disagree(self):
+        self._allow_duplicate_reports()
+        stored_first = self._report(self.media, self.reporter, "stored first, dated later")
+        stored_second = self._report(self.media, self.reporter, "stored second, dated earlier")
+        MediaAction.objects.filter(pk=stored_second.pk).update(
+            action_date=stored_first.action_date - timedelta(seconds=1)
+        )
+
+        media_report_migration.delete_duplicate_reports(apps, schema_editor=None)
+
+        self.assertEqual(list(MediaAction.objects.values_list("pk", flat=True)), [stored_second.pk])
+
+    @patch.object(media_report_migration, "RECOUNT_BATCH_SIZE", 2)
+    def test_backfill_fixes_drifted_counters_without_changing_visibility(self):
+        private_media = create_test_media(create_test_user(), state="private")
+        public_media = create_test_media(create_test_user(), state="public")
+        Media.objects.filter(pk=private_media.pk).update(reported_times=7)
+        Media.objects.filter(pk=public_media.pk).update(reported_times=3)
+        self._report(private_media, self.reporter)
+        self._report(private_media, session_key="anonymous-session")
+        MediaAction.objects.create(media=public_media, user=self.reporter, action="like")
+        MediaAction.objects.create(media=public_media, user=self.reporter, action="watch")
+
+        media_report_migration.recount_reported_times(apps, schema_editor=None)
+
+        self.assertEqual(
+            {media.pk: (media.reported_times, media.state) for media in Media.objects.all()},
+            {
+                self.media.pk: (0, "public"),
+                private_media.pk: (2, "private"),
+                public_media.pk: (0, "public"),
+            },
+        )
+
+
+class MediaReportMigrationResumeTests(TransactionTestCase):
+    report_index_names = ("mediaaction_report_media_idx", "mediaaction_one_report_per_user")
+
+    def _report_indexes(self):
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT c.relname, pg_get_indexdef(i.indexrelid), i.indisvalid FROM pg_index i "
+                "JOIN pg_class c ON c.oid = i.indexrelid WHERE c.relname = ANY(%s)",
+                [list(self.report_index_names)],
+            )
+            return {name: (definition, valid) for name, definition, valid in cursor.fetchall()}
+
+    def _restore_migrated_schema(self):
+        if ("actions", "0007_media_report") in MigrationRecorder(connection).applied_migrations():
+            return
+        with connection.cursor() as cursor:
+            for name in self.report_index_names:
+                cursor.execute(f'DROP INDEX CONCURRENTLY IF EXISTS "{name}"')
+        call_command("migrate", "actions", verbosity=0)
+
+    def test_migration_resumes_after_a_run_that_failed_building_the_unique_index(self):
+        migrated_indexes = self._report_indexes()
+        call_command("migrate", "actions", "0006", verbosity=0)
+        self.addCleanup(self._restore_migrated_schema)
+        media = create_test_media(create_test_user())
+        reporter = create_test_user()
+        for _ in range(2):
+            MediaAction.objects.create(media=media, user=reporter, action="report")
+        # The earlier run built the first index, then lost a race with a
+        # duplicate Report while building the unique one.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'CREATE INDEX CONCURRENTLY "mediaaction_report_media_idx" '
+                'ON "actions_mediaaction" ("media_id") WHERE "action" = \'report\''
+            )
+            with self.assertRaises(IntegrityError):
+                cursor.execute(
+                    'CREATE UNIQUE INDEX CONCURRENTLY "mediaaction_one_report_per_user" '
+                    'ON "actions_mediaaction" ("media_id", "user_id") '
+                    'WHERE ("action" = \'report\' AND "user_id" IS NOT NULL)'
+                )
+        self.assertFalse(self._report_indexes()["mediaaction_one_report_per_user"][1])
+
+        call_command("migrate", "actions", verbosity=0)
+
+        self.assertEqual(self._report_indexes(), migrated_indexes)
+        self.assertEqual(
+            {name: valid for name, (_, valid) in migrated_indexes.items()},
+            dict.fromkeys(self.report_index_names, True),
+        )
+        media.refresh_from_db()
+        self.assertEqual(media.reported_times, 1)
+
+
+class MediaReportBackfillRaceTests(TransactionTestCase):
+    def _wait_for_a_blocked_query(self):
+        deadline = time.monotonic() + 10
+        with connection.cursor() as cursor:
+            while time.monotonic() < deadline:
+                cursor.execute(
+                    "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'"
+                )
+                if cursor.fetchone()[0]:
+                    return
+                time.sleep(0.05)
+        self.fail("the backfill never waited on the Report")
+
+    def test_backfill_run_while_a_report_commits_counts_that_report(self):
+        media = create_test_media(create_test_user())
+        reporter = create_test_user()
+        report_recounted = threading.Event()
+        release_report = threading.Event()
+        errors = []
+
+        def report_and_hold_the_media_lock():
+            try:
+                with transaction.atomic():
+                    save_user_action({"user_id": reporter.pk}, media.friendly_token, "report", "Spam")
+                    report_recounted.set()
+                    release_report.wait(timeout=30)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        def run_backfill():
+            try:
+                media_report_migration.recount_reported_times(apps, schema_editor=None)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                connection.close()
+
+        report = threading.Thread(target=report_and_hold_the_media_lock)
+        backfill = threading.Thread(target=run_backfill)
+        report.start()
+        try:
+            self.assertTrue(report_recounted.wait(timeout=10), "the Report never recounted")
+            backfill.start()
+            self._wait_for_a_blocked_query()
+        finally:
+            release_report.set()
+            report.join(timeout=30)
+            if backfill.ident is not None:
+                backfill.join(timeout=30)
+
+        self.assertEqual(errors, [])
+        media.refresh_from_db()
+        self.assertEqual((media.reported_times, MediaAction.objects.filter(action="report").count()), (1, 1))
+
+
+@override_settings(MFA_REQUIRED_ROLES=[])
+class MediaReportAdminTests(TestCase):
+    changelist_url = reverse("admin:actions_mediareport_changelist")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.superuser = create_test_user(is_superuser=True, is_staff=True)
+        cls.media = create_test_media(create_test_user())
+        cls.reporter = create_test_user(username="report_admin_reporter")
+        cls.report = MediaAction.objects.create(
+            media=cls.media,
+            user=cls.reporter,
+            action="report",
+            extra_info="Shows a private address",
+            session_key="reportersessionkey0123456789abcd",
+            remote_ip="198.51.100.77",
+        )
+        cls.report.refresh_from_db()
+        MediaAction.objects.create(media=cls.media, action="report", extra_info="Anonymous reason", session_key="anon")
+        for action in ("like", "dislike", "watch"):
+            MediaAction.objects.create(media=cls.media, user=cls.reporter, action=action, extra_info=f"{action} row")
+
+    def _staff_user(self, *permissions):
+        user = create_test_user(is_staff=True)
+        user.user_permissions.set(
+            Permission.objects.filter(content_type__app_label="actions", codename__in=permissions)
+        )
+        return user
+
+    def test_changelist_lists_reports_and_no_other_action(self):
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(self.changelist_url)
+
+        self.assertContains(response, "Shows a private address")
+        self.assertContains(response, "Anonymous reason")
+        self.assertContains(response, "report_admin_reporter")
+        self.assertContains(response, "Anonymous")
+        for action in ("like", "dislike", "watch"):
+            self.assertNotContains(response, f"{action} row")
+        self.assertContains(response, reverse("admin:files_media_change", args=[self.media.pk]))
+
+    def test_report_page_offers_no_add_change_or_delete(self):
+        self.client.force_login(self.superuser)
+        change_url = reverse("admin:actions_mediareport_change", args=[self.report.pk])
+
+        self.assertNotContains(self.client.get(self.changelist_url), "delete_selected")
+        self.assertEqual(self.client.get(reverse("admin:actions_mediareport_add")).status_code, 403)
+        self.assertEqual(self.client.post(change_url, {"extra_info": "Edited"}).status_code, 403)
+        self.assertEqual(
+            self.client.post(reverse("admin:actions_mediareport_delete", args=[self.report.pk])).status_code, 403
+        )
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.extra_info, "Shows a private address")
+
+    def test_view_permission_decides_who_opens_the_page(self):
+        self.client.force_login(self._staff_user())
+        self.assertEqual(self.client.get(self.changelist_url).status_code, 403)
+
+        self.client.force_login(self._staff_user("view_mediareport"))
+        self.assertEqual(self.client.get(self.changelist_url).status_code, 200)
+
+    def test_change_permission_alone_does_not_open_the_page(self):
+        self.client.force_login(self._staff_user("change_mediareport"))
+        report_pages = {
+            "list": self.changelist_url,
+            "detail": reverse("admin:actions_mediareport_change", args=[self.report.pk]),
+            "history": reverse("admin:actions_mediareport_history", args=[self.report.pk]),
+        }
+
+        self.assertEqual(
+            {page: self.client.get(url).status_code for page, url in report_pages.items()},
+            dict.fromkeys(report_pages, 403),
+        )
+
+    def test_page_refuses_filtering_by_any_field_it_does_not_offer(self):
+        self.client.force_login(self._staff_user("view_mediareport"))
+        unoffered_lookups = {
+            "session_key__startswith": self.report.session_key[:4],
+            "remote_ip__exact": self.report.remote_ip,
+            "user__password__startswith": "pbkdf2",
+            "user__email__icontains": "@",
+            "extra_info__icontains": "private",
+            "action": "like",
+            "media__title__startswith": "T",
+        }
+
+        for lookup, value in unoffered_lookups.items():
+            with self.subTest(lookup=lookup):
+                self.assertEqual(self.client.get(self.changelist_url, {lookup: value}).status_code, 400)
+
+    def test_page_date_filter_search_and_media_link_still_work(self):
+        self.client.force_login(self._staff_user("view_mediareport"))
+        changelist = self.client.get(self.changelist_url).context["cl"]
+        date_filter_queries = [
+            choice["query_string"] for spec in changelist.filter_specs for choice in spec.choices(changelist)
+        ]
+        page_queries = [*date_filter_queries, f"?q={self.reporter.username}", f"?media__id__exact={self.media.pk}"]
+
+        for query in page_queries:
+            with self.subTest(query=query):
+                self.assertContains(self.client.get(f"{self.changelist_url}{query}"), "Shows a private address")
+
+    def test_report_page_shows_the_reason_but_not_the_reporters_ip_or_session(self):
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(reverse("admin:actions_mediareport_change", args=[self.report.pk]))
+
+        self.assertContains(response, "Shows a private address")
+        self.assertNotContains(response, self.report.remote_ip)
+        self.assertNotContains(response, self.report.session_key)
+
+    def test_media_admin_links_each_count_to_that_medias_reports(self):
+        other_media = create_test_media(create_test_user())
+        MediaAction.objects.create(media=other_media, action="report", extra_info="Other film reason", session_key="x")
+        self.client.force_login(self.superuser)
+        reports_link = f"{self.changelist_url}?media__id__exact={self.media.pk}"
+
+        media_changelist = self.client.get(reverse("admin:files_media_changelist"))
+        self.assertContains(media_changelist, f'href="{reports_link}"')
+        self.assertContains(media_changelist, "sortable column-reported_times_link")
+
+        response = self.client.get(reports_link)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Shows a private address")
+        self.assertNotContains(response, "Other film reason")

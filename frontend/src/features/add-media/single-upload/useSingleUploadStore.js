@@ -52,7 +52,6 @@ export function createDefaultSingleUploadState() {
 
 		// Admin settings
 		featured: false,
-		reportedTimes: '0',
 
 		// Thumbnail
 		selectedThumbnailFile: null,
@@ -120,7 +119,6 @@ const useSingleUploadStore = create((set) => ({
 
 	// Admin settings
 	setFeatured: (featured) => set({ featured }),
-	setReportedTimes: (reportedTimes) => set({ reportedTimes }),
 
 	// Thumbnail
 	setSelectedThumbnailFile: (selectedThumbnailFile) =>

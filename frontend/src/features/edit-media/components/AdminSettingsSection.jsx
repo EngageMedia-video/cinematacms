@@ -1,4 +1,5 @@
 import { FieldGroup } from '../../add-media/single-upload/components/FieldGroup';
+import { Statistic } from '../../shared/components';
 import { CheckboxButton } from '../../shared/components/CheckboxButton';
 import { TextField } from '../../shared/components/TextField';
 
@@ -28,19 +29,9 @@ export function AdminSettingsSection({ config, editState }) {
 						Reviewed
 					</CheckboxButton>
 				) : null}
-				{config.fields?.includes('reported_times') ? (
-					<TextField
-						className="w-full max-w-sm"
-						id="reported_times"
-						name="reported_times"
-						type="number"
-						label="Reported Times"
-						value={editState.reportedTimes}
-						onChange={(event) => editState.setReportedTimes(event.target.value)}
-						min="0"
-						step="1"
-					/>
-				) : null}
+				<dl className="m-0 grid">
+					<Statistic label="Reported Times" value={String(config.media?.reportedTimes ?? 0)} />
+				</dl>
 				{config.fields?.includes('add_date') ? (
 					<TextField
 						className="w-full max-w-sm"

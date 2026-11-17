@@ -1,12 +1,14 @@
 import json
+import uuid
 from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
+from django.utils.deprecation import RemovedInDjango60Warning
 
-from actions.models import MediaAction
+from actions.models import MediaAction, recount_reported_times
 from files.models import Media
-from files.tests.helpers import create_test_media, create_test_user
+from files.tests.helpers import create_test_media, create_test_user, ensure_media_insert_defaults
 
 
 class MediaActionsTests(TestCase):
@@ -120,6 +122,32 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
+    def test_racing_duplicate_report_is_refused_and_not_counted(self):
+        self.client.force_login(self.viewer)
+        self._report()
+
+        # A racing request passes the duplicate check before the first Report commits.
+        with patch("files.tasks.pre_save_action", return_value=True):
+            response = self._report("Again")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["detail"], "action already performed")
+        self.assertEqual(
+            list(self._reports(self.viewer).values_list("extra_info", flat=True)), ["Shows a private address"]
+        )
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 1)
+
+    def test_report_recounts_a_drifted_counter(self):
+        MediaAction.objects.create(media=self.media, user=self.owner, action="report")
+        Media.objects.filter(pk=self.media.pk).update(reported_times=0)
+        self.client.force_login(self.viewer)
+
+        self._report()
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.reported_times, 2)
+
     def test_viewer_can_retract_their_report(self):
         self.client.force_login(self.viewer)
         self._report()
@@ -144,32 +172,16 @@ class MediaReportActionsTests(TestCase):
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 1)
 
-    def test_retracting_duplicate_reports_lowers_the_count_by_each_one(self):
-        other_viewer = create_test_user(username="report_other_duplicate")
-        MediaAction.objects.create(media=self.media, user=other_viewer, action="report")
-        # Two racing requests can each store a report for the same viewer.
+    def test_retracting_recounts_a_drifted_counter(self):
+        MediaAction.objects.create(media=self.media, user=self.owner, action="report")
         MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        Media.objects.filter(pk=self.media.pk).update(reported_times=3)
-        self.client.force_login(self.viewer)
-
-        response = self._retract()
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(self._reports(self.viewer).exists())
-        self.media.refresh_from_db()
-        self.assertEqual(self.media.reported_times, 1)
-
-    def test_retracting_does_not_lower_the_count_below_zero(self):
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
-        Media.objects.filter(pk=self.media.pk).update(reported_times=1)
+        Media.objects.filter(pk=self.media.pk).update(reported_times=5)
         self.client.force_login(self.viewer)
 
         self._retract()
 
         self.media.refresh_from_db()
-        self.assertEqual(self.media.reported_times, 0)
+        self.assertEqual(self.media.reported_times, 1)
 
     def test_viewer_can_retract_after_reports_made_the_media_private(self):
         self.client.force_login(self.viewer)
@@ -256,6 +268,131 @@ class MediaReportActionsTests(TestCase):
         self.assertFalse(MediaAction.objects.filter(media=self.media, action="report").exists())
         self.media.refresh_from_db()
         self.assertEqual(self.media.reported_times, 0)
+
+    def test_deleting_a_reporters_account_lowers_the_count_of_each_media_they_reported(self):
+        other_media = create_test_media(self.owner)
+        self.client.force_login(self.owner)
+        self._report("Owner report")
+        self.client.force_login(self.viewer)
+        self._report()
+        self.client.post(
+            f"/api/v1/media/{other_media.friendly_token}/actions",
+            data=json.dumps({"type": "report", "extra_info": "Other film"}),
+            content_type="application/json",
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.viewer.delete()
+
+        self.media.refresh_from_db()
+        other_media.refresh_from_db()
+        self.assertEqual((self.media.reported_times, other_media.reported_times), (1, 0))
+        self.assertTrue(self._reports(self.owner).exists())
+
+    def _retitle_media_loaded_before_a_report(self, media_rows, save=Media.save):
+        loaded_before_report = media_rows.get(pk=self.media.pk)
+        self.client.force_login(self.viewer)
+        self.assertEqual(self._report().status_code, 201)
+
+        loaded_before_report.title = "Retitled after the report"
+        save(loaded_before_report)
+
+        self.media.refresh_from_db()
+        return self.media.title, self.media.reported_times
+
+    def test_saving_a_media_loaded_before_a_report_keeps_the_count(self):
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.all())
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_saving_a_partly_loaded_media_loaded_before_a_report_keeps_the_count(self):
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.defer("description"))
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_a_positional_full_save_of_a_media_loaded_before_a_report_keeps_the_count(self):
+        def save_positionally(media):
+            with self.assertWarns(RemovedInDjango60Warning):
+                media.save(False)
+
+        saved = self._retitle_media_loaded_before_a_report(Media.objects.all(), save=save_positionally)
+
+        self.assertEqual(saved, ("Retitled after the report", 1))
+
+    def test_a_positional_update_fields_save_writes_only_the_named_columns(self):
+        loaded = Media.objects.get(pk=self.media.pk)
+        loaded.title = "Retitled"
+        loaded.description = "Never saved"
+
+        with self.assertWarns(RemovedInDjango60Warning):
+            loaded.save(False, False, None, ["title"])
+
+        stored = Media.objects.get(pk=self.media.pk)
+        self.assertEqual((stored.title, stored.description), ("Retitled", self.media.description))
+
+    def test_a_forced_insert_of_a_loaded_media_stores_a_new_row_with_no_reports(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
+        copy = Media.objects.get(pk=self.media.pk)
+        copy.pk = Media.objects.order_by("-pk").values_list("pk", flat=True).first() + 1
+        copy.uid = uuid.uuid4()
+        copy.title = "Copy"
+
+        with patch.object(Media, "media_init", return_value=None):
+            copy.save(force_insert=True)
+
+        self.assertEqual(
+            {
+                pk: (title, reported_times)
+                for pk, title, reported_times in Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list(
+                    "pk", "title", "reported_times"
+                )
+            },
+            {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
+        )
+
+    def test_saving_a_loaded_media_under_an_unused_pk_stores_a_new_row_with_no_reports(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
+        copy = Media.objects.get(pk=self.media.pk)
+        copy.pk = Media.objects.order_by("-pk").values_list("pk", flat=True).first() + 1
+        copy.uid = uuid.uuid4()
+        copy.title = "Copy"
+
+        with patch.object(Media, "media_init", return_value=None):
+            copy.save()
+
+        self.assertEqual(
+            {
+                pk: (title, reported_times)
+                for pk, title, reported_times in Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list(
+                    "pk", "title", "reported_times"
+                )
+            },
+            {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
+        )
+
+    def test_saving_a_media_rebuilt_from_its_stored_row_keeps_the_count(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
+        stored_values = Media.objects.values().get(pk=self.media.pk)
+        rebuilt = Media(**{**stored_values, "title": "Rebuilt"})
+
+        rebuilt.save()
+
+        self.assertEqual(
+            Media.objects.filter(pk=self.media.pk).values_list("title", "reported_times").get(), ("Rebuilt", 1)
+        )
+
+    def test_a_new_media_is_stored_with_no_reports(self):
+        ensure_media_insert_defaults()
+        new_media = Media(title="New upload", user=self.owner, media_type="video")
+
+        with patch.object(Media, "media_init", return_value=None):
+            new_media.save()
+
+        stored = Media.objects.get(pk=new_media.pk)
+        self.assertEqual((stored.title, stored.reported_times), ("New upload", 0))
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})

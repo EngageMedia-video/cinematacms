@@ -901,10 +901,9 @@ class EncryptionKeyLostUpdateTests(TestCase):
         front.
 
         The positional cases cover Django's deprecated positional form
-        (RemovedInDjango60Warning). Those bypass the keyword-only parameter and
-        reach Model.save() untouched, so the guard sees update_fields=None and
-        runs rather than being skipped -- it fails safe, and the key still has
-        to survive.
+        (RemovedInDjango60Warning). Media.save() reads those arguments as the
+        keywords they stand for, so a positional generator has to survive the
+        same way.
         """
 
         def generator_kwarg(stale):

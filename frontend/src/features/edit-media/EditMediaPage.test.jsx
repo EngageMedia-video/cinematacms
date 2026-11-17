@@ -420,3 +420,66 @@ describe('EditMediaPage short description field', () => {
 		expect(screen.queryByLabelText('Synopsis')).not.toBeInTheDocument();
 	});
 });
+
+describe('EditMediaPage admin settings', () => {
+	function renderForEditor(reportedTimes) {
+		window.MediaCMS = {
+			editMediaPage: {
+				...PAGE_CONFIG,
+				permissions: { canUseAdminSettings: true },
+				fields: ['featured', 'is_reviewed', 'reported_times', 'add_date'],
+				media: { ...PAGE_CONFIG.media, reportedTimes },
+			},
+		};
+		render(<EditMediaPage />);
+	}
+
+	beforeEach(() => {
+		editMediaQueryClient.clear();
+	});
+
+	afterEach(() => {
+		delete window.MediaCMS;
+		vi.unstubAllGlobals();
+	});
+
+	it('shows the reported times as text an editor cannot change', () => {
+		renderForEditor(2);
+
+		const reportedTimes = screen.getByRole('definition');
+
+		expect(screen.getByRole('term')).toHaveTextContent('Reported Times');
+		expect(reportedTimes).toHaveTextContent('2');
+		expect(screen.queryByLabelText('Reported Times')).not.toBeInTheDocument();
+		expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+	});
+
+	it('shows zero reported times as 0', () => {
+		renderForEditor(0);
+
+		expect(screen.getByRole('definition')).toHaveTextContent('0');
+	});
+
+	it('saves the other admin settings without sending reported times', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({
+				ok: true,
+				status: 200,
+				json: async () => ({ success: true, url: '/view?m=abc123' }),
+			}))
+		);
+		vi.stubGlobal('location', { ...window.location, assign: vi.fn() });
+		renderForEditor(2);
+		const featured = screen.getByRole('checkbox', { name: 'Featured' });
+
+		fireEvent.click(featured);
+		await waitFor(() => expect(featured).toBeChecked());
+		fireEvent.click(screen.getByRole('button', { name: 'Update Media' }));
+
+		await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+		const submittedBody = fetch.mock.calls[0][1].body;
+		expect(submittedBody.get('featured')).toBe('on');
+		expect(submittedBody.has('reported_times')).toBe(false);
+	});
+});
