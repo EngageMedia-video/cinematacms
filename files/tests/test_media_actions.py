@@ -351,6 +351,27 @@ class MediaReportActionsTests(TestCase):
             {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
         )
 
+    def test_saving_a_loaded_media_under_an_unused_pk_stores_a_new_row_with_no_reports(self):
+        MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
+        recount_reported_times([self.media.pk])
+        copy = Media.objects.get(pk=self.media.pk)
+        copy.pk = Media.objects.order_by("-pk").values_list("pk", flat=True).first() + 1
+        copy.uid = uuid.uuid4()
+        copy.title = "Copy"
+
+        with patch.object(Media, "media_init", return_value=None):
+            copy.save()
+
+        self.assertEqual(
+            {
+                pk: (title, reported_times)
+                for pk, title, reported_times in Media.objects.filter(pk__in=[self.media.pk, copy.pk]).values_list(
+                    "pk", "title", "reported_times"
+                )
+            },
+            {self.media.pk: (self.media.title, 1), copy.pk: ("Copy", 0)},
+        )
+
     def test_saving_a_media_rebuilt_from_its_stored_row_keeps_the_count(self):
         MediaAction.objects.create(media=self.media, user=self.viewer, action="report")
         recount_reported_times([self.media.pk])

@@ -721,9 +721,8 @@ class Media(models.Model):
     def _updates_stored_row(self, force_insert):
         if force_insert or not self.pk:
             return False
-        if not self._state.adding:
-            return True
-        # Django updates, rather than inserts, an instance built with a stored row's pk.
+        # Django updates the row with this pk if it exists and inserts otherwise,
+        # whether the instance was loaded, built from stored values, or given a new pk.
         return Media.objects.filter(pk=self.pk).exists()
 
     def save(
