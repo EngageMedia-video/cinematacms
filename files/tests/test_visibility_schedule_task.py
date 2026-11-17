@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from files.models import Media
@@ -158,3 +159,154 @@ class VisibilityScheduleTaskTest(TestCase):
         second.refresh_from_db()
         self.assertEqual(first.state, "public")
         self.assertEqual(second.state, "private")
+
+
+WINDOW_ENDED_SUBJECT = "[Cinemata] - The visibility window for your film has ended"
+
+
+@override_settings(
+    PORTAL_NAME="Cinemata",
+    CURATOR_CONTACT_EMAIL="curators@example.org",
+    SSL_FRONTEND_HOST="https://films.example.org",
+)
+class VisibilityWindowEndedEmailTest(TestCase):
+    """Issue #864: tell the filmmaker when a scheduled visibility window closes."""
+
+    def _scheduled_media(self, *, username, title, state, start, expires, after, window):
+        user = create_test_user(username=username, email=f"{username}@example.com")
+        media = create_test_media(user, state=state)
+        Media.objects.filter(pk=media.pk).update(
+            title=title,
+            visibility_start_date=start,
+            visibility_expires_at=expires,
+            visibility_after_expiry=after,
+            visibility_window_state=window,
+        )
+        media.refresh_from_db()
+        return media
+
+    def _window_ended_emails(self):
+        return [message for message in mail.outbox if message.subject == WINDOW_ENDED_SUBJECT]
+
+    def test_each_closed_window_emails_its_filmmaker_once_with_the_new_state(self):
+        # The filmmaker picked 3 March 2025 as the end date. The edit form stores
+        # that as local midnight at the start of the following day.
+        expires = timezone.make_aware(datetime(2025, 3, 4))
+        unlisted_film = self._scheduled_media(
+            username="ana",
+            title="Harbour Lights",
+            state="public",
+            start=expires - timedelta(days=10),
+            expires=expires,
+            after="unlisted",
+            window="public",
+        )
+        private_film = self._scheduled_media(
+            username="budi",
+            title="River Songs",
+            state="public",
+            start=expires - timedelta(days=10),
+            expires=expires,
+            after="private",
+            window="public",
+        )
+        mail.outbox = []
+
+        apply_visibility_schedules()
+        apply_visibility_schedules()
+
+        emails = {message.to[0]: message for message in self._window_ended_emails()}
+        self.assertEqual(sorted(emails), ["ana@example.com", "budi@example.com"])
+        self.assertEqual(len(self._window_ended_emails()), 2)
+
+        ana_body = emails["ana@example.com"].body
+        self.assertIn("Dear ana,", ana_body)
+        self.assertIn(
+            'The visibility window you set for "Harbour Lights" ended on 3 March 2025. '
+            "As scheduled, your film is now unlisted, so only people with the link can see it.",
+            ana_body,
+        )
+        self.assertIn(f"URL: https://films.example.org/view?m={unlisted_film.friendly_token}", ana_body)
+        self.assertIn(
+            "To make it visible again, open the film's edit page and change its status or set a new visibility window.",
+            ana_body,
+        )
+        self.assertIn("If you have questions, write to us at curators@example.org.", ana_body)
+        self.assertIn("The Cinemata Team", ana_body)
+
+        budi_body = emails["budi@example.com"].body
+        self.assertIn(
+            'The visibility window you set for "River Songs" ended on 3 March 2025. '
+            "As scheduled, your film is now private, so it is hidden from public view.",
+            budi_body,
+        )
+        self.assertIn(f"URL: https://films.example.org/view?m={private_film.friendly_token}", budi_body)
+
+    def test_a_window_opening_into_unlisted_sends_no_window_ended_email(self):
+        now = timezone.now()
+        media = self._scheduled_media(
+            username="citra",
+            title="Night Market",
+            state="private",
+            start=now - timedelta(hours=1),
+            expires=now + timedelta(days=7),
+            after="private",
+            window="unlisted",
+        )
+        mail.outbox = []
+
+        apply_visibility_schedules()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "unlisted")
+        self.assertEqual(self._window_ended_emails(), [])
+
+    def test_a_deployment_can_switch_the_window_ended_email_off(self):
+        expires = timezone.make_aware(datetime(2025, 3, 4))
+        media = self._scheduled_media(
+            username="dewi",
+            title="Quiet Shore",
+            state="public",
+            start=expires - timedelta(days=10),
+            expires=expires,
+            after="private",
+            window="public",
+        )
+        mail.outbox = []
+
+        with self.settings(USERS_NOTIFICATIONS={"MEDIA_VISIBILITY_ENDED": False}):
+            apply_visibility_schedules()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "private")
+        self.assertEqual(self._window_ended_emails(), [])
+
+    def test_a_window_already_in_its_after_expiry_state_is_still_settled_and_emailed(self):
+        # MediaForm.save() applies the expected state when details are saved, so a
+        # save after the end date (or with an end date already past) leaves the
+        # film in its after-expiry state before this task runs.
+        expires = timezone.make_aware(datetime(2025, 3, 4))
+        media = self._scheduled_media(
+            username="eko",
+            title="Paper Boats",
+            state="unlisted",
+            start=expires - timedelta(days=10),
+            expires=expires,
+            after="unlisted",
+            window="public",
+        )
+        mail.outbox = []
+
+        apply_visibility_schedules()
+        apply_visibility_schedules()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "unlisted")
+        self.assertIsNone(media.visibility_expires_at)
+        emails = self._window_ended_emails()
+        self.assertEqual([message.to for message in emails], [["eko@example.com"]])
+        self.assertIn(
+            'The visibility window you set for "Paper Boats" ended on 3 March 2025. '
+            "As scheduled, your film is now unlisted, so only people with the link can see it.",
+            emails[0].body,
+        )

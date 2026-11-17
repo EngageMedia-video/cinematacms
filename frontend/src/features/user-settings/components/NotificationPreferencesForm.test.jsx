@@ -71,15 +71,60 @@ describe('NotificationPreferencesForm', () => {
 		hookMocks.resetMocks();
 	});
 
-	it('renders the available preference groups in the issue order', () => {
+	it('lists the working rows under Engagement & Discussions, with Replies last as coming soon', () => {
 		renderForm();
 
-		const engagement = screen.getByText('Engagement & Discussions');
-		const upload = screen.getByText('Upload & Archive Updates');
-		const institutional = screen.getByText('Institutional / Access Notifications');
+		const section = within(screen.getByRole('group', { name: 'Engagement & Discussions' }));
+		const rowLabels = [
+			'New comment on your film',
+			'New reactions to your film',
+			'When someone mentions you',
+			'Your film is added to a playlist',
+			'Replies to your comment',
+		].map((label) => section.getByText(label));
+		for (let i = 1; i < rowLabels.length; i += 1) {
+			expect(rowLabels[i - 1].compareDocumentPosition(rowLabels[i])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		}
 
-		expect(engagement.compareDocumentPosition(upload)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-		expect(upload.compareDocumentPosition(institutional)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(screen.getAllByText('Coming soon')).toHaveLength(1);
+		expect(
+			screen.queryByRole('group', { name: 'Replies to your comment notification channel' })
+		).not.toBeInTheDocument();
+	});
+
+	it('explains the App and Email channels and names the emails that are always sent', () => {
+		renderForm();
+
+		expect(screen.getByRole('heading', { level: 2, name: 'Notification Preferences' })).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Choose how you hear about activity on your films and in discussions. App shows it in your Cinemata notifications. Email sends it to your inbox as well.'
+			)
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				'Some updates are always sent by email, such as when your film is published or its visibility window ends.'
+			)
+		).toBeInTheDocument();
+	});
+
+	it('removes the sections and rows that have no notification behind them', () => {
+		renderForm();
+
+		for (const label of [
+			'Upload & Archive Updates',
+			'Institutional / Access Notifications',
+			'Upload completed',
+			'Upload failed',
+			'Processing completed',
+			'Scheduled visibility change',
+			'New films from filmmakers you follow',
+			'Film accessed by reviewer',
+			'Request for screening or usage',
+			'Film added to a curated collection',
+		]) {
+			expect(screen.queryByText(label)).not.toBeInTheDocument();
+		}
 	});
 
 	it('hides unavailable security and platform announcement groups', () => {
@@ -90,13 +135,14 @@ describe('NotificationPreferencesForm', () => {
 		expect(screen.queryByText('Account login from new device')).not.toBeInTheDocument();
 	});
 
-	it('only exposes Comments, Likes, and Added to playlist as editable rows', () => {
+	it('only exposes Comments, Likes, Mentions, and Added to playlist as editable rows', () => {
 		renderForm();
 
-		expect(screen.getAllByRole('group', { name: /notification channel/i })).toHaveLength(3);
+		expect(screen.getAllByRole('group', { name: /notification channel/i })).toHaveLength(4);
 		expect(channelGroup('New comment on your film')).toBeInTheDocument();
 		expect(channelGroup('New reactions to your film')).toBeInTheDocument();
-		expect(channelGroup('Film added to a curated collection')).toBeInTheDocument();
+		expect(channelGroup('When someone mentions you')).toBeInTheDocument();
+		expect(channelGroup('Your film is added to a playlist')).toBeInTheDocument();
 		expect(screen.queryByRole('switch')).not.toBeInTheDocument();
 		expect(screen.queryByText('Push notification')).not.toBeInTheDocument();
 		expect(screen.queryByText('Email Notification')).not.toBeInTheDocument();
@@ -108,7 +154,7 @@ describe('NotificationPreferencesForm', () => {
 		for (const label of [
 			'New comment on your film',
 			'New reactions to your film',
-			'Film added to a curated collection',
+			'Your film is added to a playlist',
 		]) {
 			const group = within(channelGroup(label));
 
@@ -132,7 +178,7 @@ describe('NotificationPreferencesForm', () => {
 			within(channelGroup('New reactions to your film')).getByRole('button', { name: 'In-App' })
 		).toHaveAttribute('aria-pressed', 'true');
 		expect(
-			within(channelGroup('Film added to a curated collection')).getByRole('button', { name: 'In-App' })
+			within(channelGroup('Your film is added to a playlist')).getByRole('button', { name: 'In-App' })
 		).toHaveAttribute('aria-pressed', 'true');
 	});
 
@@ -142,7 +188,7 @@ describe('NotificationPreferencesForm', () => {
 
 		await user.click(within(channelGroup('New comment on your film')).getByRole('button', { name: 'Off' }));
 		await user.click(
-			within(channelGroup('Film added to a curated collection')).getByRole('button', {
+			within(channelGroup('Your film is added to a playlist')).getByRole('button', {
 				name: 'In-App + Email',
 			})
 		);
@@ -153,5 +199,19 @@ describe('NotificationPreferencesForm', () => {
 			on_comment: 'none',
 			on_added_to_playlist: 'email',
 		});
+	});
+
+	it('shows the saved mention channel and saves a change to it', async () => {
+		hookMocks.queryState.data = { ...hookMocks.defaultPreferences, on_mention: 'email' };
+		const user = userEvent.setup();
+		renderForm();
+
+		const mentions = within(channelGroup('When someone mentions you'));
+		expect(mentions.getByRole('button', { name: 'In-App + Email' })).toHaveAttribute('aria-pressed', 'true');
+
+		await user.click(mentions.getByRole('button', { name: 'Off' }));
+		await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+		expect(hookMocks.mutate).toHaveBeenCalledWith({ on_mention: 'none' });
 	});
 });

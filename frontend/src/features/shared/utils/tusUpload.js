@@ -4,11 +4,12 @@
 // bytes it holds (HEAD) and continues from there. Before a file is sent, the server is asked for
 // the caller's unfinished upload of the same file (name, size and a content fingerprint), so
 // selecting the file again after a reload, or after signing in again, continues that upload.
+// A page that passes onResumeFound is told first, and the upload waits for confirmResume.
 // The browser also remembers the URL of an upload until it sees that upload end, which recovers
 // the media of an upload whose final response was lost.
 
 // The package's default entry is its Node build, which cannot read a browser File.
-import { DetailedError, Upload } from 'tus-js-client/lib.esm/browser/index.js';
+import { DefaultHttpStack, DetailedError, Upload } from 'tus-js-client/lib.esm/browser/index.js';
 import { formatBytes } from './formatBytes';
 import { UPLOAD_ID_HEADER } from './uploadId';
 
@@ -121,9 +122,10 @@ function serverMessage(error) {
  * Creates the upload engine for one page.
  *
  * `callbacks` (all optional): onSubmitted(id, name), onProgress(id, name, sentBytes, totalBytes),
- * onStatusChange(id, status, message), onComplete(id, name, { media_url }), onError(id, name, message)
- * and onCancel(id). `onError` runs once an upload has failed for good, and with a null id when a
- * selected file is refused. `getHeaders` is read before every request, so a CSRF token issued by a
+ * onStatusChange(id, status, message), onComplete(id, name, { media_url }), onError(id, name, message),
+ * onCancel(id) and onResumeFound(id, name, storedBytes, totalBytes). `onError` runs once an upload
+ * has failed for good, and with a null id when a selected file is refused. `onResumeFound` runs when
+ * the server already holds part of a selected file; the upload then waits for `confirmResume(id)`. `getHeaders` is read before every request, so a CSRF token issued by a
  * new sign-in is picked up.
  */
 export function createTusUploader({
@@ -200,8 +202,22 @@ export function createTusUploader({
 
 	const notify = (name, ...args) => callbacks[name]?.(...args);
 
+	// While a chunk is on its way, tus-js-client reports the bytes that left the browser, and the
+	// server may hold fewer. A stopped upload shows the server's offset instead. A refused chunk
+	// stores nothing, so these statuses show the last offset the server reported. A paused upload
+	// is different: see reportStoredBytesAfterPause.
+	const STOPPED_STATUSES = [UPLOAD_STATUS.AWAITING_SIGN_IN, UPLOAD_STATUS.FAILED];
+
+	function reportStoredBytes(item) {
+		if (item.acceptedBytes != null) {
+			notify('onProgress', item.id, item.file.name, item.acceptedBytes, item.file.size);
+		}
+	}
+
 	function setStatus(item, status, message = '') {
 		item.status = status;
+		// Before the status, so a caller that derives a status from the progress ends on the real one.
+		if (STOPPED_STATUSES.includes(status)) reportStoredBytes(item);
 		notify('onStatusChange', item.id, status, message);
 	}
 
@@ -223,7 +239,8 @@ export function createTusUploader({
 		return '';
 	}
 
-	async function findUploadUrl(item) {
+	/** The caller's unfinished upload of this file on the server: `{ url, offset }`, or null. */
+	async function findUpload(item) {
 		if (!item.fingerprint) return null;
 		const query = new URLSearchParams({
 			filename: item.file.name,
@@ -247,7 +264,8 @@ export function createTusUploader({
 		if (!response.ok) return null;
 		try {
 			const found = (await response.json())?.uploads?.[0];
-			return found?.url ? new URL(found.url, globalThis.location?.href).toString() : null;
+			if (!found?.url) return null;
+			return { url: new URL(found.url, globalThis.location?.href).toString(), offset: Number(found.offset) || 0 };
 		} catch {
 			return null;
 		}
@@ -296,6 +314,10 @@ export function createTusUploader({
 				const mediaUrl = response.getHeader(MEDIA_URL_HEADER);
 				if (mediaUrl) item.mediaUrl = mediaUrl;
 				if (status === 401) throw new SignInRequired();
+				// A created upload holds nothing yet, and its response carries no offset.
+				if (request.getMethod() === 'POST' && status < 400) item.acceptedBytes = 0;
+				const offset = Number.parseInt(response.getHeader('Upload-Offset'), 10);
+				if (status < 400 && !Number.isNaN(offset)) item.acceptedBytes = offset;
 				// tus-js-client answers any failed HEAD except 423 by silently creating a new upload,
 				// which would send the whole file again and could create a second media.
 				if (request.getMethod() === 'HEAD' && status >= 400 && status !== 423) {
@@ -331,6 +353,7 @@ export function createTusUploader({
 				} else if (cause instanceof UploadGone) {
 					setPendingUrl(item, null);
 					item.upload = null;
+					item.acceptedBytes = null;
 					// A remembered upload the server no longer has, or one whose completion failed,
 					// may have created its media. Sending the file again is the user's decision, through Retry.
 					const unknown = item.recalled || cause.resultUnknown;
@@ -345,6 +368,35 @@ export function createTusUploader({
 		});
 	}
 
+	// How much of an interrupted chunk the server keeps depends on what sits in front of it: a
+	// proxy that buffers the request stores nothing, and a server that reads the body as it arrives
+	// keeps what it read. Only the server knows, so a paused upload asks it. Without an answer the
+	// bar shows the last offset the server reported.
+	async function reportStoredBytesAfterPause(item, aborted) {
+		const upload = item.upload;
+		const stale = () =>
+			items.get(item.id) !== item || item.upload !== upload || item.status !== UPLOAD_STATUS.PAUSED;
+		try {
+			// The server stops writing the interrupted chunk once the request is gone.
+			await aborted;
+			if (upload?.url && !stale()) {
+				const request = (httpStack ?? new DefaultHttpStack()).createRequest('HEAD', upload.url);
+				const headers = {
+					'Tus-Resumable': '1.0.0',
+					...getHeaders(),
+					...(item.uuid ? { [UPLOAD_ID_HEADER]: item.uuid } : {}),
+				};
+				Object.entries(headers).forEach(([name, value]) => request.setHeader(name, value));
+				const response = await request.send();
+				const offset = Number.parseInt(response.getHeader('Upload-Offset'), 10);
+				if (response.getStatus() < 400 && !Number.isNaN(offset) && !stale()) item.acceptedBytes = offset;
+			}
+		} catch {
+			// Continue asks the server again before it sends anything.
+		}
+		if (!stale()) reportStoredBytes(item);
+	}
+
 	async function begin(item) {
 		// Cancelling, pausing, or beginning again while the fingerprint and the lookup run makes
 		// this start stale, so a file never ends up with two transfers.
@@ -355,9 +407,9 @@ export function createTusUploader({
 
 		item.fingerprint = item.fingerprint ?? (await fileFingerprint(item.file).catch(() => null));
 		item.pendingKey = item.pendingKey ?? (await pendingKeyOf(item).catch(() => null));
-		let uploadUrl;
+		let unfinished;
 		try {
-			uploadUrl = await findUploadUrl(item);
+			unfinished = await findUpload(item);
 		} catch {
 			// The lookup needs a sign-in; Continue repeats it, so the unfinished upload is still found.
 			if (!stale()) setStatus(item, UPLOAD_STATUS.AWAITING_SIGN_IN, SIGN_IN_MESSAGE);
@@ -366,9 +418,24 @@ export function createTusUploader({
 		if (stale()) return;
 		// The same file selected again while its first copy is still here is sent as its own upload.
 		const free = (url) => (url && !drivenByAnotherItem(item, url) ? url : null);
-		const found = free(uploadUrl);
+		const found = free(unfinished?.url);
 		const remembered = found ? null : free(pendingUrl(item));
 		item.recalled = Boolean(remembered);
+		const partlyStored = found && unfinished.offset > 0 && unfinished.offset < item.file.size;
+		if (partlyStored && callbacks.onResumeFound) {
+			// The page tells the user that part of the file is stored, and starts the rest on their answer.
+			item.acceptedBytes = unfinished.offset;
+			// No transfer exists during the wait, so discard() needs the URL to delete the stored bytes.
+			item.resumeUrl = found;
+			notify('onProgress', item.id, item.file.name, unfinished.offset, item.file.size);
+			await new Promise((resolve) => {
+				item.confirmResume = resolve;
+				notify('onResumeFound', item.id, item.file.name, unfinished.offset, item.file.size);
+			});
+			item.confirmResume = null;
+			if (stale()) return;
+			item.resumeUrl = null;
+		}
 		adoptUploadIdOf(item, found ?? remembered);
 		item.upload = buildUpload(item, found ?? remembered);
 		item.upload.start();
@@ -381,6 +448,16 @@ export function createTusUploader({
 		if (item.upload && item.status !== UPLOAD_STATUS.COMPLETE) {
 			// Terminating deletes the bytes the server holds for the unfinished upload.
 			item.upload.abort(true).catch(() => {});
+		} else if (item.resumeUrl) {
+			// Discarded while the page had not confirmed the resume: the found upload has no transfer to abort.
+			Upload.terminate(item.resumeUrl, {
+				retryDelays: [...retryDelays],
+				...(httpStack ? { httpStack } : {}),
+				onBeforeRequest(request) {
+					Object.entries(getHeaders()).forEach(([name, value]) => request.setHeader(name, value));
+				},
+			}).catch(() => {});
+			item.resumeUrl = null;
 		}
 	}
 
@@ -403,8 +480,9 @@ export function createTusUploader({
 			const item = items.get(id);
 			if (item?.status !== UPLOAD_STATUS.UPLOADING) return false;
 			item.startToken = null;
-			item.upload?.abort();
+			const aborted = item.upload?.abort();
 			setStatus(item, UPLOAD_STATUS.PAUSED);
+			reportStoredBytesAfterPause(item, aborted);
 			return true;
 		},
 		/** Continues a paused upload, or one waiting for the user to sign in again. */
@@ -415,6 +493,10 @@ export function createTusUploader({
 			if (item.upload) item.upload.start();
 			else begin(item);
 			return true;
+		},
+		/** Starts an upload that waits after onResumeFound. */
+		confirmResume(id) {
+			items.get(id)?.confirmResume?.();
 		},
 		/** Retries a failed upload from the server's offset, or sends an expired one again. */
 		retry(id) {

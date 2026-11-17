@@ -27,6 +27,8 @@ class FakeUploader {
 
 	cancelAll() {}
 
+	confirmResume() {}
+
 	remove() {}
 
 	pauseUpload(id) {
@@ -159,5 +161,41 @@ describe('BulkUploadInner leave warning', () => {
 		} finally {
 			window.removeEventListener('click', recordFollowedLink);
 		}
+	});
+});
+
+describe('BulkUploadInner resume notice', () => {
+	beforeEach(() => {
+		tus.create = (options) => new FakeUploader(options);
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }))
+		);
+	});
+
+	afterEach(() => {
+		useBulkUploadStore.getState().reset();
+		tus.create = null;
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	// An open dialog makes every other dialog inert, so two open dialogs block each other.
+	it('shows the single-upload notice only after the resume notice is answered', async () => {
+		renderBulkUpload();
+		act(() => {
+			uploader.start(0, 'river.mp4');
+			uploader.callbacks.onResumeFound(0, 'river.mp4', 2, 5);
+		});
+		// Longer than the wait before the single-upload notice opens.
+		await act(() => new Promise((resolve) => setTimeout(resolve, 500)));
+
+		expect(screen.getAllByRole('dialog')).toHaveLength(1);
+		expect(screen.getByRole('dialog', { name: 'Part of this file is already uploaded' })).toBeVisible();
+
+		fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+
+		await waitFor(() => expect(screen.getByRole('dialog', { name: 'Switch to single upload' })).toBeVisible());
+		expect(screen.getAllByRole('dialog')).toHaveLength(1);
 	});
 });

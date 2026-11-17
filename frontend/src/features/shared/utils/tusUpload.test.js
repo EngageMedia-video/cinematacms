@@ -58,6 +58,7 @@ function createTusServer() {
 		getName: () => 'FakeTusServer',
 		createRequest(method, url) {
 			const request = { method, url, headers: {} };
+			let reportSent = () => {};
 			return {
 				getMethod: () => method,
 				getURL: () => url,
@@ -65,11 +66,15 @@ function createTusServer() {
 					request.headers[name] = value;
 				},
 				getHeader: (name) => request.headers[name],
-				setProgressHandler: () => {},
+				setProgressHandler: (handler) => {
+					reportSent = handler;
+				},
 				abort: () => Promise.resolve(),
 				getUnderlyingObject: () => null,
 				async send(body) {
 					request.body = body;
+					// Like a browser, the whole body counts as sent before the server answers.
+					if (body) reportSent(body.size);
 					const response = await server.handle(request);
 					if (response.networkError) throw new Error('network error');
 					return {
@@ -106,6 +111,7 @@ function memoryStorage() {
 function setup({ lookup = { uploads: [] }, server = createTusServer(), storage = memoryStorage(), ...options } = {}) {
 	const events = [];
 	const statuses = [];
+	const progress = [];
 	const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, json: async () => lookup }));
 	const uploader = createTusUploader({
 		endpoint: ENDPOINT,
@@ -117,6 +123,7 @@ function setup({ lookup = { uploads: [] }, server = createTusServer(), storage =
 		getHeaders: () => ({ 'X-CSRFToken': 'token-1' }),
 		callbacks: {
 			onSubmitted: (id, name) => events.push(['submitted', id, name]),
+			onProgress: (id, name, sentBytes, totalBytes) => progress.push([sentBytes, totalBytes]),
 			onStatusChange: (id, status, message) => statuses.push([id, status, message]),
 			onComplete: (id, name, response) => events.push(['complete', id, response]),
 			onError: (id, name, message) => events.push(['error', id, message]),
@@ -127,7 +134,7 @@ function setup({ lookup = { uploads: [] }, server = createTusServer(), storage =
 	const settled = (status) => vi.waitFor(() => expect(statuses.map((entry) => entry[1])).toContain(status));
 	const patches = () => server.requests.filter((request) => request.method === 'PATCH');
 	const storedText = () => [...server.uploads.values()].map((upload) => upload.text);
-	return { server, uploader, events, statuses, fetchImpl, settled, patches, storedText, storage };
+	return { server, uploader, events, statuses, progress, fetchImpl, settled, patches, storedText, storage };
 }
 
 describe('createTusUploader', () => {
@@ -512,6 +519,206 @@ describe('createTusUploader', () => {
 			expect(failures).toBe(2);
 			expect(server.requests.filter((request) => request.method === 'POST')).toHaveLength(1);
 			expect(storedText()).toEqual([CONTENT]);
+		});
+	});
+
+	describe('telling the page about a partly stored file', () => {
+		const url = `${ENDPOINT}upload-9/`;
+
+		function partlyStored(offset = 10) {
+			const found = [];
+			const context = setup({
+				lookup: { uploads: [{ url, size: 26, offset }] },
+				callbacks: {
+					onResumeFound: (...args) => found.push(args),
+					onStatusChange: (id, status) => context.statuses.push([id, status]),
+					onProgress: (id, name, sentBytes, totalBytes) => context.progress.push([sentBytes, totalBytes]),
+				},
+			});
+			context.server.uploads.set(url, { length: 26, text: CONTENT.slice(0, offset) });
+			return { ...context, found };
+		}
+
+		it('waits for the page to confirm before it sends the rest', async () => {
+			const { server, uploader, found, progress, settled, patches, storedText } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toEqual([[0, 'clip.mp4', 10, 26]]));
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			expect(server.requests).toEqual([]);
+			expect(progress).toEqual([[10, 26]]);
+
+			uploader.confirmResume(0);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(patches().map((request) => request.headers['Upload-Offset'])).toEqual(['10', '20']);
+			expect(storedText()).toEqual([CONTENT]);
+		});
+
+		it('deletes the stored part and sends nothing when cancelled before the page confirms', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.cancel(0);
+			uploader.confirmResume(0);
+			await vi.waitFor(() => expect(server.uploads.has(url)).toBe(false));
+
+			expect(server.requests.map((request) => request.method)).toEqual(['DELETE']);
+			expect(server.requests[0].headers['X-CSRFToken']).toBe('token-1');
+		});
+
+		it('deletes the stored part of every waiting file when all uploads are cancelled', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.cancelAll();
+
+			await vi.waitFor(() => expect(server.uploads.has(url)).toBe(false));
+		});
+
+		it('keeps the stored part when the upload is paused before the page confirms', async () => {
+			const { server, uploader, found } = partlyStored();
+
+			uploader.addFiles([makeFile()]);
+			await vi.waitFor(() => expect(found).toHaveLength(1));
+			uploader.pauseUpload(0);
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			expect(server.requests).toEqual([]);
+			expect(server.uploads.get(url).text).toBe(CONTENT.slice(0, 10));
+		});
+
+		it('does not wait when the server holds the whole file', async () => {
+			const { uploader, found, settled } = partlyStored(26);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(found).toEqual([]);
+		});
+
+		it('does not wait for a new file', async () => {
+			const found = [];
+			const context = setup({
+				callbacks: {
+					onResumeFound: (...args) => found.push(args),
+					onStatusChange: (id, status) => context.statuses.push([id, status]),
+				},
+			});
+
+			context.uploader.addFiles([makeFile()]);
+			await context.settled(UPLOAD_STATUS.COMPLETE);
+
+			expect(found).toEqual([]);
+		});
+	});
+
+	describe('progress of an upload that stops', () => {
+		it('shows the bytes the server holds when the last chunk is refused for a sign-in', async () => {
+			const { server, uploader, progress, settled, storedText } = setup();
+			let signedIn = false;
+			server.intercept = (request) =>
+				!signedIn && request.method === 'PATCH' && request.headers['Upload-Offset'] === '20'
+					? { status: 401 }
+					: null;
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			// The refused chunk left the browser in full, and none of it was stored.
+			expect(progress).toContainEqual([26, 26]);
+			expect(progress.at(-1)).toEqual([20, 26]);
+
+			signedIn = true;
+			expect(uploader.continueUpload(0)).toBe(true);
+			await settled(UPLOAD_STATUS.COMPLETE);
+			expect(storedText()).toEqual([CONTENT]);
+			expect(progress.at(-1)).toEqual([26, 26]);
+		});
+
+		// A server that reads the body as it arrives keeps the part of an interrupted chunk it read.
+		it('asks the server what it holds when the upload is paused during a chunk', async () => {
+			const { server, uploader, progress, settled, storedText } = setup();
+			server.intercept = (request) => {
+				if (request.method !== 'PATCH' || request.headers['Upload-Offset'] !== '10') return null;
+				server.uploads.get(new URL(request.url, 'http://localhost').pathname).text += CONTENT.slice(10, 14);
+				uploader.pauseUpload(0);
+				return { networkError: true };
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.PAUSED);
+			await vi.waitFor(() => expect(progress.at(-1)).toEqual([14, 26]));
+
+			// After the chunk left the browser, the bar never drops to the 10 bytes of the last answered
+			// chunk, which is less than the server holds.
+			const sentInFull = progress.findLastIndex(([sent]) => sent === 20);
+			expect(progress.slice(sentInFull)).toEqual([
+				[20, 26],
+				[14, 26],
+			]);
+			const check = server.requests.at(-1);
+			expect(check.method).toBe('HEAD');
+			expect(check.headers).toMatchObject({ 'Tus-Resumable': '1.0.0', 'X-CSRFToken': 'token-1' });
+
+			server.intercept = () => null;
+			uploader.continueUpload(0);
+			await settled(UPLOAD_STATUS.COMPLETE);
+			expect(storedText()).toEqual([CONTENT]);
+		});
+
+		it('shows the last offset the server reported when it cannot be asked after a pause', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) => {
+				if (request.method === 'HEAD') return { status: 503 };
+				if (request.method !== 'PATCH' || request.headers['Upload-Offset'] !== '10') return null;
+				uploader.pauseUpload(0);
+				return { networkError: true };
+			};
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.PAUSED);
+
+			await vi.waitFor(() => expect(progress.at(-1)).toEqual([10, 26]));
+		});
+
+		it('shows the bytes the server holds when the upload fails', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) =>
+				request.method === 'PATCH' && request.headers['Upload-Offset'] === '10' ? { status: 503 } : null;
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.FAILED);
+
+			expect(progress.at(-1)).toEqual([10, 26]);
+		});
+
+		it('shows nothing stored when the first chunk of a new upload is refused', async () => {
+			const { server, uploader, progress, settled } = setup();
+			server.intercept = (request) => (request.method === 'PATCH' ? { status: 401 } : null);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			expect(progress).toContainEqual([10, 26]);
+			expect(progress.at(-1)).toEqual([0, 26]);
+		});
+
+		it('shows the offset of a resumed upload whose first chunk is refused', async () => {
+			const url = `${ENDPOINT}upload-9/`;
+			const { server, uploader, progress, settled } = setup({
+				lookup: { uploads: [{ url, size: 26, offset: 10 }] },
+			});
+			server.uploads.set(url, { length: 26, text: CONTENT.slice(0, 10) });
+			server.intercept = (request) => (request.method === 'PATCH' ? { status: 401 } : null);
+
+			uploader.addFiles([makeFile()]);
+			await settled(UPLOAD_STATUS.AWAITING_SIGN_IN);
+
+			expect(progress.at(-1)).toEqual([10, 26]);
 		});
 	});
 

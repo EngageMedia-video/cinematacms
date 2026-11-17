@@ -225,6 +225,7 @@ describe('AddMediaPage leaving the page', () => {
 				pauseUpload: vi.fn(() => true),
 				continueUpload: vi.fn(() => true),
 				retry: vi.fn(() => true),
+				confirmResume: vi.fn(),
 				getSize: () => 2048,
 			};
 			return uploader;
@@ -283,6 +284,21 @@ describe('AddMediaPage leaving the page', () => {
 			act(() => uploaderOptions.callbacks.onComplete(0, 'river.mp4', { media_url: '/view?m=single123' }));
 
 			expect(listItem()).toHaveAttribute('data-upload-status', 'complete');
+		});
+
+		it('tells the user that part of the file is saved, and starts the rest on OK', async () => {
+			const user = userEvent.setup();
+			startUpload();
+
+			act(() => uploaderOptions.callbacks.onResumeFound(0, 'river.mp4', 1024, 2048));
+
+			expect(screen.getByRole('dialog', { name: 'Part of this file is already uploaded' })).toBeVisible();
+			expect(uploader.confirmResume).not.toHaveBeenCalled();
+
+			await user.click(screen.getByRole('button', { name: 'OK' }));
+
+			expect(uploader.confirmResume).toHaveBeenCalledExactlyOnceWith(0);
+			expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 		});
 
 		it('asks the user to sign in again and continues the same upload', async () => {

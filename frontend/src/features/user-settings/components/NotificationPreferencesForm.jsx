@@ -8,32 +8,11 @@ const PREFERENCE_CATEGORIES = [
 		title: 'Engagement & Discussions',
 		items: [
 			{ key: 'on_comment', label: 'New comment on your film', status: 'active' },
-			{ label: 'Replies to your comment', status: 'coming_soon' },
 			{ key: 'on_like', label: 'New reactions to your film', status: 'active' },
-		],
-	},
-	{
-		id: 'upload',
-		title: 'Upload & Archive Updates',
-		items: [
-			{ label: 'Upload completed', status: 'coming_soon' },
-			{ label: 'Upload failed', status: 'coming_soon' },
-			{ label: 'Processing completed', status: 'coming_soon' },
-			{ label: 'Scheduled visibility change', status: 'coming_soon' },
-			{ label: 'New films from filmmakers you follow', status: 'coming_soon' },
-		],
-	},
-	{
-		id: 'institutional',
-		title: 'Institutional / Access Notifications',
-		items: [
-			{ label: 'Film accessed by reviewer', status: 'coming_soon' },
-			{
-				key: 'on_added_to_playlist',
-				label: 'Film added to a curated collection',
-				status: 'active',
-			},
-			{ label: 'Request for screening or usage', status: 'coming_soon' },
+			{ key: 'on_mention', label: 'When someone mentions you', status: 'active' },
+			{ key: 'on_added_to_playlist', label: 'Your film is added to a playlist', status: 'active' },
+			// The backend already sends on_reply; activate this row once comments can be replied to.
+			{ label: 'Replies to your comment', status: 'coming_soon' },
 		],
 	},
 ];
@@ -55,7 +34,7 @@ function arePrefsEqual(a, b) {
 
 function ComingSoonPill() {
 	return (
-		<span className="inline-flex min-h-[24px] items-center rounded-full bg-bg-surface-muted px-3 text-[11px] font-medium leading-[14px] tracking-normal text-text-muted">
+		<span className="inline-flex min-h-[24px] items-center justify-self-start rounded-full bg-bg-surface-muted px-3 text-[11px] font-medium leading-[14px] tracking-normal text-text-muted">
 			Coming soon
 		</span>
 	);
@@ -158,11 +137,11 @@ export function NotificationPreferencesForm() {
 		<form onSubmit={handleSave} className="flex flex-col gap-[26px]">
 			<div className="flex flex-col gap-[8px]">
 				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-text-strong">
-					Notification Preference
+					Notification Preferences
 				</h2>
 				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
-					Choose how and when you&apos;d like to be notified about activity on your films and discussions, so
-					you stay informed without unnecessary noise.
+					Choose how you hear about activity on your films and in discussions. App shows it in your Cinemata
+					notifications. Email sends it to your inbox as well.
 				</p>
 			</div>
 
@@ -201,6 +180,14 @@ export function NotificationPreferencesForm() {
 					</React.Fragment>
 				);
 			})}
+
+			<div className="flex flex-col gap-[14px]">
+				<div className="h-px bg-border-subtle" aria-hidden="true" />
+				<p className="m-0 text-[13px] font-normal leading-[20px] tracking-normal text-text-muted">
+					Some updates are always sent by email, such as when your film is published or its visibility window
+					ends.
+				</p>
+			</div>
 
 			<div
 				className={`items-center justify-end gap-3 pt-2 ${isDirty || isSaveError || isSuccess ? 'flex' : 'hidden'}`}
