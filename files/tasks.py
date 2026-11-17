@@ -107,6 +107,10 @@ ERRORS_LIST = [
     "Unable to find a suitable output format for",
 ]
 
+# ffmpeg handles SIGTERM itself: it finalises the output, which can be a valid
+# but truncated file, and exits with this status instead of dying by the signal.
+FFMPEG_EXIT_AFTER_SIGNAL = 255
+
 # ffmpeg writes no frame, and no file, when -ss lands at or past the last
 # frame, so media no longer than this start their preview from the beginning.
 PREVIEW_SEEK_SECONDS = 3
@@ -426,7 +430,11 @@ def encode_media(
             tf,
         ]
         ret = run_command(command)
-        if os.path.exists(tf) and get_file_type(tf) == "image":
+        stopped_by_signal = ret["returncode"] < 0 or ret["returncode"] == FFMPEG_EXIT_AFTER_SIGNAL
+        if stopped_by_signal and self.request.retries < 1:
+            rm_file(tf)
+            raise self.retry(countdown=5, max_retries=1)
+        if ret["returncode"] == 0 and os.path.exists(tf) and get_file_type(tf) == "image":
             with open(tf, "rb") as f:
                 myfile = File(f)
                 encoding.status = "success"
