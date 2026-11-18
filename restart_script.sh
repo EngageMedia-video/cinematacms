@@ -339,11 +339,12 @@ echo "Starting Cinemata restart process..."
 # Navigate to cinemata directory
 cd /home/cinemata
 
-# Activate virtual environment
-source /home/cinemata/bin/activate
-
 # Navigate to cinematacms directory
 cd cinematacms
+
+# Activate virtual environment
+deploy/migrate-python-runtime.sh --adopt-legacy-venv
+source /home/cinemata/venv/bin/activate
 
 # Both steps can fail, and neither changes what is served, so they run before the
 # checkout moves and before the Python packages change.

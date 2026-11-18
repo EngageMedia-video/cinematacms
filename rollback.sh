@@ -58,9 +58,6 @@ fi
 
 echo -e "${GREEN}Starting Cinemata rollback...${NC}"
 
-cd "$CINEMATA_HOME"
-# shellcheck disable=SC1091
-source "${CINEMATA_HOME}/bin/activate"
 # Django reads its settings, SECRET_KEY among them, from this file. The frontend
 # rebuild below runs collectstatic.
 set -a
@@ -71,6 +68,9 @@ cd "$REPO_DIR"
 # Loaded before the checkout below replaces the file on disk.
 # shellcheck source=restart_script.sh
 source "$REPO_DIR/restart_script.sh"
+deploy/migrate-python-runtime.sh --adopt-legacy-venv
+# shellcheck disable=SC1091
+source "${CINEMATA_HOME}/venv/bin/activate"
 
 if [ ! -s "$DEPLOY_LOG" ]; then
   echo -e "${RED}No deploy log at $DEPLOY_LOG (or empty). Cannot rollback.${NC}" >&2
@@ -92,6 +92,16 @@ fi
 if ! git cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then
   echo -e "${RED}Target commit $TARGET_SHA is not present in the local repo.${NC}" >&2
   echo -e "${YELLOW}It may have been pruned. Try 'git fetch --all' and retry, or check out manually.${NC}" >&2
+  exit 1
+fi
+
+# The restart script of a commit without versioned virtualenvs installs packages into
+# the legacy virtualenv, so the link must name that virtualenv before such a checkout.
+if ! git cat-file -e "${TARGET_SHA}:deploy/migrate-python-runtime.sh" 2>/dev/null &&
+  [ ! "${CINEMATA_HOME}/venv" -ef "$CINEMATA_HOME" ]; then
+  echo -e "${RED}$TARGET_SHA predates versioned virtualenvs, but the services run from $(readlink -f "${CINEMATA_HOME}/venv").${NC}" >&2
+  echo -e "${YELLOW}Move them back to the virtualenv in $CINEMATA_HOME first, then run this script again:${NC}" >&2
+  echo -e "${YELLOW}  sudo $REPO_DIR/deploy/migrate-python-runtime.sh --rollback${NC}" >&2
   exit 1
 fi
 

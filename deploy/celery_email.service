@@ -9,7 +9,7 @@ Group=www-data
 EnvironmentFile=/etc/cinematacms/app.env
 Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=CELERY_QUEUE="email_tasks"
-Environment=CELERY_BIN="/home/cinemata/bin/celery"
+Environment=CELERY_BIN="/home/cinemata/venv/bin/celery"
 Environment=CELERY_APP="cms"
 Environment=CELERYD_OPTS="--prefetch-multiplier=1"
 Environment=CINEMATA_CELERY_EMAIL_CONCURRENCY=4

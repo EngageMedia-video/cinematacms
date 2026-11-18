@@ -10,7 +10,7 @@ EnvironmentFile=/etc/cinematacms/app.env
 Restart=always
 RestartSec=10
 Environment=APP_DIR="/home/cinemata/cinematacms"
-Environment=CELERY_BIN="/home/cinemata/bin/celery"
+Environment=CELERY_BIN="/home/cinemata/venv/bin/celery"
 Environment=CELERY_APP="cms"
 Environment=CELERYD_PID_FILE="/home/cinemata/cinematacms/pids/beat%n.pid"
 Environment=CELERYD_LOG_FILE="/home/cinemata/cinematacms/logs/beat%N.log"

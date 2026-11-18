@@ -405,14 +405,13 @@ else
 fi
 
 CURRENT_STEP="Python dependency installation"
-echo 'Creating python virtualenv on /home/cinemata'
-
-cd /home/cinemata || exit 1
-virtualenv . --python=python3
+# shellcheck source=deploy/migrate-python-runtime.sh
+source "$SCRIPT_DIR/deploy/migrate-python-runtime.sh"
+build_python_venv "$PYTHON_RUNTIME_VENV"
+point_python_venv_link "$PYTHON_VENV_LINK" "$PYTHON_RUNTIME_VENV"
 # shellcheck source=/dev/null
-source /home/cinemata/bin/activate
-cd cinematacms || exit 1
-pip install -r requirements.txt
+source /home/cinemata/venv/bin/activate
+cd /home/cinemata/cinematacms || exit 1
 CURRENT_STEP="Whisper dependency installation"
 cd .. && git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp/ || exit 1

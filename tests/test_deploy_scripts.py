@@ -22,6 +22,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
+MIGRATOR = PROJECT_ROOT / "deploy" / "migrate-python-runtime.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
@@ -925,6 +926,11 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.observability_installer = Path(self.temp_dir.name) / "install-observability"
         self.fake_bin.mkdir()
         self.deploy_root.mkdir()
+        # An existing install whose virtualenv is the home directory itself.
+        legacy_python = self.deploy_root / "home/cinemata/bin/python"
+        legacy_python.parent.mkdir(parents=True)
+        legacy_python.write_text("#!/bin/sh\n")
+        legacy_python.chmod(0o755)
         self._write_fake_command("systemctl")
         self._write_fake_command("chgrp")
         self._write_fake_command("nginx", 'exit "${FAKE_NGINX_EXIT:-0}"')
@@ -1388,6 +1394,110 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertRegex(unit, r"(?m)^ExecStart=/bin/sh -c 'exec \$\{CELERY_BIN\} ")
         self.assertIn("\nKillMode=mixed\n", unit)
         self.assertNotIn("ExecStop=", unit)
+
+    def apply_without_restart(self):
+        return self.run_updater(
+            "--domain", "video.example.org", "--proxy", "none", "--observability", "none", "--no-restart"
+        )
+
+    def installed_programs(self):
+        """The program each installed unit starts, as a path of the server."""
+        programs = {}
+        for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
+            text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
+            celery = re.search(r'(?m)^Environment=CELERY_BIN="([^"]+)"$', text)
+            programs[unit] = celery[1] if celery else shlex.split(re.search(r"(?m)^ExecStart=(.*)$", text)[1])[0]
+        return programs
+
+    def test_apply_links_the_virtualenv_of_an_older_install_for_every_unit(self):
+        legacy_bin = self.deploy_root / "home/cinemata/bin"
+        for program in ("uwsgi", "celery"):
+            (legacy_bin / program).write_text("#!/bin/sh\n")
+
+        result = self.apply_without_restart()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        link = self.deploy_root / "home/cinemata/venv"
+        self.assertEqual(os.readlink(link), str(self.deploy_root / "home/cinemata"))
+        for unit, program in self.installed_programs().items():
+            with self.subTest(unit=unit):
+                self.assertTrue(program.startswith("/home/cinemata/venv/bin/"), program)
+                self.assertTrue((self.deploy_root / program.lstrip("/")).is_file(), program)
+
+    def test_apply_keeps_the_virtualenv_that_the_link_names(self):
+        venv = self.deploy_root / "home/cinemata/venvs/py3.14"
+        (venv / "bin").mkdir(parents=True)
+        link = self.deploy_root / "home/cinemata/venv"
+        link.symlink_to(venv)
+
+        result = self.apply_without_restart()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(os.readlink(link), str(venv))
+
+    def test_apply_installs_no_unit_when_no_virtualenv_can_be_linked(self):
+        (self.deploy_root / "home/cinemata/bin/python").unlink()
+
+        result = self.apply_without_restart()
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("holds no virtualenv", result.stderr)
+        self.assertFalse((self.deploy_root / "home/cinemata/venv").exists())
+        self.assertFalse((self.deploy_root / "etc/systemd/system/mediacms.service").exists())
+
+    def test_installed_mediacms_unit_overrides_the_virtualenv_of_uwsgi_ini(self):
+        """uWSGI starts Python from the virtualenv it is given last.
+
+        A unit from an older release still reads the virtualenv of uwsgi.ini, so the
+        ini keeps naming the legacy one and this unit's --virtualenv must win.
+        """
+        result = self.apply_without_restart()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        exec_start = shlex.split(
+            re.search(r"(?m)^ExecStart=(.*)$", (self.deploy_root / "etc/systemd/system/mediacms.service").read_text())[
+                1
+            ]
+        )
+        self.assertEqual(
+            exec_start,
+            [
+                "/home/cinemata/venv/bin/uwsgi",
+                "--ini",
+                "/home/cinemata/cinematacms/uwsgi.ini",
+                "--virtualenv",
+                "/home/cinemata/venv",
+            ],
+        )
+        self.assertRegex((PROJECT_ROOT / "uwsgi.ini").read_text(), r"(?m)^virtualenv = /home/cinemata$")
+
+        not_a_python_home = Path(self.temp_dir.name) / "legacy-home"
+        not_a_python_home.mkdir()
+        portable = Path(self.temp_dir.name) / "uwsgi.ini"
+        portable.write_text(f"[uwsgi]\nvirtualenv = {not_a_python_home}\n")
+        this_python_home = subprocess.run(
+            [sys.executable, "-c", "import sys; print(sys.base_prefix)"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        uwsgi = str(Path(sys.executable).parent / "uwsgi")
+        arguments = {"/home/cinemata/cinematacms/uwsgi.ini": str(portable), "/home/cinemata/venv": this_python_home}
+        as_the_unit = [uwsgi, *(arguments.get(argument, argument) for argument in exec_start[1:]), "--no-server"]
+        as_an_older_unit = [uwsgi, "--ini", str(portable), "--no-server"]
+        for command, starts in ((as_the_unit, True), (as_an_older_unit, False)):
+            with self.subTest(command=command):
+                started = subprocess.run(command, cwd=self.temp_dir.name, capture_output=True, text=True, check=False)
+                self.assertEqual(started.returncode == 0, starts, started.stderr)
+
+    def test_uwsgi_ini_does_not_run_os_after_fork_hooks(self):
+        """With py-call-osafterfork, uWSGI 2.0 workers abort on Python 3.13 and later (unbit/uwsgi#2710)."""
+        unit = (PROJECT_ROOT / "deploy/mediacms.service").read_text()
+        self.assertNotIn("py-call-osafterfork", unit)
+        for path in (PROJECT_ROOT / "uwsgi.ini", PROJECT_ROOT / "deploy/uwsgi.ini"):
+            with self.subTest(path=path):
+                options = [
+                    line.split("=")[0].strip()
+                    for line in path.read_text().splitlines()
+                    if "=" in line and not line.lstrip().startswith((";", "#"))
+                ]
+                self.assertNotIn("py-call-osafterfork", options)
 
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
@@ -1877,6 +1987,223 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("Certbot and nginx", second.stderr)
 
 
+class PythonRuntimeMigrationTests(unittest.TestCase):
+    RUNTIME_VENV = "/home/cinemata/venvs/py3.14"
+    LEGACY_VENV = "/home/cinemata"
+    REQUIREMENTS = "/home/cinemata/cinematacms/requirements.txt"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        # readlink -f answers with the resolved path, which differs from a temporary path on macOS.
+        self.deploy_root = Path(self.temp_dir.name).resolve() / "root"
+        self.fake_bin = Path(self.temp_dir.name) / "bin"
+        self.command_log = Path(self.temp_dir.name) / "commands.log"
+        self.runtime_template = Path(self.temp_dir.name) / "python-3.14-venv"
+        self.fake_bin.mkdir()
+        self.write_venv(self.deploy_root / self.LEGACY_VENV.lstrip("/"), "3.10.12")
+        self.write_venv(self.runtime_template, "3.14.0")
+        write_tree(
+            self.deploy_root,
+            {
+                self.REQUIREMENTS.lstrip("/"): "django\n",
+                "etc/cinematacms/app.env": "CINEMATA_SERVICE_SETTING=from-app-env\n",
+            },
+        )
+        uv_version = re.search(r"(?m)^UV_VERSION=(\S+)$", MIGRATOR.read_text())[1]
+        self.write_command(
+            self.deploy_root / "opt/cinematacms/bin/uv",
+            textwrap.dedent(
+                f"""\
+                [ "$1" != --version ] || {{ echo "uv {uv_version}"; exit 0; }}
+                log "uv $*"
+                if [ "$1" = venv ]; then
+                    for venv; do :; done
+                    mkdir -p "$venv" && cp -R "$FAKE_RUNTIME_VENV/." "$venv/"
+                fi
+                """
+            ),
+        )
+        self.write_command(
+            self.fake_bin / "runuser",
+            'log "runuser $* with $CINEMATA_SERVICE_SETTING in $PWD"\nshift 3\n"$@" || exit\nexit "$FAKE_CHECK_EXIT"',
+        )
+        self.write_command(self.fake_bin / "chown", 'log "chown $*"')
+        self.write_command(
+            self.deploy_root / "home/cinemata/cinematacms/deploy/apply-release-config.sh",
+            'log "apply-release-config $* while venv -> $(readlink "$FAKE_VENV_LINK")"',
+        )
+
+    def write_command(self, path, body):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'#!/bin/sh\nlog() {{ printf \'%s\\n\' "$*" >> "$FAKE_COMMAND_LOG"; }}\n{body}\n')
+        path.chmod(0o755)
+
+    def write_venv(self, venv, version):
+        self.write_command(
+            venv / "bin/python",
+            f'case "$1" in --version) echo "Python {version}" ;; -c) ;; *) log "$0 $*" ;; esac',
+        )
+        self.write_command(venv / "bin/pip", 'log "$0 $*"')
+
+    def migrate(self, *arguments, check_exit="0"):
+        env = os.environ.copy()
+        env.update(
+            {
+                "CINEMATA_DEPLOY_ROOT": str(self.deploy_root),
+                "CINEMATA_SKIP_ROOT_CHECK": "1",
+                "FAKE_COMMAND_LOG": str(self.command_log),
+                "FAKE_RUNTIME_VENV": str(self.runtime_template),
+                "FAKE_VENV_LINK": str(self.venv_link),
+                "FAKE_CHECK_EXIT": check_exit,
+                "PATH": f"{self.fake_bin}:{env['PATH']}",
+            }
+        )
+        self.command_log.write_text("")
+        result = subprocess.run(
+            ["bash", str(MIGRATOR), *arguments], env=env, capture_output=True, text=True, check=False
+        )
+        commands = self.command_log.read_text().replace(str(self.deploy_root), "").splitlines()
+        return result, commands
+
+    @property
+    def venv_link(self):
+        return self.deploy_root / "home/cinemata/venv"
+
+    def link_target(self, link):
+        return os.readlink(link).replace(str(self.deploy_root), "")
+
+    def checks_and_restarts_on(self, venv):
+        return [
+            f"runuser -u www-data -- {venv}/bin/python manage.py check with from-app-env in /home/cinemata/cinematacms",
+            f"{venv}/bin/python manage.py check",
+            "chown -R www-data: /home/cinemata/venvs",
+            "chown -h www-data: /home/cinemata/venv",
+            f"apply-release-config  while venv -> {venv}",
+        ]
+
+    def test_migration_builds_and_checks_the_new_virtualenv_before_the_services_use_it(self):
+        result, commands = self.migrate()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            commands,
+            [
+                "uv python install --no-config --no-bin 3.14",
+                f"uv venv --no-project --no-config --managed-python --seed --clear --python 3.14 {self.RUNTIME_VENV}",
+                f"{self.RUNTIME_VENV}/bin/pip install --disable-pip-version-check -r {self.REQUIREMENTS}",
+                *self.checks_and_restarts_on(self.RUNTIME_VENV),
+            ],
+        )
+        self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
+        self.assertEqual(self.link_target(self.deploy_root / "home/cinemata/venvs/previous"), self.LEGACY_VENV)
+        self.assertIn("now runs on Python 3.14.0", result.stdout)
+
+    def test_failed_check_leaves_the_services_on_the_virtualenv_they_use(self):
+        result, commands = self.migrate(check_exit="1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
+        self.assertFalse((self.deploy_root / "home/cinemata/venvs/previous").is_symlink())
+        self.assertFalse([command for command in commands if command.startswith(("chown", "apply-release-config"))])
+
+    def test_second_migration_builds_nothing_and_keeps_the_previous_virtualenv(self):
+        first, _ = self.migrate()
+        self.assertEqual(first.returncode, 0, first.stderr)
+
+        second, commands = self.migrate()
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(
+            commands,
+            [
+                "uv python install --no-config --no-bin 3.14",
+                f"{self.RUNTIME_VENV}/bin/pip install --disable-pip-version-check -r {self.REQUIREMENTS}",
+                *self.checks_and_restarts_on(self.RUNTIME_VENV),
+            ],
+        )
+        self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
+        self.assertEqual(self.link_target(self.deploy_root / "home/cinemata/venvs/previous"), self.LEGACY_VENV)
+
+    def test_rollback_brings_the_previous_virtualenv_up_to_date_before_it_switches(self):
+        migration, _ = self.migrate()
+        self.assertEqual(migration.returncode, 0, migration.stderr)
+
+        for attempt in ("first", "second"):
+            with self.subTest(attempt=attempt):
+                rollback, commands = self.migrate("--rollback")
+
+                self.assertEqual(rollback.returncode, 0, rollback.stderr)
+                self.assertEqual(
+                    commands,
+                    [
+                        f"{self.LEGACY_VENV}/bin/pip install --disable-pip-version-check -r {self.REQUIREMENTS}",
+                        *self.checks_and_restarts_on(self.LEGACY_VENV),
+                    ],
+                )
+                self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
+                self.assertIn("now runs on Python 3.10.12", rollback.stdout)
+
+    def test_failed_rollback_check_leaves_the_services_on_the_new_virtualenv(self):
+        migration, _ = self.migrate()
+        self.assertEqual(migration.returncode, 0, migration.stderr)
+
+        rollback, commands = self.migrate("--rollback", check_exit="1")
+
+        self.assertNotEqual(rollback.returncode, 0)
+        self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
+        self.assertFalse([command for command in commands if command.startswith("apply-release-config")])
+
+    def test_rollback_without_a_previous_virtualenv_changes_nothing(self):
+        result, commands = self.migrate("--rollback")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no earlier virtualenv is known", result.stderr)
+        self.assertEqual(commands, [])
+
+    def test_adoption_links_a_missing_link_to_the_legacy_virtualenv_and_nothing_else(self):
+        venv = self.deploy_root / self.RUNTIME_VENV.lstrip("/")
+        for existing, expected in ((None, self.LEGACY_VENV), (venv, self.RUNTIME_VENV)):
+            with self.subTest(existing=existing):
+                self.venv_link.unlink(missing_ok=True)
+                if existing:
+                    self.write_venv(existing, "3.14.0")
+                    self.venv_link.symlink_to(existing)
+
+                result, commands = self.migrate("--adopt-legacy-venv")
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(commands, [])
+                self.assertEqual(self.link_target(self.venv_link), expected)
+
+    def test_adoption_refuses_a_link_whose_virtualenv_is_gone(self):
+        gone = self.deploy_root / "home/cinemata/venvs/py3.13"
+        self.venv_link.symlink_to(gone)
+
+        result, _ = self.migrate("--adopt-legacy-venv")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("which does not exist", result.stderr)
+        self.assertEqual(os.readlink(self.venv_link), str(gone))
+
+    def test_uv_whose_checksum_differs_from_the_pin_is_not_installed(self):
+        uv = self.deploy_root / "opt/cinematacms/bin/uv"
+        uv.unlink()
+        self.write_command(self.fake_bin / "uname", "echo x86_64")
+        self.write_command(
+            self.fake_bin / "curl",
+            'while [ "$1" != --output ]; do shift; done\nprintf "not uv" > "$2"',
+        )
+
+        result, commands = self.migrate()
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not match the checksum pinned", result.stderr)
+        self.assertFalse(uv.exists())
+        self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
+        self.assertEqual(commands, [])
+
+
 class FrontendArtifactTests(unittest.TestCase):
     COMMIT = "a" * 40
     OTHER_COMMIT = "b" * 40
@@ -2356,6 +2683,27 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn("\nrestart_application_services\n", rollback)
         self.assertNotRegex(rollback, r"(?m)^\s*systemctl restart (?!nginx$)")
 
+    def test_deploy_scripts_link_a_legacy_virtualenv_before_they_activate_the_link(self):
+        for script in ("restart_script.sh", "rollback.sh"):
+            with self.subTest(script=script):
+                text = (PROJECT_ROOT / script).read_text()
+
+                self.assertNotIn("/home/cinemata/bin/", text)
+                self.assertLess(
+                    text.index("deploy/migrate-python-runtime.sh --adopt-legacy-venv\n"),
+                    text.index("/venv/bin/activate"),
+                )
+
+    def test_rollback_to_a_commit_without_versioned_virtualenvs_needs_the_legacy_virtualenv(self):
+        rollback = (PROJECT_ROOT / "rollback.sh").read_text()
+        guard = 'if ! git cat-file -e "${TARGET_SHA}:deploy/migrate-python-runtime.sh" 2>/dev/null &&\n'
+        guard += '  [ ! "${CINEMATA_HOME}/venv" -ef "$CINEMATA_HOME" ]; then\n'
+
+        self.assertIn(guard, rollback)
+        self.assertIn("migrate-python-runtime.sh --rollback", rollback[rollback.index(guard) :])
+        self.assertLess(rollback.index(guard), rollback.index('if [ "$DRY_RUN" -eq 1 ]'))
+        self.assertLess(rollback.index(guard), rollback.index("git checkout --detach"))
+
     def run_with_service_restart_armed(self, command):
         fake_bin = self.test_root / "bin"
         fake_bin.mkdir(exist_ok=True)
@@ -2726,6 +3074,8 @@ class StaticReleaseTests(unittest.TestCase):
     OLD_REVISION = "0" * 40
     NEW_REVISION = "a" * 40
     UNITS = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
+    # Changes nothing on a host whose /home/cinemata/venv exists.
+    LINKS_A_LEGACY_VENV = "deploy/migrate-python-runtime.sh --adopt-legacy-venv"
     ACTIVATE = (
         "adopt_served_frontend\nnew_static_release\nunpack_frontend_artifact\n"
         "collect_static_release\nactivate_static_release"
@@ -2857,7 +3207,7 @@ class StaticReleaseTests(unittest.TestCase):
         export DEPLOY_SHELL=$$
         source "$1"; shift
         cd() { if [ "$1" = /home/cinemata ]; then builtin cd "$FAKE_SERVER_HOME"; else builtin cd "$@"; fi; }
-        source() { case "$1" in /home/cinemata/bin/activate | /etc/cinematacms/app.env) ;; *) builtin source "$@" ;; esac; }
+        source() { case "$1" in /home/cinemata/venv/bin/activate | /etc/cinematacms/app.env) ;; *) builtin source "$@" ;; esac; }
         mkdir() { [ "$*" = "-p /var/log/cinemata" ] || command mkdir "$@"; }
         main "$@"
         """
@@ -2911,7 +3261,8 @@ class StaticReleaseTests(unittest.TestCase):
             self.write_stand_in(fake_bin / name, name, body)
         self.collectstatic_becomes(self.COLLECTSTATIC_COLLECTS_THE_BUILD)
         self.vite_becomes(self.VITE_BUILDS_THE_SOURCE)
-        self.write_stand_in(checkout / "deploy/apply-release-config.sh", "deploy/apply-release-config.sh", "exit 0")
+        for script in ("deploy/apply-release-config.sh", "deploy/migrate-python-runtime.sh"):
+            self.write_stand_in(checkout / script, script, "exit 0")
         return checkout
 
     def host_whose_deploy_can_be_killed_after_each_step(self):
@@ -3363,7 +3714,11 @@ class StaticReleaseTests(unittest.TestCase):
         )
 
     def test_restart_with_a_prebuilt_frontend_keeps_every_other_step(self):
-        before_the_frontend = ["pip install -r requirements.txt", "deploy/apply-release-config.sh --no-restart"]
+        before_the_frontend = [
+            self.LINKS_A_LEGACY_VENV,
+            "pip install -r requirements.txt",
+            "deploy/apply-release-config.sh --no-restart",
+        ]
         after_the_frontend = [
             "python manage.py migrate",
             "python manage.py backfill_media_storage_usage",
@@ -3423,7 +3778,7 @@ class StaticReleaseTests(unittest.TestCase):
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(steps, [])
+        self.assertEqual(steps, [self.LINKS_A_LEGACY_VENV])
         self.assertEqual(self.served(checkout), old_frontend)
 
     def test_restart_checks_the_artifact_before_it_moves_the_checkout(self):
@@ -3438,7 +3793,7 @@ class StaticReleaseTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(f"not from {self.NEW_REVISION}", result.stderr)
         self.assertEqual(git_commands, [])
-        self.assertEqual(steps, [])
+        self.assertEqual(steps, [self.LINKS_A_LEGACY_VENV])
         self.assertEqual(self.served(checkout), old_frontend)
 
     def test_deploy_signalled_during_collectstatic_restarts_the_services_on_the_old_frontend(self):

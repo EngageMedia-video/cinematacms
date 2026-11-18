@@ -12,7 +12,7 @@ RestartSec=10
 Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=CELERY_QUEUE="short_tasks"
 # Absolute or relative path to the 'celery' command:
-Environment=CELERY_BIN="/home/cinemata/bin/celery"
+Environment=CELERY_BIN="/home/cinemata/venv/bin/celery"
 # App instance to use
 # comment out this line if you don't use an app
 Environment=CELERY_APP="cms"

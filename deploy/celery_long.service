@@ -11,7 +11,7 @@ Restart=always
 RestartSec=10
 Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=CELERY_QUEUE="long_tasks"
-Environment=CELERY_BIN="/home/cinemata/bin/celery"
+Environment=CELERY_BIN="/home/cinemata/venv/bin/celery"
 Environment=CELERY_APP="cms"
 Environment=CELERYD_OPTS="-Ofair --prefetch-multiplier=1"
 Environment=CINEMATA_CELERY_LONG_CONCURRENCY=4
