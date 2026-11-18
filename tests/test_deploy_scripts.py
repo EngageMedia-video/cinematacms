@@ -1716,6 +1716,35 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertEqual(site_path.read_text(), foreign_site)
         self.assertNotIn("systemctl", self.command_log.read_text())
 
+    def test_apply_writes_one_proxy_policy_for_a_hand_edited_location(self):
+        site_path = self.apply_new_site()
+        released_site = site_path.read_text()
+        policy_after_pass = (
+            "        include /etc/nginx/snippets/cinematacms-proxy.conf;\n"
+            "        proxy_pass http://127.0.0.1:9000;\n"
+            "        proxy_read_timeout 900s;\n"
+            "        proxy_send_timeout 300s;\n"
+            "        proxy_request_buffering on;\n"
+        )
+        comment = "        # uploads can take minutes\n\n"
+        comment_in_policy = self.GUNICORN_PASS.replace(
+            "        proxy_send_timeout", comment + "        proxy_send_timeout"
+        )
+
+        for name, edited_location, converted_location in (
+            ("policy after the pass", policy_after_pass, self.GUNICORN_PASS),
+            ("comment among the policy", comment_in_policy, comment + self.GUNICORN_PASS),
+        ):
+            with self.subTest(name):
+                site_path.write_text(released_site.replace(self.GUNICORN_PASS, edited_location))
+                converted_site = released_site.replace(self.GUNICORN_PASS, converted_location)
+
+                for run in ("first", "second"):
+                    result = self.run_updater("--no-restart")
+
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(site_path.read_text(), converted_site, run)
+
     def test_apply_renders_again_the_full_stack_files_that_reach_the_web_server(self):
         self.apply_new_site()
         full_stack = self.deploy_root / "etc/cinematacms-observability"

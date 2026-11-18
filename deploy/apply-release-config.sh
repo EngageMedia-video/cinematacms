@@ -310,11 +310,16 @@ if ! grep -q 'cinematacms-rate-limits\.conf' "$NGINX_SITE"; then
 fi
 
 # Each location that passes to the application server ends in the same five
-# lines. The lines held before a pass are replaced by them; held lines before
-# anything else are printed unchanged. Earlier releases passed with uwsgi_pass,
-# so that pass becomes proxy_pass and every uWSGI directive goes.
+# lines. The policy lines held before a pass are replaced by them, and the
+# comments and blank lines held among them are printed above them. The policy
+# lines that follow a pass in its block are dropped. Held lines before anything
+# else are printed unchanged. Earlier releases passed with uwsgi_pass, so that
+# pass becomes proxy_pass and every uWSGI directive goes.
 rendered_site="$(mktemp)"
 awk '
+    function is_policy(line) {
+        return line ~ /^[[:space:]]*(include[[:space:]]+\/etc\/nginx\/snippets\/cinematacms-proxy\.conf|proxy_(read_timeout|send_timeout|request_buffering)[[:space:]][^;]*);[[:space:]]*$/
+    }
     function print_held(i) {
         for (i = 1; i <= held; i++) {
             print held_line[i]
@@ -325,11 +330,22 @@ awk '
     /^[[:space:]]*include[[:space:]]+[^;]*uwsgi_params;/ {
         next
     }
-    /^[[:space:]]*(include[[:space:]]+\/etc\/nginx\/snippets\/cinematacms-proxy\.conf|proxy_(read_timeout|send_timeout|request_buffering)[[:space:]][^;]*);[[:space:]]*$/ {
+    is_policy($0) {
+        if (!after_pass) {
+            held_line[++held] = $0
+        }
+        next
+    }
+    held && /^[[:space:]]*(#.*)?$/ {
         held_line[++held] = $0
         next
     }
     /^[[:space:]]*(uwsgi_pass[[:space:]]+127\.0\.0\.1:9000|proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:9000);[[:space:]]*$/ {
+        for (i = 1; i <= held; i++) {
+            if (!is_policy(held_line[i])) {
+                print held_line[i]
+            }
+        }
         held = 0
         match($0, /^[[:space:]]*/)
         indent = substr($0, RSTART, RLENGTH)
@@ -338,9 +354,13 @@ awk '
         print indent "proxy_send_timeout 300s;"
         print indent "proxy_request_buffering on;"
         print indent "proxy_pass http://127.0.0.1:9000;"
+        after_pass = 1
         next
     }
     {
+        if ($0 ~ /[{}]/) {
+            after_pass = 0
+        }
         print_held()
         if ($0 ~ /^[[:space:]]*(access|error)_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\./) {
             sub(/\/var\/log\/nginx\/mediacms\.io\./, "/var/log/cinematacms/nginx/mediacms.io.")
