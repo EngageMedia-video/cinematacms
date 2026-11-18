@@ -64,7 +64,7 @@ server {
         proxy_read_timeout 900s;
         proxy_send_timeout 300s;
         proxy_request_buffering on;
-        proxy_pass http://127.0.0.1:9000;
+        proxy_pass http://cinematacms_app;
     }
 }
 
@@ -131,6 +131,6 @@ server {
         proxy_read_timeout 900s;
         proxy_send_timeout 300s;
         proxy_request_buffering on;
-        proxy_pass http://127.0.0.1:9000;
+        proxy_pass http://cinematacms_app;
     }
 }

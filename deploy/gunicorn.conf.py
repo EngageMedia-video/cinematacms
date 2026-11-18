@@ -5,10 +5,15 @@
 # in the master would write a file that every forked worker then shares.
 import itertools
 import os
+import re
+from pathlib import Path
 
 from prometheus_client import multiprocess, values
 
-bind = "127.0.0.1:9000"
+# The server of the upstream that nginx passes application requests to.
+bind = re.search(
+    r"^\s*server\s+(\S+);", (Path(__file__).parent / "nginx/cinematacms-upstream.conf").read_text(), re.MULTILINE
+)[1]
 worker_class = "gthread"
 workers = int(os.environ.get("CINEMATA_WEB_WORKERS", "8"))
 threads = 10

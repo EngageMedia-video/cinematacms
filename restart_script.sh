@@ -303,8 +303,14 @@ reset_app_ownership() {
   fi
 }
 
+# nginx reloads as soon as the web server is back, before the Celery restarts that
+# can take minutes. Every step runs, and the restart fails when any step fails.
 restart_application_services() {
-  systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
+  local status=0
+  systemctl restart mediacms || status=$?
+  systemctl reload-or-restart nginx || status=$?
+  systemctl restart celery_long celery_short celery_whisper celery_email celery_beat || status=$?
+  return "$status"
 }
 
 # Bash runs the EXIT trap at once when a signal reaches only this shell, while a
@@ -419,7 +425,6 @@ echo "Restarting services..."
 systemctl enable mediacms celery_long celery_short celery_whisper celery_email celery_beat
 restart_application_services
 trap - EXIT
-systemctl restart nginx
 
 echo "Cinemata restart completed successfully!"
 }

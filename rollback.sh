@@ -211,7 +211,6 @@ systemctl daemon-reload
 echo -e "${YELLOW}Restarting services...${NC}"
 restart_application_services
 trap - EXIT
-systemctl restart nginx
 
 # Audit entry so a subsequent rollback (or the next forward deploy) can
 # trace the chain. Field 4 is "rollback" instead of a branch name.

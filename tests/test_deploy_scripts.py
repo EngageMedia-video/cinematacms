@@ -1,3 +1,4 @@
+import ast
 import errno
 import hashlib
 import io
@@ -124,13 +125,45 @@ def gunicorn_settings(environment):
     return dict(re.findall(r"(?m)^(\w+) +=(?: (.*))?$", result.stdout))
 
 
+APPLICATION_PASS = "proxy_pass http://cinematacms_app;"
+# The systemctl calls with which restart_script.sh and rollback.sh restart the application.
+APPLICATION_RESTART = [
+    "systemctl restart mediacms",
+    "systemctl reload-or-restart nginx",
+    "systemctl restart celery_long celery_short celery_whisper celery_email celery_beat",
+]
+
+
 def application_locations(config):
     """Bodies of the locations that pass requests to the application server."""
     return [
         match.group("body")
         for match in re.finditer(r"location\s+[^{]+\{(?P<body>(?:[^{}]|\{[^{}]*\})*)\}", config)
-        if "proxy_pass http://127.0.0.1:9000;" in match.group("body")
+        if APPLICATION_PASS in match.group("body")
     ]
+
+
+def proxy_pass_targets(config):
+    return re.findall(r"\bproxy_pass\s+http://([^;]+);", config)
+
+
+def nginx_upstreams(directory):
+    """The server of each single-server upstream that the .conf files of a directory define."""
+    return {
+        name: server
+        for path in sorted(Path(directory).glob("*.conf"))
+        for name, server in re.findall(r"upstream\s+(\w+)\s*\{\s*server\s+(\S+);\s*\}", path.read_text())
+    }
+
+
+def gunicorn_bind():
+    (address,) = ast.literal_eval(gunicorn_settings({})["bind"])
+    return address
+
+
+def uwsgi_socket():
+    """The address the uWSGI server of the last uWSGI release listens on."""
+    return re.search(r"(?m)^socket = (\S+)$", (PROJECT_ROOT / "uwsgi.ini").read_text())[1]
 
 
 class NginxConfigTests(unittest.TestCase):
@@ -157,6 +190,19 @@ class NginxConfigTests(unittest.TestCase):
                 self.assertEqual(len(location_bodies), passes)
                 for body in location_bodies:
                     self.assertIn("include /etc/nginx/snippets/cinematacms-proxy.conf;", body)
+
+    def test_every_pass_to_the_application_reaches_the_address_gunicorn_listens_on(self):
+        upstreams = nginx_upstreams(PROJECT_ROOT / "deploy/nginx")
+        configs = [
+            PROJECT_ROOT / "deploy/mediacms.io",
+            *sorted((PROJECT_ROOT / "deploy/nginx").glob("*.conf")),
+            PROJECT_ROOT / "deploy/observability/templates/nginx-app-metrics.conf",
+        ]
+
+        targets = [target for config in configs for target in proxy_pass_targets(config.read_text())]
+
+        self.assertEqual(len(targets), 9)
+        self.assertEqual({upstreams[target] for target in targets}, {gunicorn_bind()})
 
     def test_the_application_reads_its_client_headers_from_nginx_variables(self):
         snippet = (PROJECT_ROOT / "deploy/nginx/cinematacms-proxy.conf").read_text()
@@ -308,6 +354,15 @@ class GunicornConfigTests(unittest.TestCase):
 
         self.assertEqual(settings["secure_scheme_headers"], "{'X-FORWARDED-PROTO': 'https'}")
         self.assertEqual(settings["forwarded_allow_ips"], "['127.0.0.1', '::1']")
+
+    def test_gunicorn_never_listens_where_a_stale_uwsgi_pass_sends_requests(self):
+        """nginx can still run a site that passes uwsgi requests to uWSGI's socket.
+
+        Gunicorn waits for an HTTP request line that a uwsgi request never sends, so
+        on that address the request would hang until nginx's 900 s read timeout.
+        Where nothing listens, nginx answers 502 at once.
+        """
+        self.assertNotEqual(gunicorn_bind(), uwsgi_socket())
 
     def test_the_master_opens_no_control_socket(self):
         settings = gunicorn_settings({})
@@ -1497,12 +1552,12 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         # Gunicorn must finish its graceful stop before systemd kills what is left.
         self.assertLess(int(gunicorn_settings({})["graceful_timeout"]), stop_timeout)
 
-    def test_installed_mediacms_unit_reloads_nginx_before_gunicorn_listens(self):
-        """A site that nginx still runs with uwsgi_pass must not reach gunicorn.
+    def test_installed_mediacms_unit_queues_an_nginx_reload_once_gunicorn_listens(self):
+        """The first deploy of gunicorn runs the previous release's restart_script.sh.
 
-        gunicorn waits for an HTTP request line that a uwsgi request never sends, so the
-        request hangs until nginx's 900 s read timeout. ExecStartPre runs after the old
-        server stopped and before gunicorn binds, so until then nginx answers 502.
+        That script restarts nginx only after every Celery unit, and not at all when the
+        deploy fails after this unit is installed. The unit queues the reload and does
+        not wait for it, so its start never depends on nginx's jobs.
         """
         result = self.run_updater(
             "--domain",
@@ -1516,8 +1571,8 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         unit = (self.deploy_root / "etc/systemd/system/mediacms.service").read_text()
-        self.assertRegex(unit, r"(?m)^ExecStartPre=\+/bin/systemctl --no-block try-reload-or-restart nginx\.service$")
-        self.assertNotRegex(unit, r"(?m)^ExecStartPost=")
+        self.assertRegex(unit, r"(?m)^ExecStartPost=\+/bin/systemctl --no-block try-reload-or-restart nginx\.service$")
+        self.assertNotRegex(unit, r"(?m)^ExecStartPre=.*nginx")
 
     def test_installed_celery_long_unit_sends_sigterm_only_to_celery(self):
         result = self.run_updater(
@@ -1641,7 +1696,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         "        proxy_read_timeout 900s;\n"
         "        proxy_send_timeout 300s;\n"
         "        proxy_request_buffering on;\n"
-        "        proxy_pass http://127.0.0.1:9000;\n"
+        f"        {APPLICATION_PASS}\n"
     )
     # The application locations of earlier releases, before and after they set an upload policy.
     UWSGI_PASSES = {
@@ -1688,11 +1743,24 @@ class ApplyReleaseConfigTests(unittest.TestCase):
                 self.assertEqual(again.returncode, 0, again.stderr)
                 self.assertEqual(site_path.read_text(), released_site)
 
+    def test_apply_sends_a_converted_uwsgi_site_to_the_address_gunicorn_listens_on(self):
+        site_path = self.apply_new_site()
+        uwsgi_site = site_path.read_text().replace(self.GUNICORN_PASS, self.UWSGI_PASSES["uwsgi with upload policy"])
+        site_path.write_text(uwsgi_site)
+
+        result = self.run_updater("--no-restart")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        upstreams = nginx_upstreams(self.deploy_root / "etc/nginx/conf.d")
+        targets = proxy_pass_targets(site_path.read_text())
+        self.assertEqual(len(targets), 2)
+        self.assertEqual({upstreams[target] for target in targets}, {gunicorn_bind()})
+
     def test_apply_stops_at_a_uwsgi_pass_to_another_server_before_it_reloads_anything(self):
         site_path = self.apply_new_site()
         foreign_site = site_path.read_text().replace(
             "    location / {",
-            "    location /legacy/ {\n        uwsgi_pass 127.0.0.1:9001;\n    }\n\n    location / {",
+            "    location /legacy/ {\n        uwsgi_pass 127.0.0.1:9100;\n    }\n\n    location / {",
             1,
         )
         site_path.write_text(foreign_site)
@@ -1710,7 +1778,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         released_site = site_path.read_text()
         policy_after_pass = (
             "        include /etc/nginx/snippets/cinematacms-proxy.conf;\n"
-            "        proxy_pass http://127.0.0.1:9000;\n"
+            f"        {APPLICATION_PASS}\n"
             "        proxy_read_timeout 900s;\n"
             "        proxy_send_timeout 300s;\n"
             "        proxy_request_buffering on;\n"
@@ -1770,7 +1838,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         listener = app_metrics.read_text()
         self.assertIn("listen 127.0.0.1:8123;", listener)
-        self.assertEqual(listener.count("proxy_pass http://127.0.0.1:9000;"), 2)
+        self.assertEqual(listener.count(APPLICATION_PASS), 2)
         self.assertNotIn("uwsgi", listener)
         rendered_rotation = rotation.read_text()
         self.assertIn("/srv/logs/errorlog.txt", rendered_rotation)
@@ -2914,7 +2982,8 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn(f"for unit in {units}; do", script)
         self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
         self.assertIn(f"systemctl enable {units}", script)
-        self.assertIn(f"systemctl restart {units}", script)
+        self.assertIn("\n  systemctl restart mediacms ", script)
+        self.assertIn("\n  systemctl restart celery_long celery_short celery_whisper celery_email celery_beat ", script)
 
     def _reset_app_ownership(self, *, group_exists):
         with tempfile.TemporaryDirectory() as directory:
@@ -3026,15 +3095,24 @@ class RestartScriptTests(unittest.TestCase):
             [leg["python"] for leg in job["strategy"]["matrix"]["include"] if leg["uploads-coverage"]], ["3.10"]
         )
 
-    def run_with_service_restart_armed(self, command):
+    def run_with_service_restart_armed(self, command, *, failing_systemctl=""):
         fake_bin = self.test_root / "bin"
         fake_bin.mkdir(exist_ok=True)
         command_log = self.test_root / "commands.log"
         systemctl = fake_bin / "systemctl"
-        systemctl.write_text('#!/bin/sh\nprintf \'%s\\n\' "systemctl $*" >> "$FAKE_COMMAND_LOG"\n')
+        systemctl.write_text(
+            '#!/bin/sh\nprintf \'%s\\n\' "systemctl $*" >> "$FAKE_COMMAND_LOG"\n'
+            '[ "systemctl $*" != "$FAKE_FAILING_SYSTEMCTL" ]\n'
+        )
         systemctl.chmod(systemctl.stat().st_mode | stat.S_IXUSR)
         env = os.environ.copy()
-        env.update({"FAKE_COMMAND_LOG": str(command_log), "PATH": f"{fake_bin}:{env['PATH']}"})
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(command_log),
+                "FAKE_FAILING_SYSTEMCTL": failing_systemctl,
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
         result = subprocess.run(
             [
                 "bash",
@@ -3054,8 +3132,7 @@ class RestartScriptTests(unittest.TestCase):
 
     def test_deploy_that_stops_after_packages_change_restarts_every_application_unit(self):
         # A process that keeps running mixes the modules it already imported with the new packages on disk.
-        units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
-        expected = ["systemctl daemon-reload", f"systemctl restart {units}"]
+        expected = ["systemctl daemon-reload", *APPLICATION_RESTART]
 
         signalled_during_a_step = "sh -c 'kill -{} $PPID; sleep 1'"
         for command, status in (
@@ -3080,7 +3157,6 @@ class RestartScriptTests(unittest.TestCase):
             '#!/bin/sh\nkill -"$FAKE_SIGNAL" "$PPID"\nsleep 1\nprintf \'%s\\n\' "pip finished" >> "$FAKE_COMMAND_LOG"\n'
         )
         pip.chmod(pip.stat().st_mode | stat.S_IXUSR)
-        units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
 
         for signal_name, status in (("TERM", -15), ("HUP", -1)):
             with self.subTest(signal=signal_name):
@@ -3091,7 +3167,17 @@ class RestartScriptTests(unittest.TestCase):
                 result, commands = self.run_with_service_restart_armed("install_python_requirements")
 
                 self.assertEqual(result.returncode, status, result.stderr)
-                self.assertEqual(commands, ["pip finished", "systemctl daemon-reload", f"systemctl restart {units}"])
+                self.assertEqual(commands, ["pip finished", "systemctl daemon-reload", *APPLICATION_RESTART])
+
+    def test_a_failed_nginx_reload_fails_the_deploy_and_still_restarts_celery(self):
+        result, commands = self.run_with_service_restart_armed(
+            "restart_application_services; trap - EXIT", failing_systemctl="systemctl reload-or-restart nginx"
+        )
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(commands[:3], APPLICATION_RESTART)
+        self.assertEqual(commands[3:], ["systemctl daemon-reload", *APPLICATION_RESTART])
+        self.assertIn("Restart them by hand", result.stderr)
 
     def test_deploy_restarts_services_once_packages_may_have_changed(self):
         script = RESTART_SCRIPT.read_text()
@@ -3102,8 +3188,8 @@ class RestartScriptTests(unittest.TestCase):
         self.assertLess(main.index(arm), main.index("\ninstall_python_requirements\n"))
         self.assertNotIn("pip install", main)
         self.assertLess(main.index("\nrestart_application_services\n"), main.index("trap - EXIT"))
-        self.assertLess(main.index("trap - EXIT"), main.index("systemctl restart nginx"))
-        self.assertNotIn("systemctl restart mediacms", main)
+        self.assertNotIn("systemctl restart", main)
+        self.assertNotIn("nginx", main[main.index("trap - EXIT") :])
 
     def test_rollback_loads_the_runtime_environment_before_it_changes_anything(self):
         # cms/settings.py reads SECRET_KEY from app.env. Without it collectstatic is unknown to manage.py.
@@ -3122,7 +3208,7 @@ class RestartScriptTests(unittest.TestCase):
         self.assertLess(rollback.index(arm), rollback.index("\ninstall_python_requirements\n"))
         self.assertNotIn("pip install", rollback)
         self.assertLess(rollback.index("\nrestart_application_services\n"), rollback.index("trap - EXIT"))
-        self.assertLess(rollback.index("trap - EXIT"), rollback.index("systemctl restart nginx"))
+        self.assertNotIn("nginx", rollback[rollback.index("trap - EXIT") :])
 
     def rollback_progress_on(self, host, *, head, served, target, deployed):
         self.git(host, "checkout", "--quiet", "--detach", head)
@@ -4051,8 +4137,7 @@ class StaticReleaseTests(unittest.TestCase):
             ),
             "systemctl daemon-reload",
             f"systemctl enable {self.UNITS}",
-            f"systemctl restart {self.UNITS}",
-            "systemctl restart nginx",
+            *APPLICATION_RESTART,
         ]
         checkout = self.host_checkout()
         self.serve_from_a_release(checkout)
@@ -4121,7 +4206,7 @@ class StaticReleaseTests(unittest.TestCase):
     def test_deploy_signalled_during_collectstatic_restarts_the_services_on_the_old_frontend(self):
         records_the_frontend_at_the_restart = textwrap.dedent(
             """\
-            if [ "$1" = restart ]; then
+            if [ "$1 $2" = "restart mediacms" ]; then
               cp -RL static_collected "$FAKE_SERVER_HOME/collected-at-restart"
               cp -RL frontend/build/production/static "$FAKE_SERVER_HOME/build-at-restart"
             fi
@@ -4142,7 +4227,7 @@ class StaticReleaseTests(unittest.TestCase):
                 )
 
                 self.assertEqual(result.returncode, -getattr(signal, f"SIG{name}"), result.stderr)
-                self.assertEqual(steps[-2:], ["systemctl daemon-reload", f"systemctl restart {self.UNITS}"])
+                self.assertEqual(steps[-4:], ["systemctl daemon-reload", *APPLICATION_RESTART])
                 self.assertEqual(
                     (
                         read_tree(self.test_root / "collected-at-restart"),

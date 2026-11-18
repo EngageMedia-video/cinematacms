@@ -241,6 +241,7 @@ NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
 NGINX_RATE_LIMITS="$(root_path /etc/nginx/snippets/cinematacms-rate-limits.conf)"
 NGINX_PROXY="$(root_path /etc/nginx/snippets/cinematacms-proxy.conf)"
 NGINX_HTTP_POLICY="$(root_path /etc/nginx/conf.d/cinematacms-http.conf)"
+NGINX_UPSTREAM="$(root_path /etc/nginx/conf.d/cinematacms-upstream.conf)"
 NGINX_LOG_DIR="$(root_path /var/log/cinematacms/nginx)"
 NGINX_LOGROTATE="$(root_path /etc/logrotate.d/cinematacms-nginx)"
 NGINX_SITE="$(root_path /etc/nginx/sites-available/mediacms.io)"
@@ -253,6 +254,7 @@ install_managed_file "$SCRIPT_DIR/nginx/cinematacms-metrics.conf" "$NGINX_SNIPPE
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-rate-limits.conf" "$NGINX_RATE_LIMITS"
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-proxy.conf" "$NGINX_PROXY"
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-http.conf" "$NGINX_HTTP_POLICY"
+install_managed_file "$SCRIPT_DIR/nginx/cinematacms-upstream.conf" "$NGINX_UPSTREAM"
 install_managed_file "$SCRIPT_DIR/logrotate-cinematacms-nginx" "$NGINX_LOGROTATE"
 # Site logs hold raw client IPs. Only root and the nginx workers, which must
 # reopen the logs after rotation, may enter the directory.
@@ -314,7 +316,8 @@ fi
 # comments and blank lines held among them are printed above them. The policy
 # lines that follow a pass in its block are dropped. Held lines before anything
 # else are printed unchanged. Earlier releases passed with uwsgi_pass, so that
-# pass becomes proxy_pass and every uWSGI directive goes.
+# pass becomes a proxy_pass to the upstream that gunicorn listens on, and every
+# uWSGI directive goes.
 rendered_site="$(mktemp)"
 awk '
     function is_policy(line) {
@@ -340,7 +343,7 @@ awk '
         held_line[++held] = $0
         next
     }
-    /^[[:space:]]*(uwsgi_pass[[:space:]]+127\.0\.0\.1:9000|proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:9000);[[:space:]]*$/ {
+    /^[[:space:]]*(uwsgi_pass[[:space:]]+127\.0\.0\.1:9000|proxy_pass[[:space:]]+http:\/\/cinematacms_app);[[:space:]]*$/ {
         for (i = 1; i <= held; i++) {
             if (!is_policy(held_line[i])) {
                 print held_line[i]
@@ -353,7 +356,7 @@ awk '
         print indent "proxy_read_timeout 900s;"
         print indent "proxy_send_timeout 300s;"
         print indent "proxy_request_buffering on;"
-        print indent "proxy_pass http://127.0.0.1:9000;"
+        print indent "proxy_pass http://cinematacms_app;"
         after_pass = 1
         next
     }

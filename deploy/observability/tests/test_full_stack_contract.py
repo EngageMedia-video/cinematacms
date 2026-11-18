@@ -780,7 +780,12 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("listen 127.0.0.1:${APP_METRICS_PORT};", nginx)
         self.assertIn("location = /metrics", nginx)
         self.assertIn("location = /internal/observability/references", nginx)
-        self.assertEqual(nginx.count("proxy_pass http://127.0.0.1:9000;"), 2)
+        self.assertEqual(nginx.count("proxy_pass http://cinematacms_app;"), 2)
+        # The listener names the application's upstream, so nginx -t needs that upstream first.
+        self.assertLess(
+            installer.index("/etc/nginx/conf.d/cinematacms-upstream.conf"),
+            installer.index("render_nginx_app_metrics > /etc/nginx/conf.d/cinematacms-app-metrics.conf"),
+        )
         self.assertIn("render_nginx_app_metrics", installer)
         self.assertIn('content="${content//\\$\\{APP_METRICS_PORT\\}/$APP_METRICS_PORT}"', installer)
         self.assertIn("http://127.0.0.1:${APP_METRICS_PORT}/metrics", installer)

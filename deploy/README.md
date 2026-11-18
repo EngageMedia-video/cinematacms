@@ -48,6 +48,9 @@ fail. A Celery worker in that state can lose its tracing, which
 `restart_script.sh` and `rollback.sh` restart the six application units
 (`mediacms`, `celery_long`, `celery_short`, `celery_whisper`, `celery_email`,
 and `celery_beat`) once `pip install -r requirements.txt` starts. They restart
+`mediacms` first, then reload nginx, then restart the Celery units, so nginx
+serves the new site configuration as soon as gunicorn listens. A failed nginx
+reload fails the deploy, and the Celery units still restart. They restart
 the units even when a later step fails or the script receives `SIGTERM` or
 `SIGHUP`, and still exit with the failure status. A signal can reach the
 script but not `pip`, so the restart waits until `pip` exits. The restart does
@@ -291,6 +294,12 @@ The deployment files split nginx ownership as follows:
   to 300 seconds between writes to gunicorn and 900 seconds between reads from
   it. The longer read window covers the synchronous final-chunk combine and
   media-file save for large uploads.
+- `deploy/nginx/cinematacms-upstream.conf` owns the address of the
+  `cinematacms_app` upstream, which every location that passes to gunicorn
+  names. Gunicorn reads its listen address from this file. The release updater
+  installs it into `/etc/nginx/conf.d/`, and so does
+  `deploy/observability/install.sh`, whose application metrics listener names
+  the same upstream.
 - `deploy/nginx/cinematacms-proxy.conf` owns the request headers of every
   location that passes to gunicorn: `Host`, `X-Real-IP`, and
   `X-Forwarded-Proto`. Each line replaces what the client sent, except that
@@ -345,10 +354,11 @@ Run a dry run to validate installer options without changing the server:
 ## Application server
 
 `deploy/mediacms.service` runs gunicorn with the settings in
-`deploy/gunicorn.conf.py`: `CINEMATA_WEB_WORKERS` workers of 10 threads each on
-`127.0.0.1:9000`, as `www-data`. Gunicorn writes its own messages and the output
-of the application to `logs/errorlog.txt`. It reopens that log on `SIGUSR1`,
-which the full-stack log rotation sends after it renames the log.
+`deploy/gunicorn.conf.py`: `CINEMATA_WEB_WORKERS` workers of 10 threads each,
+as `www-data`, on the address of the `cinematacms_app` upstream in
+`deploy/nginx/cinematacms-upstream.conf`. Gunicorn writes its own messages and
+the output of the application to `logs/errorlog.txt`. It reopens that log on
+`SIGUSR1`, which the full-stack log rotation sends after it renames the log.
 
 The application takes the client address from `X-Real-IP` and the scheme from
 `X-Forwarded-Proto` only when nginx on the same host sends the request over
@@ -363,13 +373,27 @@ stops the old ones after their requests finish. A restart also lets requests in
 progress finish, for up to 25 seconds, but nginx answers `502` until gunicorn
 listens again.
 
-Releases before gunicorn ran uWSGI behind `uwsgi_pass`. On such a server the
-release updater turns every pass to `127.0.0.1:9000` into the gunicorn form and
-stops when a `uwsgi_pass` names any other address. When the full observability
-stack is installed, it also renders that stack's nginx listener and log rotation
-again. The web unit reloads nginx each time before gunicorn starts, so the first
-deploy of gunicorn switches nginx with the web server instead of after the
-Celery restarts. Until gunicorn listens, nginx answers `502`.
+Releases before gunicorn ran uWSGI behind `uwsgi_pass 127.0.0.1:9000`. On such
+a server the release updater turns every such pass into a pass to the
+`cinematacms_app` upstream and stops when a `uwsgi_pass` names any other
+address. When the full observability stack is installed, it also renders that
+stack's nginx listener and log rotation again. Gunicorn does not listen on
+uWSGI's address, so nginx running the uWSGI site finds no listener there and
+answers `502` at once. A uwsgi request that reached gunicorn would wait for an
+HTTP request line until nginx's 900-second read timeout.
+
+The first deploy of gunicorn runs the `restart_script.sh` of the uWSGI release
+it replaces. That script restarts nginx only after every Celery unit, and not at
+all when the deploy fails after the updater installed the gunicorn unit. So
+that nginx serves the new site as soon as gunicorn listens,
+`deploy/mediacms.service` queues an nginx reload each time gunicorn starts:
+
+```ini
+ExecStartPost=+/bin/systemctl --no-block try-reload-or-restart nginx.service
+```
+
+Delete that line together with `uwsgi.ini` once no server deploys from a uWSGI
+release.
 
 ### Roll back to a uWSGI release
 
@@ -411,7 +435,7 @@ sed -i \
   -e 's|^\([[:space:]]*\)proxy_read_timeout 900s;|\1uwsgi_read_timeout 900s;|' \
   -e 's|^\([[:space:]]*\)proxy_send_timeout 300s;|\1uwsgi_send_timeout 300s;|' \
   -e 's|^\([[:space:]]*\)proxy_request_buffering on;|\1uwsgi_request_buffering on;|' \
-  -e 's|^\([[:space:]]*\)proxy_pass http://127\.0\.0\.1:9000;|\1uwsgi_pass 127.0.0.1:9000;|' \
+  -e 's|^\([[:space:]]*\)proxy_pass http://cinematacms_app;|\1uwsgi_pass 127.0.0.1:9000;|' \
   /etc/nginx/sites-available/mediacms.io
 # The full observability stack, when installed, gets its uWSGI nginx listener and
 # log rotation back. At a uWSGI release, render_nginx_app_metrics writes its file.

@@ -349,6 +349,9 @@ install_configuration() {
   install_grafana_provisioning
   if command -v nginx >/dev/null 2>&1; then
     install -m 0644 "${TEMPLATE_DIR}/nginx-stub-status.conf" /etc/nginx/conf.d/cinematacms-observability.conf
+    # The application metrics listener passes to this upstream, which an apply of
+    # this release installs too.
+    install -m 0644 "${SCRIPT_DIR}/../nginx/cinematacms-upstream.conf" /etc/nginx/conf.d/cinematacms-upstream.conf
     render_nginx_app_metrics > /etc/nginx/conf.d/cinematacms-app-metrics.conf
     nginx -t
   fi

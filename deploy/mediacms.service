@@ -11,12 +11,11 @@ EnvironmentFile=/etc/cinematacms/app.env
 Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 Environment=OTEL_SERVICE_ROLE="web"
 ExecStartPre=+/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
-# The nginx site speaks this server's protocol, and restart_script.sh restarts
-# nginx only after every application unit. nginx reloads before gunicorn listens,
-# because gunicorn holds a uwsgi_pass request open while it waits for an HTTP
-# request line that never comes.
-ExecStartPre=+/bin/systemctl --no-block try-reload-or-restart nginx.service
 ExecStart=/home/cinemata/venv/bin/gunicorn --config /home/cinemata/cinematacms/deploy/gunicorn.conf.py cms.wsgi:application
+# The first deploy of this unit runs the restart_script.sh of a uWSGI release,
+# which restarts nginx only after every Celery unit, and not at all when the
+# deploy fails after this unit is installed. Remove this line with uwsgi.ini.
+ExecStartPost=+/bin/systemctl --no-block try-reload-or-restart nginx.service
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=30s
