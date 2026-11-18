@@ -259,7 +259,8 @@ install_celery_exporter() {
   DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv
   python3 -m venv "$venv"
   "${venv}/bin/python" -m pip install --disable-pip-version-check \
-    "prometheus-exporter-celery @ https://github.com/danihodovic/celery-exporter/archive/${CELERY_EXPORTER_COMMIT}.tar.gz"
+    "prometheus-exporter-celery @ https://github.com/danihodovic/celery-exporter/archive/${CELERY_EXPORTER_COMMIT}.tar.gz" \
+    "celery[redis]"
 }
 
 render_file() {
