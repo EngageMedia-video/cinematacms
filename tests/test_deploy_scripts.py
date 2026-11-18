@@ -29,6 +29,7 @@ MIGRATOR = PROJECT_ROOT / "deploy" / "migrate-python-runtime.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
+DEPLOY_README = PROJECT_ROOT / "deploy" / "README.md"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
 NODE_INSTALLER = PROJECT_ROOT / "install-nodejs.sh"
@@ -1048,6 +1049,14 @@ class LocalObservabilityInstallerTests(unittest.TestCase):
         self.assertNotIn("systemctl disable", self.command_log.read_text())
 
 
+def sed_is_gnu_sed():
+    sed = shutil.which("sed")
+    return bool(sed) and "GNU" in subprocess.run([sed, "--version"], capture_output=True, text=True).stdout
+
+
+only_with_gnu_sed = unittest.skipUnless(sed_is_gnu_sed(), "the README's commands target the GNU sed of Ubuntu")
+
+
 class ApplyReleaseConfigTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -1744,6 +1753,22 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertEqual(site_path.read_text(), converted_site, run)
+
+    @only_with_gnu_sed
+    def test_the_readme_rollback_restores_the_uwsgi_site_that_apply_converted(self):
+        site_path = self.apply_new_site()
+        uwsgi_site = site_path.read_text().replace(self.GUNICORN_PASS, self.UWSGI_PASSES["uwsgi with upload policy"])
+        site_path.write_text(uwsgi_site)
+        converted = self.run_updater("--no-restart")
+        self.assertEqual(converted.returncode, 0, converted.stderr)
+        installed_site = "/etc/nginx/sites-available/mediacms.io"
+        site_rollback = re.search(
+            rf"^sed -i \\\n(?:  .*\n)+?  {re.escape(installed_site)}$", DEPLOY_README.read_text(), re.MULTILINE
+        ).group(0)
+
+        subprocess.run(["bash", "-c", site_rollback.replace(installed_site, shlex.quote(str(site_path)))], check=True)
+
+        self.assertEqual(site_path.read_text(), uwsgi_site)
 
     def test_apply_renders_again_the_full_stack_files_that_reach_the_web_server(self):
         self.apply_new_site()
