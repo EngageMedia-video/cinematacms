@@ -40,6 +40,9 @@ export function useHoverPreview(previewSrc) {
 			}
 		}
 		query.addEventListener('change', stopWhenBlocked);
+		// The preference may have changed before this listener existed, or the preview became
+		// active again without a start check, such as a new source on a hovered tile.
+		stopWhenBlocked();
 		return () => query.removeEventListener('change', stopWhenBlocked);
 	}, [active]);
 

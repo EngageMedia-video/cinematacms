@@ -417,6 +417,27 @@ describe('MovieItem hover preview', () => {
 		expect(media.listenerCount()).toBe(0);
 	});
 
+	it('does not resume a hovered tile under reduced motion when its preview source changes', async () => {
+		const user = userEvent.setup();
+		const media = mockChangingMatchMedia();
+		const nextSrc = 'https://example.com/media/encoded/preview.gif?v=4';
+		const { container, rerender } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		await user.hover(screen.getByRole('article'));
+		fireEvent.error(getPreview(container));
+		expect(media.listenerCount()).toBe(0);
+
+		act(() => media.turnOn('prefers-reduced-motion: reduce'));
+		rerender(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={nextSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		expect(getPreview(container)).toBeNull();
+		expect(media.listenerCount()).toBe(0);
+	});
+
 	it('keeps playing when a preference change leaves previews allowed', async () => {
 		const user = userEvent.setup();
 		const media = mockChangingMatchMedia();
