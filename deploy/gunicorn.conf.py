@@ -10,10 +10,29 @@ from pathlib import Path
 
 from prometheus_client import multiprocess, values
 
-# The server of the upstream that nginx passes application requests to.
-bind = re.search(
-    r"^\s*server\s+(\S+);", (Path(__file__).parent / "nginx/cinematacms-upstream.conf").read_text(), re.MULTILINE
-)[1]
+APPLICATION_UPSTREAM = "cinematacms_app"
+
+
+def application_server(upstream_config):
+    """The one address of the upstream that nginx passes application requests to.
+
+    nginx balances across every server in the upstream, and gunicorn binds one
+    address, so any other shape is a configuration error.
+    """
+    config = re.sub(r"#[^\n]*", "", upstream_config)
+    blocks = re.findall(rf"\bupstream\s+{APPLICATION_UPSTREAM}\s*\{{([^}}]*)\}}", config)
+    if len(blocks) != 1:
+        raise ValueError(f"expected one upstream {APPLICATION_UPSTREAM} block, found {len(blocks)}")
+    servers = re.findall(r"(?:^|;|\s)server\s+([^;]*);", blocks[0])
+    if len(servers) != 1:
+        raise ValueError(f"upstream {APPLICATION_UPSTREAM} must have exactly one server, found {len(servers)}")
+    address = servers[0].strip()
+    if not re.fullmatch(r"127\.0\.0\.1:\d+", address):
+        raise ValueError(f"upstream {APPLICATION_UPSTREAM} server must be a bare 127.0.0.1:<port>, got {address!r}")
+    return address
+
+
+bind = application_server((Path(__file__).parent / "nginx/cinematacms-upstream.conf").read_text())
 worker_class = "gthread"
 workers = int(os.environ.get("CINEMATA_WEB_WORKERS", "8"))
 threads = 10

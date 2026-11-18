@@ -321,6 +321,27 @@ class GunicornConfigTests(unittest.TestCase):
         self.arbiter = types.SimpleNamespace(WORKERS={})
         self.pids = iter(range(1000, 2000))
 
+    def test_bind_reads_the_one_upstream_server_past_comments_and_whitespace(self):
+        config = "# server 127.0.0.1:9000;\nupstream   cinematacms_app\n{\n\tserver   127.0.0.1:9001 ;  # live\n}\n"
+
+        self.assertEqual(self.hooks["application_server"](config), "127.0.0.1:9001")
+
+    def test_bind_rejects_an_upstream_that_nginx_would_balance_across(self):
+        config = "upstream cinematacms_app {\n    server 127.0.0.1:9001;\n    server 127.0.0.1:9002;\n}\n"
+
+        with self.assertRaisesRegex(ValueError, "exactly one server, found 2"):
+            self.hooks["application_server"](config)
+
+    def test_bind_rejects_a_server_with_parameters_or_another_host(self):
+        for server in ("127.0.0.1:9001 weight=2", "0.0.0.0:9001", "unix:/run/app.sock"):
+            with self.subTest(server=server), self.assertRaises(ValueError):
+                self.hooks["application_server"](f"upstream cinematacms_app {{ server {server}; }}")
+
+    def test_bind_rejects_a_missing_upstream(self):
+        for config in ("", "upstream other { server 127.0.0.1:9001; }"):
+            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "found 0"):
+                self.hooks["application_server"](config)
+
     def start_worker(self):
         """Fork a worker as the arbiter does, then count one request in it."""
         from prometheus_client import CollectorRegistry, Counter, Gauge
