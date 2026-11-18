@@ -1,3 +1,4 @@
+import signal
 import unittest
 from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
@@ -361,7 +362,12 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
                 stack.enter_context(patch("builtins.open", mock_open(read_data=b"encoded")))
                 stack.enter_context(patch("files.tasks.File"))
             if extension == "gif":
-                stack.enter_context(patch("files.tasks.run_command", run_command or Mock(return_value={"out": ""})))
+                stack.enter_context(
+                    patch(
+                        "files.tasks.run_command",
+                        run_command or Mock(return_value={"out": "", "error": "", "returncode": 0}),
+                    )
+                )
                 stack.enter_context(patch("files.tasks.rm_file"))
 
             try:
@@ -386,7 +392,7 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
 
     def test_gif_failure_is_persisted_with_the_ffmpeg_output(self):
         """A preview left in 'running' is re-encoded by check_running_states for ever."""
-        ffmpeg = Mock(return_value={"error": "Error writing trailer: Invalid argument"})
+        ffmpeg = Mock(return_value={"error": "Error writing trailer: Invalid argument", "returncode": 1})
 
         result, media, profile, encoding, observer = self._run_encode_media(extension="gif", run_command=ffmpeg)
 
@@ -396,11 +402,46 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
         encoding.save.assert_any_call(update_fields=["status", "logs"])
         observer.assert_called_once_with(media, profile, "fail")
 
+    def test_gif_stopped_by_worker_shutdown_is_retried_not_saved(self):
+        """A worker stop sends ffmpeg SIGTERM; it then exits 255 and may leave a valid but short GIF."""
+        from files.tasks import encode_media
+
+        for returncode in (255, -signal.SIGKILL):
+            with self.subTest(returncode=returncode):
+                ffmpeg = Mock(return_value={"error": "Exiting normally, received signal 15.", "returncode": returncode})
+                with patch.object(encode_media, "retry", side_effect=RuntimeError("retry")) as retry:
+                    result, _media, _profile, encoding, observer = self._run_encode_media(
+                        extension="gif",
+                        run_command=ffmpeg,
+                        output_exists=True,
+                        output_type="image",
+                        task_retries=0,
+                        capture_exception=True,
+                    )
+
+                self.assertEqual(str(result), "retry")
+                retry.assert_called_once_with(countdown=5, max_retries=1)
+                self.assertNotEqual(encoding.status, "success")
+                encoding.media_file.save.assert_not_called()
+                observer.assert_not_called()
+
+    def test_gif_stopped_again_on_its_retry_fails(self):
+        ffmpeg = Mock(return_value={"error": "Exiting normally, received signal 15.", "returncode": 255})
+
+        result, media, profile, encoding, observer = self._run_encode_media(
+            extension="gif", run_command=ffmpeg, output_exists=True, output_type="image", task_retries=1
+        )
+
+        self.assertFalse(result)
+        self.assertEqual(encoding.status, "fail")
+        encoding.media_file.save.assert_not_called()
+        observer.assert_called_once_with(media, profile, "fail")
+
     def test_gif_preview_does_not_seek_past_the_end_of_a_short_media(self):
         """ffmpeg writes no frame, and no file, when -ss lands at or beyond the last frame."""
         for duration, seek in ((3, "0"), (4, "3")):
             with self.subTest(duration=duration):
-                ffmpeg = Mock(return_value={"error": ""})
+                ffmpeg = Mock(return_value={"error": "", "returncode": 1})
 
                 self._run_encode_media(extension="gif", duration=duration, run_command=ffmpeg)
 

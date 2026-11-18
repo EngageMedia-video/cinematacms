@@ -303,6 +303,7 @@ def run_command(cmd, cwd=None):
             ret["error"] = stderr.decode("utf-8")
         except:
             ret["error"] = ""
+    ret["returncode"] = process.returncode
     return ret
 
 

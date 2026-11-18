@@ -65,6 +65,27 @@ print(
 """
 
 
+# A pool child that is still preparing its encode when shutdown begins and
+# starts the encoder afterwards. The warm shutdown waits for that task, so
+# nothing else stops this encoder before systemd's stop timeout.
+ENCODER_STARTED_DURING_SHUTDOWN = """
+import json, os, subprocess
+import django
+
+django.setup()
+from files.tasks import worker_shutdown_handler
+
+worker_shutdown_handler(sender="long@ffmpeg-node")
+late = subprocess.Popen(json.loads(os.environ["ENCODER_STAND_IN"]), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+try:
+    late.wait(timeout=10)
+    late_alive = False
+except subprocess.TimeoutExpired:
+    late_alive = True
+print(json.dumps({"late_alive": late_alive}))
+"""
+
+
 def _is_running(pid):
     state = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
     return bool(state) and not state.startswith("Z")
@@ -108,22 +129,9 @@ class WorkerShutdownCleanupTests(SimpleTestCase):
         self.addCleanup(other_worker_encoder.wait)
         self.addCleanup(_kill_group_quietly, other_worker_encoder.pid)
 
-        worker = subprocess.Popen(
-            [sys.executable, "-", *WORKER_NAME_ARGS],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=settings.BASE_DIR,
-            env={**os.environ, "ENCODER_STAND_IN": json.dumps(self.encoder_stand_in)},
-            start_new_session=True,
-        )
-        self.addCleanup(_kill_group_quietly, worker.pid)
-        stdout, stderr = worker.communicate(SHUTTING_DOWN_WORKER, timeout=60)
+        stdout, stderr, returncode = self.run_worker(SHUTTING_DOWN_WORKER)
 
-        self.assertEqual(
-            worker.returncode, 0, f"worker with ffmpeg in its name was killed by its own shutdown\n{stderr}"
-        )
+        self.assertEqual(returncode, 0, f"worker with ffmpeg in its name was killed by its own shutdown\n{stderr}")
         result = json.loads(stdout.strip().splitlines()[-1])
         self.assertTrue(result["prefork_child_alive"], "worker process with ffmpeg in its argv was killed")
         self.assertFalse(result["attached_alive"], "worker's own encoder survived its shutdown")
@@ -135,3 +143,25 @@ class WorkerShutdownCleanupTests(SimpleTestCase):
             other_worker_encoder.poll(),
             f"another worker's encoder stopped with status {other_worker_encoder.returncode}",
         )
+
+    def test_shutdown_stops_an_encoder_started_after_it_began(self):
+        stdout, stderr, returncode = self.run_worker(ENCODER_STARTED_DURING_SHUTDOWN)
+
+        self.assertEqual(returncode, 0, stderr)
+        result = json.loads(stdout.strip().splitlines()[-1])
+        self.assertFalse(result["late_alive"], "encoder started during shutdown kept running")
+
+    def run_worker(self, script):
+        worker = subprocess.Popen(
+            [sys.executable, "-", *WORKER_NAME_ARGS],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=settings.BASE_DIR,
+            env={**os.environ, "ENCODER_STAND_IN": json.dumps(self.encoder_stand_in)},
+            start_new_session=True,
+        )
+        self.addCleanup(_kill_group_quietly, worker.pid)
+        stdout, stderr = worker.communicate(script, timeout=60)
+        return stdout, stderr, worker.returncode

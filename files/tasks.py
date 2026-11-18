@@ -5,6 +5,7 @@ import secrets
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import uuid
 from datetime import datetime, timedelta
@@ -105,6 +106,10 @@ ERRORS_LIST = [
     "Invalid data found when processing input",
     "Unable to find a suitable output format for",
 ]
+
+# ffmpeg handles SIGTERM itself: it finalises the output, which can be a valid
+# but truncated file, and exits with this status instead of dying by the signal.
+FFMPEG_EXIT_AFTER_SIGNAL = 255
 
 # ffmpeg writes no frame, and no file, when -ss lands at or past the last
 # frame, so media no longer than this start their preview from the beginning.
@@ -425,7 +430,11 @@ def encode_media(
             tf,
         ]
         ret = run_command(command)
-        if os.path.exists(tf) and get_file_type(tf) == "image":
+        stopped_by_signal = ret["returncode"] < 0 or ret["returncode"] == FFMPEG_EXIT_AFTER_SIGNAL
+        if stopped_by_signal and self.request.retries < 1:
+            rm_file(tf)
+            raise self.retry(countdown=5, max_retries=1)
+        if ret["returncode"] == 0 and os.path.exists(tf) and get_file_type(tf) == "image":
             with open(tf, "rb") as f:
                 myfile = File(f)
                 encoding.status = "success"
@@ -1513,7 +1522,38 @@ def worker_shutdown_handler(sender=None, **kwargs):
 
     Processes match by executable name, not command line, because the
     worker's own argv can contain "ffmpeg" (`-n long@ffmpeg-node`).
+
+    A task that is still preparing when shutdown begins starts its ffmpeg
+    later, and the warm shutdown waits for that task. A daemon thread keeps
+    stopping such encoders until the worker exits, so the task can retry
+    before systemd's stop timeout kills it with its message already acked.
+    Celery runs this handler again on a second SIGTERM; one thread is enough.
     """
+    global _shutdown_sweep_started
+    worker_session = os.getsid(0)
+    owned = _session_encoders()
+    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
+    for pid in owned:
+        _graceful_kill(pid, label="(worker shutdown)")
+    if not _shutdown_sweep_started:
+        _shutdown_sweep_started = True
+        threading.Thread(target=_stop_encoders_until_exit, name="ffmpeg-shutdown-sweep", daemon=True).start()
+
+
+_shutdown_sweep_started = False
+SHUTDOWN_SWEEP_INTERVAL_SECONDS = 0.5
+
+
+def _stop_encoders_until_exit():
+    while True:
+        time.sleep(SHUTDOWN_SWEEP_INTERVAL_SECONDS)
+        for pid in _session_encoders():
+            logger.info(f"Worker shutting down, stopping ffmpeg {pid} started after shutdown began")
+            _graceful_kill(pid, label="(worker shutdown)")
+
+
+def _session_encoders():
+    """PIDs of the ffmpeg processes in this worker's session."""
     worker_pid = os.getpid()
     worker_session = os.getsid(0)
     encoder_name = os.path.basename(settings.FFMPEG_COMMAND)
@@ -1527,9 +1567,7 @@ def worker_shutdown_handler(sender=None, **kwargs):
                 owned.append(pid)
         except (ProcessLookupError, PermissionError):
             continue
-    logger.info(f"Worker shutting down, stopping {len(owned)} ffmpeg processes in session {worker_session}")
-    for pid in owned:
-        _graceful_kill(pid, label="(worker shutdown)")
+    return owned
 
 
 def _graceful_kill(pid, label=""):
