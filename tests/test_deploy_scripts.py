@@ -1497,6 +1497,28 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         # Gunicorn must finish its graceful stop before systemd kills what is left.
         self.assertLess(int(gunicorn_settings({})["graceful_timeout"]), stop_timeout)
 
+    def test_installed_mediacms_unit_reloads_nginx_before_gunicorn_listens(self):
+        """A site that nginx still runs with uwsgi_pass must not reach gunicorn.
+
+        gunicorn waits for an HTTP request line that a uwsgi request never sends, so the
+        request hangs until nginx's 900 s read timeout. ExecStartPre runs after the old
+        server stopped and before gunicorn binds, so until then nginx answers 502.
+        """
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        unit = (self.deploy_root / "etc/systemd/system/mediacms.service").read_text()
+        self.assertRegex(unit, r"(?m)^ExecStartPre=\+/bin/systemctl --no-block try-reload-or-restart nginx\.service$")
+        self.assertNotRegex(unit, r"(?m)^ExecStartPost=")
+
     def test_installed_celery_long_unit_sends_sigterm_only_to_celery(self):
         result = self.run_updater(
             "--domain",

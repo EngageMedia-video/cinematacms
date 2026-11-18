@@ -367,9 +367,9 @@ Releases before gunicorn ran uWSGI behind `uwsgi_pass`. On such a server the
 release updater turns every pass to `127.0.0.1:9000` into the gunicorn form and
 stops when a `uwsgi_pass` names any other address. When the full observability
 stack is installed, it also renders that stack's nginx listener and log rotation
-again. The web unit reloads nginx each time gunicorn starts, so the first deploy
-of gunicorn switches nginx as soon as gunicorn listens instead of after the
-Celery restarts.
+again. The web unit reloads nginx each time before gunicorn starts, so the first
+deploy of gunicorn switches nginx with the web server instead of after the
+Celery restarts. Until gunicorn listens, nginx answers `502`.
 
 ### Roll back to a uWSGI release
 
