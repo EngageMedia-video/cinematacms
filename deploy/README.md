@@ -252,7 +252,8 @@ mTLS for that connection.
 line that the frontend requires and makes it the nvm default for root. When a
 release raises that line, run the release's `install-nodejs.sh` on each
 existing server before you deploy the release. Otherwise the server builds the
-frontend with the old Node.js.
+frontend with the old Node.js. The script also installs `libatomic1` with
+`apt-get`, because Node.js 26 does not start without `libatomic.so.1`.
 
 ```bash
 cd /home/cinemata/cinematacms

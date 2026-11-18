@@ -20,6 +20,12 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# The Node.js 26 binary links against libatomic.so.1, which a minimal
+# Ubuntu install does not ship.
+echo "Installing Node.js runtime libraries..."
+apt-get update
+apt-get install -y libatomic1
+
 # Install nvm for root user
 echo "Installing nvm for root user..."
 # Download and install nvm
