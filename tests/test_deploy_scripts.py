@@ -2704,6 +2704,39 @@ class RestartScriptTests(unittest.TestCase):
         self.assertLess(rollback.index(guard), rollback.index('if [ "$DRY_RUN" -eq 1 ]'))
         self.assertLess(rollback.index(guard), rollback.index("git checkout --detach"))
 
+    def test_required_checks_pass_only_when_every_python_passes(self):
+        jobs = yaml.safe_load(CI_WORKFLOW.read_text())["jobs"]
+
+        for required, per_python in (
+            ("pre-commit", "pre-commit-per-python"),
+            ("backend-tests", "backend-tests-per-python"),
+        ):
+            with self.subTest(required=required):
+                matrix = jobs[per_python]["strategy"]["matrix"]
+                pythons = matrix.get("python") or [leg["python"] for leg in matrix["include"]]
+                self.assertEqual(pythons, ["3.10", "3.14"])
+                self.assertIs(jobs[per_python]["strategy"]["fail-fast"], False)
+                self.assertEqual(jobs[per_python]["env"]["UV_PYTHON"], "${{ matrix.python }}")
+                self.assertEqual(jobs[required]["needs"], per_python)
+                self.assertEqual(jobs[required]["if"], "always()")
+                (step,) = jobs[required]["steps"]
+                self.assertEqual(step["env"], {"RESULT": f"${{{{ needs.{per_python}.result }}}}"})
+                self.assertEqual(step["run"], 'test "$RESULT" = success')
+        self.assertEqual(jobs["pre-commit"]["name"], "Pre-commit (lint & format)")
+        self.assertEqual(jobs["backend-tests"]["name"], "Backend Tests")
+        self.assertIn("backend-tests", jobs["deploy-dev"]["needs"])
+        self.assertIn("pre-commit", jobs["deploy-dev"]["needs"])
+
+    def test_backend_coverage_comes_from_one_python(self):
+        job = yaml.safe_load(CI_WORKFLOW.read_text())["jobs"]["backend-tests-per-python"]
+        (upload,) = (step for step in job["steps"] if step.get("uses", "").startswith("actions/upload-artifact@"))
+
+        self.assertEqual(upload["if"], "matrix.uploads-coverage")
+        self.assertEqual(upload["with"]["name"], "backend-coverage-${{ github.sha }}")
+        self.assertEqual(
+            [leg["python"] for leg in job["strategy"]["matrix"]["include"] if leg["uploads-coverage"]], ["3.10"]
+        )
+
     def run_with_service_restart_armed(self, command):
         fake_bin = self.test_root / "bin"
         fake_bin.mkdir(exist_ok=True)

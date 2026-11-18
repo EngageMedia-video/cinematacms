@@ -161,10 +161,16 @@ jobs:
           MEDIA_ACTION_IP_HMAC_KEY: ci-action-ip-hmac-key-not-for-production
         run: uv run python manage.py makemigrations --check
 
-  pre-commit:
-    name: Pre-commit (lint & format)
+  pre-commit-per-python:
+    name: Pre-commit (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}
 
     steps:
       - name: Checkout code
@@ -175,8 +181,8 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install Python 3.10
-        run: uv python install 3.10
+      - name: Install Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
 
       - name: Setup Node.js (for Prettier hook)
         uses: actions/setup-node@v4
@@ -194,13 +200,39 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --all-extras
 
+      - name: Confirm the Python version
+        run: uv run python -c 'import platform, sys; print(platform.python_version()); sys.exit(platform.python_version().rsplit(".", 1)[0] != sys.argv[1])' "$UV_PYTHON"
+
       - name: Run pre-commit (make lint)
         run: make lint
 
-  backend-tests:
-    name: Backend Tests
+  # Branch protection requires this name, so it stands for every Python above.
+  pre-commit:
+    name: Pre-commit (lint & format)
+    needs: pre-commit-per-python
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require lint on every Python
+        env:
+          RESULT: ${{ needs.pre-commit-per-python.result }}
+        run: test "$RESULT" = success
+
+  backend-tests-per-python:
+    name: Backend Tests (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The coverage series keeps one artifact name per commit, taken from the oldest supported Python.
+          - python: "3.10"
+            uploads-coverage: true
+          - python: "3.14"
+            uploads-coverage: false
 
     services:
       postgres:
@@ -229,6 +261,7 @@ jobs:
     env:
       DJANGO_SETTINGS_MODULE: cms.test_settings
       SECRET_KEY: ci-test-key-not-for-production
+      UV_PYTHON: ${{ matrix.python }}
 
     steps:
       - name: Checkout code
@@ -240,7 +273,7 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.10
+        run: uv python install ${{ matrix.python }}
 
       - name: Install system dependencies
         run: |
@@ -249,6 +282,9 @@ jobs:
 
       - name: Install Python dependencies
         run: uv sync --all-extras
+
+      - name: Confirm the Python version
+        run: uv run python -c 'import platform, sys; print(platform.python_version()); sys.exit(platform.python_version().rsplit(".", 1)[0] != sys.argv[1])' "$UV_PYTHON"
 
       - name: Run migrations
         run: uv run python manage.py migrate --noinput
@@ -267,11 +303,26 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload backend coverage data
+        if: matrix.uploads-coverage
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-${{ github.sha }}
           path: coverage.json
           retention-days: 30
+
+  # Branch protection requires this name, so it stands for every Python above.
+  backend-tests:
+    name: Backend Tests
+    needs: backend-tests-per-python
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require the tests to pass on every Python
+        env:
+          RESULT: ${{ needs.backend-tests-per-python.result }}
+        run: test "$RESULT" = success
 
   deploy-dev:
     name: Deploy to Dev VPS
