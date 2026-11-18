@@ -25,6 +25,8 @@
 		"lint:legacy": "eslint src/static/js/pages/ src/static/js/components/"
 	},
 	"devDependencies": {
+		"@mediacms/vjs-plugin": "file:packages/vjs-plugin",
+		"@mediacms/vjs-plugin-font-icons": "file:packages/vjs-plugin-font-icons",
 		"@storybook/addon-docs": "^10.6.5",
 		"@storybook/react-vite": "^10.6.5",
 		"@svgr/plugin-svgo": "^8.1.0",
