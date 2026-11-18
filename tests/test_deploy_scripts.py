@@ -782,6 +782,16 @@ class InstallScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("observability=managed", result.stdout)
 
+    def test_system_packages_use_ubuntu_24_04_names(self):
+        script = INSTALLER.read_text()
+        install_line = re.search(r"apt-get install (python3-venv [^\n]*) -y\n", script)
+        packages = install_line.group(1).split()
+
+        self.assertIn("libncurses-dev", packages)
+        self.assertIn("xz-utils", packages)
+        self.assertNotIn("libncurses5-dev", packages)
+        self.assertNotIn("libncursesw5-dev", packages)
+
     def test_installer_leaves_certbot_storage_to_a_single_certbot_run(self):
         script = INSTALLER.read_text()
 
