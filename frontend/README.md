@@ -2,7 +2,8 @@
 
 ## **Requirements**
 
-- nodejs version **22.22.2**
+- Node.js **26** (see `.nvmrc`)
+- the npm version that `packageManager` declares in `package.json`
 
 ---
 

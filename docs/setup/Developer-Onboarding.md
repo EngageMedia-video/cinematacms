@@ -152,31 +152,27 @@ These versions are tested and confirmed working:
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | **Python** | 3.10+ | 3.10 recommended |
-| **Node.js** | 22.x | **v22.22.2 recommended** — any Node.js 22.x version should work |
+| **Node.js** | 26.x | Active LTS. Tested with v26.13.1 |
 | **PostgreSQL** | 14+ | Via Docker (14-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
 | **FFmpeg** | 4.4+ | For video processing |
 | **Docker** | 20.10+ | Docker Compose included |
 | **uv** | Latest | Python package manager |
-| **npm** | 11+ | Node.js 22 bundles npm 10 — you must upgrade, see note below |
+| **npm** | 11.20.0 | Pinned by `packageManager` in `frontend/package.json`, see note below |
 
-> **⚠️ Important:** Node.js v22.x is required for the frontend build. Version 22.22.2 is tested and recommended.
+> **⚠️ Important:** Node.js v26.x is required for the frontend build.
 
-> **⚠️ npm 11 is required.** Node.js 22 bundles npm 10, which does not understand the
-> `libc` field that `frontend/package-lock.json` uses to pick the correct native binary
-> on glibc versus musl systems. Running `npm install` with npm 10 silently deletes those
-> fields and produces a lockfile that can resolve the wrong binary on Linux. Upgrade
-> after installing Node:
+> **⚠️ Use the pinned npm.** The `packageManager` field in `frontend/package.json` pins
+> the npm version. A Node 26 release can bundle a different npm, so install the pinned
+> version after installing Node:
 >
 > ```bash
 > cd frontend
 > npm i -g "$(node -p "require('./package.json').packageManager")"
-> npm --version   # must report 11.x
+> npm --version   # must match packageManager
 > ```
 >
-> The exact version is pinned by the `packageManager` field in `frontend/package.json`.
-> If you see a `git diff` on `package-lock.json` that only removes `libc` entries, you
-> are on npm 10 — discard the diff and upgrade.
+> Regenerate `package-lock.json` only with that npm version.
 
 ---
 
@@ -279,11 +275,11 @@ brew install wget openssl ffmpeg make cmake python bento4 uv
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.zshrc  # or ~/.bash_profile for bash users
 
-# Install the recommended Node.js version (any 22.x works, but 22.22.2 is tested)
-nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
+# Install Node.js 26 LTS
+nvm install 26 && nvm use 26 && nvm alias default 26
 
 # Verify installations
-node --version   # Should output v22.22.2 (recommended, any v22.x works)
+node --version   # Should output v26.x
 uv --version
 docker --version
 ```
@@ -301,7 +297,7 @@ sudo apt install -y libpq-dev libssl-dev libffi-dev ffmpeg cmake
 # Install Node.js via nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
-nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
+nvm install 26 && nvm use 26 && nvm alias default 26
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -328,7 +324,7 @@ sudo apt install -y git wget curl build-essential libpq-dev libssl-dev libffi-de
 # Install Node.js via nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
-nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
+nvm install 26 && nvm use 26 && nvm alias default 26
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -356,10 +352,9 @@ mkdir -p ~/cinemata && cd ~/cinemata
 git clone https://github.com/EngageMedia-video/cinematacms cinematacms
 cd cinematacms
 
-# The repository includes .nvmrc files specifying Node.js v22 (any 22.x version)
-# nvm will automatically switch to Node 22.x when you cd into the directory
+# The repository includes .nvmrc files specifying Node.js v26
+# nvm will automatically switch to Node 26 when you cd into the directory
 # Run 'nvm use' manually if auto-switching doesn't work
-# Note: v22.22.2 is the tested/recommended version from the install steps above
 
 # Clone Whisper.cpp for ASR
 cd ~/cinemata
@@ -719,7 +714,7 @@ make docker-shell-db
 ```
 
 ✅ **Expected:** Hot reload works, page loads
-❌ **If fails:** Check Node.js version (must be 22.22.2)
+❌ **If fails:** Check Node.js version (must be v26.x)
 
 ### Quick Health Check Script
 
@@ -1172,7 +1167,7 @@ MediaAction → User (foreign key)
 - **Vite** - Build tool and dev server
 - **django-vite** - Django integration for Vite assets
 - **Video.js** - Custom media player foundation
-- **Node.js v22.22.2** - Build environment
+- **Node.js v26** - Build environment
 
 ### Development Architecture
 
@@ -1851,10 +1846,10 @@ cd frontend && npm install
 make frontend-build
 
 # Check Node version
-node --version  # Should be v22.22.2
+node --version  # Should be v26.x
 
 # Reinstall Node if needed
-nvm install 22.22.2 && nvm use 22.22.2
+nvm install 26 && nvm use 26
 ```
 
 ### Celery Workers Not Processing
@@ -1940,19 +1935,19 @@ sudo apt install python3.10 python3.10-venv
 
 ### Node.js Version Errors
 
-#### Error: Node.js v22.22.2 required or Vite build fails
+#### Error: Node.js v26 required or Vite build fails
 
 ```bash
 # Check current version
 node --version
 
 # Install correct version with nvm
-nvm install 22.22.2
-nvm use 22.22.2
-nvm alias default 22.22.2
+nvm install 26
+nvm use 26
+nvm alias default 26
 
 # Verify
-node --version  # Should output v22.22.2
+node --version  # Should output v26.x
 
 # Reinstall frontend dependencies
 cd frontend

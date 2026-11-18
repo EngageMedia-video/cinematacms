@@ -246,6 +246,31 @@ Configure `OBSERVABILITY_REFERENCE_ALLOWED_IPS` with explicit addresses or CIDR
 ranges only when the monitoring service runs on another host, and use HTTPS or
 mTLS for that connection.
 
+### Upgrade Node.js on an existing server
+
+`install.sh` runs `install-nodejs.sh`, which installs the Node.js LTS release
+line that the frontend requires and makes it the nvm default for root. When a
+release raises that line, run the release's `install-nodejs.sh` on each
+existing server before you deploy the release. Otherwise the server builds the
+frontend with the old Node.js.
+
+```bash
+cd /home/cinemata/cinematacms
+git fetch origin
+git show <commit-sha>:install-nodejs.sh > /tmp/install-nodejs.sh
+sudo bash /tmp/install-nodejs.sh
+sudo sh -c 'command -v node; node --version; npm --version'
+```
+
+Use the commit that you are about to deploy as `<commit-sha>`. The last
+command shows the `node` that `restart_script.sh` finds on the `PATH` that
+`sudo` sets. It must report the major version in `frontend/.nvmrc`. If it
+reports an older version, that `PATH` leads to an old Node.js install. Point it
+at the new install before you deploy.
+
+The deploy runs `npm ci`, which installs from the lockfile and does not rewrite
+it, so the npm that the new Node.js bundles is enough.
+
 ## Nginx request handling
 
 The deployment files split nginx ownership as follows:

@@ -337,7 +337,7 @@ class InstallScriptTests(unittest.TestCase):
         )
         return env, command_log, install_dir
 
-    def npm_env(self, installed_version="11.19.0", package_manager="npm@11.19.0"):
+    def npm_env(self, installed_version="11.20.0", package_manager="npm@11.20.0"):
         fake_bin = self.test_root / "npm-bin"
         fake_bin.mkdir(exist_ok=True)
         command_log = self.test_root / "npm-commands.log"
@@ -442,7 +442,7 @@ class InstallScriptTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("npm install --global npm@11.19.0", command_log.read_text())
+        self.assertIn("npm install --global npm@11.20.0", command_log.read_text())
 
     def test_project_npm_version_mismatch_fails_installation(self):
         env, _ = self.npm_env(installed_version="10.9.8")
@@ -453,10 +453,10 @@ class InstallScriptTests(unittest.TestCase):
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("expected npm 11.19.0", result.stderr)
+        self.assertIn("expected npm 11.20.0", result.stderr)
 
     def test_project_npm_ignores_corepack_integrity_suffix_for_version_check(self):
-        package_manager = "npm@11.19.0+sha512.deadbeef"
+        package_manager = "npm@11.20.0+sha512.deadbeef"
         env, command_log = self.npm_env(package_manager=package_manager)
 
         result = self.run_installer_function(

@@ -32,9 +32,9 @@ npm ci --no-fund --no-audit
 cd ..
 ```
 
-The frontend requires Node.js 22 and the npm version declared in
-`frontend/package.json`. Do not regenerate `frontend/package-lock.json` with
-npm 10.
+The frontend requires Node.js 26 and the npm version that `packageManager`
+declares in `frontend/package.json`. The `npm i -g` command above installs that
+version. Regenerate `frontend/package-lock.json` only with that npm version.
 
 ## Follow the coding standards
 

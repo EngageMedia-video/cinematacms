@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# Node.js v22 LTS Installation Script
-# This script installs Node Version Manager (nvm) and Node.js v22 LTS
+# Node.js LTS Installation Script
+# This script installs Node Version Manager (nvm) and Node.js LTS
 # Designed to be run as root for building frontend static assets
 
 set -Eeuo pipefail  # safer: exit on error, fail pipelines, and error on unset vars
 umask 022
 trap 'echo "Error on line $LINENO"; exit 1' ERR
 
-echo "Starting Node.js v22 LTS installation..."
+NODE_MAJOR=26
+
+echo "Starting Node.js v${NODE_MAJOR} LTS installation..."
 
 # Check if running as root
 if [ "$(id -u)" != "0" ]; then
@@ -52,11 +54,10 @@ if ! command -v nvm >/dev/null 2>&1; then
     exit 1
 fi
 
-# Install Node.js v22 LTS
-echo "Installing Node.js v22 LTS..."
-nvm install 22 || { echo "Failed to install Node.js v22"; exit 1; }
-nvm use 22 || { echo "Failed to use Node.js v22"; exit 1; }
-nvm alias default 22 || { echo "Failed to set default Node.js version"; exit 1; }
+echo "Installing Node.js v${NODE_MAJOR} LTS..."
+nvm install "$NODE_MAJOR" || { echo "Failed to install Node.js v${NODE_MAJOR}"; exit 1; }
+nvm use "$NODE_MAJOR" || { echo "Failed to use Node.js v${NODE_MAJOR}"; exit 1; }
+nvm alias default "$NODE_MAJOR" || { echo "Failed to set default Node.js version"; exit 1; }
 
 # Verify installation
 echo ""
@@ -67,7 +68,7 @@ echo "Node.js version: $NODE_VERSION"
 echo "npm version: $NPM_VERSION"
 
 echo ""
-echo "Node.js v22 LTS installation completed successfully!"
+echo "Node.js v${NODE_MAJOR} LTS installation completed successfully!"
 echo ""
 echo "Node.js has been installed for the root user."
 echo "To use Node.js in future sessions, run:"

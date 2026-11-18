@@ -374,7 +374,7 @@ su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" post
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
 CURRENT_STEP="Node.js and npm installation"
-echo 'Installing Node.js v22 LTS...'
+echo 'Installing Node.js v26 LTS...'
 # Resolve install-nodejs.sh relative to this script's own location, so the
 # installer works regardless of where the repository was cloned or the current
 # working directory. Fall back to the legacy fixed path for compatibility.
@@ -390,7 +390,7 @@ if [ -f "$NODEJS_SCRIPT" ]; then
         # shellcheck source=/dev/null
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         # Ensure Node is on PATH in this shell
-        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 22 >/dev/null 2>&1
+        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 26 >/dev/null 2>&1
         if ! node -v || ! npm -v; then
             echo "Error: node/npm not on PATH after install"
             exit 1
