@@ -388,8 +388,9 @@ take in step 2.
 5. If the full observability stack is installed, run its installer again with
    the environment file that you installed it with. It rebuilds the Celery
    exporter virtualenv with Ubuntu 24.04's `python3` (3.12), because the
-   virtualenv built with Python 3.10 cannot run any more. Then verify the
-   stack:
+   virtualenv built with Python 3.10 cannot run any more. Do not run this
+   installer before the upgrade: the pinned exporter needs Python 3.11 or
+   later, and Ubuntu 22.04 has 3.10. Then verify the stack:
 
    ```bash
    sudo deploy/observability/install.sh --env <environment file>
