@@ -249,7 +249,9 @@ mTLS for that connection.
 ### Upgrade Node.js on an existing server
 
 `install.sh` runs `install-nodejs.sh`, which installs the Node.js LTS release
-line that the frontend requires and makes it the nvm default for root. When a
+line that the frontend requires, makes it the nvm default for root, and points
+`/usr/local/bin/node`, `npm` and `npx` at it. `restart_script.sh` finds Node.js
+through those links, because `sudo` does not load nvm. When a
 release raises that line, run the release's `install-nodejs.sh` on each
 existing server before you deploy the release. Otherwise the server builds the
 frontend with the old Node.js. The script also installs `libatomic1` with
@@ -265,9 +267,9 @@ sudo sh -c 'command -v node; node --version; npm --version'
 
 Use the commit that you are about to deploy as `<commit-sha>`. The last
 command shows the `node` that `restart_script.sh` finds on the `PATH` that
-`sudo` sets. It must report the major version in `frontend/.nvmrc`. If it
-reports an older version, that `PATH` leads to an old Node.js install. Point it
-at the new install before you deploy.
+`sudo` sets. It must be `/usr/local/bin/node` and report the major version in
+`frontend/.nvmrc`. If `command -v node` shows another path, an earlier entry on
+the `sudo` `PATH` holds an old Node.js. Remove that install before you deploy.
 
 The deploy runs `npm ci`, which installs from the lockfile and does not rewrite
 it, so the npm that the new Node.js bundles is enough.

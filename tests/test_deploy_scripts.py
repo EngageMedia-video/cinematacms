@@ -27,6 +27,7 @@ LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
+NODE_INSTALLER = PROJECT_ROOT / "install-nodejs.sh"
 FRONTEND_ARTIFACT_TOOL = PROJECT_ROOT / "deploy" / "frontend-artifact.py"
 PATH_EXCHANGE_TOOL = PROJECT_ROOT / "deploy" / "exchange-paths.py"
 STATIC_RELEASES = Path("static_releases")
@@ -695,6 +696,97 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("portal_name=Example Video", result.stdout)
         self.assertIn("proxy=cloudflare", result.stdout)
         self.assertIn("observability=local", result.stdout)
+
+
+FAKE_NVM_INSTALLER = """\
+mkdir -p "$HOME/.nvm"
+cat > "$HOME/.nvm/nvm.sh" <<'NVM'
+nvm() {
+    case "$1" in
+        install)
+            bin="$NVM_DIR/versions/node/v$2.1.0/bin"
+            mkdir -p "$bin"
+            for tool in node npm npx; do
+                printf '#!/bin/sh\\necho v%s.1.0\\n' "$2" > "$bin/$tool"
+                chmod +x "$bin/$tool"
+            done ;;
+        which) echo "$NVM_DIR/versions/node/v$2.1.0/bin/node" ;;
+    esac
+}
+NVM
+"""
+
+FAKE_CURL = """\
+#!/bin/sh
+while [ "$#" -gt 0 ]; do
+    if [ "$1" = "-o" ]; then cp "$FAKE_NVM_INSTALLER" "$2"; fi
+    shift
+done
+"""
+
+
+class NodeInstallerTests(unittest.TestCase):
+    def setUp(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.root = Path(temp_dir.name)
+        self.home = self.root / "home"
+        self.home.mkdir()
+        self.link_dir = self.root / "usr-local-bin"
+        self.link_dir.mkdir()
+        self.fake_bin = self.root / "bin"
+        self.fake_bin.mkdir()
+        self.write_executable(self.fake_bin / "id", "#!/bin/sh\necho 0\n")
+        self.write_executable(self.fake_bin / "apt-get", "#!/bin/sh\nexit 0\n")
+        self.write_executable(self.fake_bin / "curl", FAKE_CURL)
+        self.nvm_installer = self.root / "nvm-installer.sh"
+        self.nvm_installer.write_text(FAKE_NVM_INSTALLER)
+        self.new_bin = self.home / ".nvm" / "versions" / "node" / "v26.1.0" / "bin"
+
+    def write_executable(self, path, content):
+        path.write_text(content)
+        path.chmod(0o755)
+
+    def run_node_installer(self):
+        env = os.environ.copy()
+        env.update(
+            {
+                "HOME": str(self.home),
+                "PATH": f"{self.fake_bin}:{env['PATH']}",
+                "NODE_LINK_DIR": str(self.link_dir),
+                "NVM_INSTALL_TMP": str(self.root / "nvm-install.sh"),
+                "FAKE_NVM_INSTALLER": str(self.nvm_installer),
+            }
+        )
+        return subprocess.run(
+            ["bash", str(NODE_INSTALLER)],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_rerun_moves_existing_links_to_the_new_release_line(self):
+        old_bin = self.root / "old-node" / "bin"
+        old_bin.mkdir(parents=True)
+        for tool in ("node", "npm", "npx"):
+            self.write_executable(old_bin / tool, "#!/bin/sh\necho v22.0.0\n")
+            (self.link_dir / tool).symlink_to(old_bin / tool)
+
+        result = self.run_node_installer()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for tool in ("node", "npm", "npx"):
+            self.assertEqual((self.link_dir / tool).resolve(), (self.new_bin / tool).resolve())
+        self.assertIn("Node.js version: v26.1.0", result.stdout)
+
+    def test_second_run_keeps_the_links_on_the_new_release_line(self):
+        first = self.run_node_installer()
+        second = self.run_node_installer()
+
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertEqual((self.link_dir / "node").resolve(), (self.new_bin / "node").resolve())
 
 
 class LocalObservabilityInstallerTests(unittest.TestCase):

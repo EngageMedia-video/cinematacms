@@ -65,11 +65,25 @@ nvm install "$NODE_MAJOR" || { echo "Failed to install Node.js v${NODE_MAJOR}"; 
 nvm use "$NODE_MAJOR" || { echo "Failed to use Node.js v${NODE_MAJOR}"; exit 1; }
 nvm alias default "$NODE_MAJOR" || { echo "Failed to set default Node.js version"; exit 1; }
 
+# restart_script.sh runs under sudo without loading nvm, so it finds Node.js
+# through these links. Repoint them on every run so an upgrade replaces the
+# previous release line.
+NODE_LINK_DIR="${NODE_LINK_DIR:-/usr/local/bin}"
+NODE_BIN_DIR=$(dirname "$(nvm which "$NODE_MAJOR")")
+echo "Linking node, npm and npx into ${NODE_LINK_DIR}..."
+for tool in node npm npx; do
+    ln -sfn "${NODE_BIN_DIR}/${tool}" "${NODE_LINK_DIR}/${tool}"
+done
+
 # Verify installation
 echo ""
 echo "Verifying installation..."
-NODE_VERSION=$(node -v 2>/dev/null) || { echo "Error: Node.js not found after installation"; exit 1; }
-NPM_VERSION=$(npm -v 2>/dev/null) || { echo "Error: npm not found after installation"; exit 1; }
+NODE_VERSION=$("${NODE_LINK_DIR}/node" -v 2>/dev/null) || { echo "Error: Node.js not found after installation"; exit 1; }
+NPM_VERSION=$("${NODE_LINK_DIR}/npm" -v 2>/dev/null) || { echo "Error: npm not found after installation"; exit 1; }
+case "$NODE_VERSION" in
+    "v${NODE_MAJOR}."*) ;;
+    *) echo "Error: ${NODE_LINK_DIR}/node is $NODE_VERSION, expected v${NODE_MAJOR}"; exit 1 ;;
+esac
 echo "Node.js version: $NODE_VERSION"
 echo "npm version: $NPM_VERSION"
 
