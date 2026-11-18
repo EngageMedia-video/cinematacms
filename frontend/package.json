@@ -29,6 +29,7 @@
 		"@mediacms/vjs-plugin-font-icons": "file:packages/vjs-plugin-font-icons",
 		"@storybook/addon-docs": "^10.6.5",
 		"@storybook/react-vite": "^10.6.5",
+		"@svgr/plugin-jsx": "^8.1.0",
 		"@svgr/plugin-svgo": "^8.1.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@testing-library/jest-dom": "^7.0.1",
