@@ -443,7 +443,7 @@ class InstallScriptTests(unittest.TestCase):
             check=False,
         )
 
-    def platform_env(self, version="22.04", architecture="amd64"):
+    def platform_env(self, version="24.04", architecture="amd64"):
         os_release = self.test_root / "os-release"
         os_release.write_text(f'ID=ubuntu\nVERSION_ID="{version}"\n')
         fake_bin = self.test_root / "bin"
@@ -694,23 +694,23 @@ class InstallScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "noninteractive")
 
-    def test_platform_check_accepts_ubuntu_22_arm64(self):
+    def test_platform_check_accepts_ubuntu_24_arm64(self):
         result = self.run_installer(
             "--check-platform",
             env=self.platform_env(architecture="arm64"),
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Supported platform: Ubuntu 22.04 (arm64)", result.stdout)
+        self.assertIn("Supported platform: Ubuntu 24.04 (arm64)", result.stdout)
 
     def test_platform_check_rejects_other_ubuntu_release(self):
         result = self.run_installer(
             "--check-platform",
-            env=self.platform_env(version="24.04"),
+            env=self.platform_env(version="22.04"),
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Ubuntu 22.04 is required", result.stderr)
+        self.assertIn("Ubuntu 24.04 is required", result.stderr)
 
     def test_platform_check_rejects_unsupported_architecture(self):
         result = self.run_installer(
