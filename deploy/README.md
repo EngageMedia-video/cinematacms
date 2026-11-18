@@ -150,7 +150,7 @@ The number is how many processes to remove, and the name before `@` is `long`,
 
 ```bash
 cd /home/cinemata/cinematacms
-sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/bin/celery -A cms control pool_shrink 3 -d "long@$(hostname)"'
+sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/venv/bin/celery -A cms control pool_shrink 3 -d "long@$(hostname)"'
 ```
 
 Then check the live sizes. The first command counts the uWSGI workers. In the
@@ -160,7 +160,7 @@ does not show a later `pool_shrink`.
 
 ```bash
 pgrep -c -P "$(systemctl show -p MainPID --value mediacms)"
-sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/bin/celery -A cms inspect stats'
+sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/venv/bin/celery -A cms inspect stats'
 ```
 
 To roll back, delete the keys from `app.env` and the drop-in, then repeat the
@@ -376,6 +376,94 @@ together. To change the domain, update the nginx certificate and site config as
 one maintenance operation.
 
 Use `--no-restart` to install and validate files without restarting services.
+
+## Move to another Python
+
+The services, `restart_script.sh`, and `rollback.sh` reach the Python
+virtualenv only through the link `/home/cinemata/venv`. The link names one of
+two virtualenvs:
+
+| Virtualenv | Python | Made by |
+| --- | --- | --- |
+| `/home/cinemata/venvs/py3.14` | 3.14 from uv | `install.sh`, or `deploy/migrate-python-runtime.sh` on an existing install |
+| `/home/cinemata` itself | the Ubuntu `python3` | an install made before versioned virtualenvs |
+
+uv and its interpreters live in `/opt/cinematacms/bin/uv` and
+`/opt/cinematacms/python`. Both stay owned by root and readable by `www-data`.
+The script pins the uv release and the checksum of its download.
+
+### First deploy on an existing install
+
+An existing install has no link. The first deploy of a release with versioned
+virtualenvs links `/home/cinemata/venv` to `/home/cinemata` and changes nothing
+else. The services keep the same interpreter and packages. A deploy runs the
+`restart_script.sh` of the release it replaces, which calls
+`deploy/apply-release-config.sh` of the new release before it installs the new
+units. That script makes the link, and so do `restart_script.sh` and
+`rollback.sh` before they activate the virtualenv. Each of them leaves an
+existing link alone.
+
+On such an install the link points at its own parent directory. `chown -R` and
+`find` do not follow it. A backup or copy tool that follows links must exclude
+`/home/cinemata/venv`.
+
+`uwsgi.ini` still sets `virtualenv = /home/cinemata`, for a unit that an older
+release installed. `mediacms.service` passes `--virtualenv /home/cinemata/venv`
+after `--ini`, and uWSGI uses the value it reads last.
+
+### Upgrade
+
+1. Deploy the release as usual. The services still run on the old virtualenv.
+2. Run the migration:
+
+   ```bash
+   sudo /home/cinemata/cinematacms/deploy/migrate-python-runtime.sh
+   ```
+
+3. Confirm the interpreter:
+
+   ```bash
+   /home/cinemata/venv/bin/python --version
+   systemctl status mediacms celery_long celery_short celery_whisper celery_email celery_beat
+   ```
+
+The script installs uv and Python 3.14 when they are missing. It builds
+`/home/cinemata/venvs/py3.14` from `requirements.txt`, which compiles uWSGI
+against that Python. It runs `manage.py check` as `www-data` with
+`/etc/cinematacms/app.env`. Only then does it point the link at the new
+virtualenv, record the old one as `/home/cinemata/venvs/previous`, and run
+`deploy/apply-release-config.sh` to install the units and restart the services.
+A failure before the switch leaves the services on the old virtualenv.
+
+The script runs no database migration and changes no code. Running it again
+builds nothing new. It installs the requirements of the checkout, checks, and
+restarts. Do not run it while a deploy runs.
+
+### Roll back
+
+Roll back in the reverse order of the upgrade. Each commit then runs on an
+interpreter that its code and its deploy scripts support.
+
+To move the services back to the previous virtualenv:
+
+```bash
+sudo /home/cinemata/cinematacms/deploy/migrate-python-runtime.sh --rollback
+```
+
+Deploys since the migration installed packages only into the virtualenv in use.
+The rollback therefore installs the requirements of the checkout into the
+previous virtualenv and checks it as `www-data` before it switches. A failure
+leaves the services where they were. The Python 3.14 virtualenv stays, so a
+later migration reuses it.
+
+A commit from before versioned virtualenvs knows only `/home/cinemata`. Its
+`restart_script.sh` would install packages there while the units run from the
+link. `rollback.sh` refuses such a commit while the link names another
+virtualenv. Run `migrate-python-runtime.sh --rollback` first, then `rollback.sh`.
+
+Once a release needs Python 3.14, the order reverses. Roll back the code to a
+release that still supports the old Python, then the interpreter. Never move
+the interpreter back under code that needs the newer one.
 
 ## Deploy a prebuilt frontend
 
