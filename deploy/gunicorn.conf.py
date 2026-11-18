@@ -23,7 +23,8 @@ def application_server(upstream_config):
     blocks = re.findall(rf"\bupstream\s+{APPLICATION_UPSTREAM}\s*\{{([^}}]*)\}}", config)
     if len(blocks) != 1:
         raise ValueError(f"expected one upstream {APPLICATION_UPSTREAM} block, found {len(blocks)}")
-    servers = re.findall(r"(?:^|;|\s)server\s+([^;]*);", blocks[0])
+    directives = [directive.split() for directive in blocks[0].split(";")]
+    servers = [" ".join(words[1:]) for words in directives if words and words[0] == "server"]
     if len(servers) != 1:
         raise ValueError(f"upstream {APPLICATION_UPSTREAM} must have exactly one server, found {len(servers)}")
     address = servers[0].strip()
