@@ -1532,7 +1532,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
     def test_apply_links_the_virtualenv_of_an_older_install_for_every_unit(self):
         legacy_bin = self.deploy_root / "home/cinemata/bin"
-        for program in ("uwsgi", "celery"):
+        for program in ("gunicorn", "celery"):
             (legacy_bin / program).write_text("#!/bin/sh\n")
 
         result = self.apply_without_restart()
@@ -1566,59 +1566,17 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertFalse((self.deploy_root / "home/cinemata/venv").exists())
         self.assertFalse((self.deploy_root / "etc/systemd/system/mediacms.service").exists())
 
-    def test_installed_mediacms_unit_overrides_the_virtualenv_of_uwsgi_ini(self):
-        """uWSGI starts Python from the virtualenv it is given last.
-
-        A unit from an older release still reads the virtualenv of uwsgi.ini, so the
-        ini keeps naming the legacy one and this unit's --virtualenv must win.
-        """
-        result = self.apply_without_restart()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        exec_start = shlex.split(
-            re.search(r"(?m)^ExecStart=(.*)$", (self.deploy_root / "etc/systemd/system/mediacms.service").read_text())[
-                1
-            ]
-        )
-        self.assertEqual(
-            exec_start,
-            [
-                "/home/cinemata/venv/bin/uwsgi",
-                "--ini",
-                "/home/cinemata/cinematacms/uwsgi.ini",
-                "--virtualenv",
-                "/home/cinemata/venv",
-            ],
-        )
-        self.assertRegex((PROJECT_ROOT / "uwsgi.ini").read_text(), r"(?m)^virtualenv = /home/cinemata$")
-
-        not_a_python_home = Path(self.temp_dir.name) / "legacy-home"
-        not_a_python_home.mkdir()
-        portable = Path(self.temp_dir.name) / "uwsgi.ini"
-        portable.write_text(f"[uwsgi]\nvirtualenv = {not_a_python_home}\n")
-        this_python_home = subprocess.run(
-            [sys.executable, "-c", "import sys; print(sys.base_prefix)"], capture_output=True, text=True, check=True
-        ).stdout.strip()
-        uwsgi = str(Path(sys.executable).parent / "uwsgi")
-        arguments = {"/home/cinemata/cinematacms/uwsgi.ini": str(portable), "/home/cinemata/venv": this_python_home}
-        as_the_unit = [uwsgi, *(arguments.get(argument, argument) for argument in exec_start[1:]), "--no-server"]
-        as_an_older_unit = [uwsgi, "--ini", str(portable), "--no-server"]
-        for command, starts in ((as_the_unit, True), (as_an_older_unit, False)):
-            with self.subTest(command=command):
-                started = subprocess.run(command, cwd=self.temp_dir.name, capture_output=True, text=True, check=False)
-                self.assertEqual(started.returncode == 0, starts, started.stderr)
-
     def test_uwsgi_ini_does_not_run_os_after_fork_hooks(self):
-        """With py-call-osafterfork, uWSGI 2.0 workers abort on Python 3.13 and later (unbit/uwsgi#2710)."""
-        unit = (PROJECT_ROOT / "deploy/mediacms.service").read_text()
-        self.assertNotIn("py-call-osafterfork", unit)
-        for path in (PROJECT_ROOT / "uwsgi.ini", PROJECT_ROOT / "deploy/uwsgi.ini"):
-            with self.subTest(path=path):
-                options = [
-                    line.split("=")[0].strip()
-                    for line in path.read_text().splitlines()
-                    if "=" in line and not line.lstrip().startswith((";", "#"))
-                ]
-                self.assertNotIn("py-call-osafterfork", options)
+        """With py-call-osafterfork, uWSGI 2.0 workers abort on Python 3.13 and later (unbit/uwsgi#2710).
+
+        The uWSGI unit of the last uWSGI release can still start uwsgi.ini on Python 3.14.
+        """
+        options = [
+            line.split("=")[0].strip()
+            for line in (PROJECT_ROOT / "uwsgi.ini").read_text().splitlines()
+            if "=" in line and not line.lstrip().startswith((";", "#"))
+        ]
+        self.assertNotIn("py-call-osafterfork", options)
 
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
@@ -2794,9 +2752,12 @@ class StaticFilesSettingsTests(unittest.TestCase):
 
 
 class RestartScriptTests(unittest.TestCase):
-    # The mediacms unit of the uWSGI releases. Their restart_script.sh restarts it when a
+    # The mediacms units of the uWSGI releases. Their restart_script.sh restarts the unit when a
     # deploy to this release stops before apply-release-config.sh installs the gunicorn unit.
-    UWSGI_RELEASE_EXEC_START = "/home/cinemata/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini"
+    UWSGI_RELEASE_EXEC_STARTS = (
+        "/home/cinemata/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini",
+        "/home/cinemata/venv/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini --virtualenv /home/cinemata/venv",
+    )
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -2804,16 +2765,21 @@ class RestartScriptTests(unittest.TestCase):
         self.test_root = Path(self.temp_dir.name)
 
     def test_a_deploy_from_a_uwsgi_release_that_stops_early_can_restart_uwsgi(self):
-        installed_ini = Path(self.UWSGI_RELEASE_EXEC_START.split(" --ini ")[1])
-        ini = PROJECT_ROOT / installed_ini.relative_to("/home/cinemata/cinematacms")
-        settings = {
-            tuple(part.strip() for part in line.split("=", 1))
-            for line in ini.read_text().splitlines()
-            if "=" in line and not line.startswith("#")
-        }
+        for exec_start in self.UWSGI_RELEASE_EXEC_STARTS:
+            with self.subTest(exec_start=exec_start):
+                arguments = shlex.split(exec_start)
+                installed_ini = Path(arguments[arguments.index("--ini") + 1])
+                ini = PROJECT_ROOT / installed_ini.relative_to("/home/cinemata/cinematacms")
+                settings = {
+                    tuple(part.strip() for part in line.split("=", 1))
+                    for line in ini.read_text().splitlines()
+                    if "=" in line and not line.startswith("#")
+                }
+                if "--virtualenv" not in arguments:
+                    self.assertIn(("virtualenv", "/home/cinemata"), settings)
 
-        self.assertIn(("module", "cms.wsgi"), settings)
-        self.assertIn(("socket", "127.0.0.1:9000"), settings)
+                self.assertIn(("module", "cms.wsgi"), settings)
+                self.assertIn(("socket", "127.0.0.1:9000"), settings)
 
     def run_restart_functions(self, arguments, *, then=""):
         fake_bin = self.test_root / "bin"

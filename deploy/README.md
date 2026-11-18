@@ -384,13 +384,19 @@ fails. Fix the reported cause and run the remaining commands by hand.
 
 ```bash
 set -Eeuo pipefail
-cd /home/cinemata
-source bin/activate
-cd cinematacms
+cd /home/cinemata/cinematacms
 source restart_script.sh
+deploy/migrate-python-runtime.sh --adopt-legacy-venv
+source /home/cinemata/venv/bin/activate
 TARGET="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f2)"
 DEPLOYED="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f3)"
 [ "$(git rev-parse HEAD)" = "$DEPLOYED" ] || { echo "HEAD is not the last deployed commit" >&2; exit 1; }
+# The same refusal as rollback.sh. See "Move to another Python".
+if ! git cat-file -e "$TARGET:deploy/migrate-python-runtime.sh" 2>/dev/null &&
+  [ ! /home/cinemata/venv -ef /home/cinemata ]; then
+  echo "Run deploy/migrate-python-runtime.sh --rollback first" >&2
+  exit 1
+fi
 
 # The same steps as rollback.sh: the code, the Python packages and the frontend.
 adopt_served_frontend
@@ -500,9 +506,10 @@ On such an install the link points at its own parent directory. `chown -R` and
 `find` do not follow it. A backup or copy tool that follows links must exclude
 `/home/cinemata/venv`.
 
-`uwsgi.ini` still sets `virtualenv = /home/cinemata`, for a unit that an older
-release installed. `mediacms.service` passes `--virtualenv /home/cinemata/venv`
-after `--ini`, and uWSGI uses the value it reads last.
+`uwsgi.ini` still sets `virtualenv = /home/cinemata`, for a uWSGI unit that an
+older release installed. The uWSGI unit of the last uWSGI release passes
+`--virtualenv /home/cinemata/venv` after `--ini`, and uWSGI uses the value it
+reads last.
 
 ### Upgrade
 
@@ -521,9 +528,9 @@ after `--ini`, and uWSGI uses the value it reads last.
    ```
 
 The script installs uv and Python 3.14 when they are missing. It builds
-`/home/cinemata/venvs/py3.14` from `requirements.txt`, which compiles uWSGI
-against that Python. It runs `manage.py check` as `www-data` with
-`/etc/cinematacms/app.env`. Only then does it point the link at the new
+`/home/cinemata/venvs/py3.14` from `requirements.txt`. It runs
+`manage.py check` as `www-data` with `/etc/cinematacms/app.env`. Only then does
+it point the link at the new
 virtualenv, record the old one as `/home/cinemata/venvs/previous`, and run
 `deploy/apply-release-config.sh` to install the units and restart the services.
 A failure before the switch leaves the services on the old virtualenv.

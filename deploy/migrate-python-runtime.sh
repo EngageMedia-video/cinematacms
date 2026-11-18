@@ -57,7 +57,7 @@ install_uv() {
     )
 }
 
-# A virtualenv whose interpreter runs is kept, because building it again recompiles uWSGI.
+# A virtualenv whose interpreter runs is kept, so a second run only installs the requirements.
 build_python_venv() {
     local venv=$1
     install_uv
