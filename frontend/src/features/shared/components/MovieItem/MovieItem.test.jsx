@@ -157,6 +157,30 @@ describe('MovieItem hover preview', () => {
 		}));
 	}
 
+	function mockChangingMatchMedia() {
+		const listeners = new Set();
+		let matchingQuery = '';
+		window.matchMedia = vi.fn((query) => ({
+			get matches() {
+				return Boolean(matchingQuery) && query.includes(matchingQuery);
+			},
+			media: query,
+			addEventListener: (type, listener) => listeners.add(listener),
+			removeEventListener: (type, listener) => listeners.delete(listener),
+		}));
+		return {
+			listenerCount: () => listeners.size,
+			turnOn(query) {
+				matchingQuery = query;
+				listeners.forEach((listener) => listener({ matches: true }));
+			},
+			turnOff() {
+				matchingQuery = '';
+				listeners.forEach((listener) => listener({ matches: false }));
+			},
+		};
+	}
+
 	function getPreview(container) {
 		return container.querySelector('img[data-movie-item-preview]');
 	}
@@ -363,6 +387,96 @@ describe('MovieItem hover preview', () => {
 
 		fireEvent.load(getPreview(container));
 		expect(getPreview(container)).toHaveClass('opacity-100');
+	});
+
+	it.each([
+		{ trigger: 'hover', setting: 'prefers-reduced-motion: reduce' },
+		{ trigger: 'hover', setting: 'hover: none' },
+		{ trigger: 'keyboard focus', setting: 'prefers-reduced-motion: reduce' },
+		{ trigger: 'keyboard focus', setting: 'hover: none' },
+	])('stops a $trigger preview when ($setting) starts to match', async ({ trigger, setting }) => {
+		const user = userEvent.setup();
+		const media = mockChangingMatchMedia();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+		expect(media.listenerCount()).toBe(0);
+
+		if (trigger === 'hover') {
+			await user.hover(screen.getByRole('article'));
+		} else {
+			await user.tab();
+		}
+		fireEvent.load(getPreview(container));
+		expect(getPreview(container)).toHaveClass('opacity-100');
+
+		act(() => media.turnOn(setting));
+
+		expect(getPreview(container)).toBeNull();
+		expect(screen.getByRole('img', { name: 'Movie artwork' })).toHaveAttribute('src', samplePoster);
+		expect(media.listenerCount()).toBe(0);
+	});
+
+	it('does not resume a hovered tile under reduced motion when its preview source changes', async () => {
+		const user = userEvent.setup();
+		const media = mockChangingMatchMedia();
+		const nextSrc = 'https://example.com/media/encoded/preview.gif?v=4';
+		const { container, rerender } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		await user.hover(screen.getByRole('article'));
+		fireEvent.error(getPreview(container));
+		expect(media.listenerCount()).toBe(0);
+
+		act(() => media.turnOn('prefers-reduced-motion: reduce'));
+		rerender(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={nextSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		expect(getPreview(container)).toBeNull();
+		expect(media.listenerCount()).toBe(0);
+	});
+
+	it('keeps playing when a preference change leaves previews allowed', async () => {
+		const user = userEvent.setup();
+		const media = mockChangingMatchMedia();
+		const { container } = render(
+			<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Arrival" link="/media/arrival/" />
+		);
+
+		await user.hover(screen.getByRole('article'));
+		const preview = getPreview(container);
+		fireEvent.load(preview);
+
+		act(() => media.turnOff());
+
+		expect(getPreview(container)).toBe(preview);
+		expect(preview).toHaveClass('opacity-100');
+	});
+
+	it('listens for preference changes only while a preview plays', async () => {
+		const user = userEvent.setup();
+		const media = mockChangingMatchMedia();
+		render(
+			<>
+				<VerticalMovieItem
+					imageSrc={samplePoster}
+					previewSrc={previewSrc}
+					title="Arrival"
+					link="/media/arrival/"
+				/>
+				<VerticalMovieItem imageSrc={samplePoster} previewSrc={previewSrc} title="Blade" link="/media/blade/" />
+			</>
+		);
+		expect(media.listenerCount()).toBe(0);
+
+		const [first] = screen.getAllByRole('article');
+		await user.hover(first);
+		expect(media.listenerCount()).toBe(1);
+
+		await user.unhover(first);
+		expect(media.listenerCount()).toBe(0);
 	});
 
 	it('keeps the static thumbnail and stops requesting the preview after it fails to load', async () => {
