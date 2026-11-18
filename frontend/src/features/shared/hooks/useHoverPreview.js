@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const PREVIEW_BLOCKED_QUERY = '(prefers-reduced-motion: reduce), (hover: none)';
 const FOCUSABLE_SELECTOR = 'a[href], button, input, select, textarea, [tabindex]';
@@ -24,6 +24,24 @@ export function useHoverPreview(previewSrc) {
 	// Focus caused by a pointer press is not keyboard focus and must not hold the preview.
 	const pressedRef = useRef(false);
 	const enabled = Boolean(previewSrc) && failedSrc !== previewSrc;
+	const active = enabled && (hovered || focused);
+
+	// A visitor can turn on reduced motion, or switch to a touch-only mode, while a preview plays.
+	useEffect(() => {
+		if (!active || typeof window === 'undefined' || !window.matchMedia) {
+			return undefined;
+		}
+		const query = window.matchMedia(PREVIEW_BLOCKED_QUERY);
+		function stopWhenBlocked() {
+			if (query.matches) {
+				setHovered(false);
+				setFocused(false);
+				setLoadedSrc('');
+			}
+		}
+		query.addEventListener('change', stopWhenBlocked);
+		return () => query.removeEventListener('change', stopWhenBlocked);
+	}, [active]);
 
 	function canStart() {
 		return enabled && !isPreviewBlocked();
@@ -78,14 +96,13 @@ export function useHoverPreview(previewSrc) {
 
 	return {
 		containerProps: { onPointerEnter, onPointerLeave, onPointerDown, onPointerCancel, onFocus, onBlur },
-		previewProps:
-			enabled && (hovered || focused)
-				? {
-						src: previewSrc,
-						loaded: loadedSrc === previewSrc,
-						onLoad: () => setLoadedSrc(previewSrc),
-						onError: () => setFailedSrc(previewSrc),
-					}
-				: null,
+		previewProps: active
+			? {
+					src: previewSrc,
+					loaded: loadedSrc === previewSrc,
+					onLoad: () => setLoadedSrc(previewSrc),
+					onError: () => setFailedSrc(previewSrc),
+				}
+			: null,
 	};
 }
