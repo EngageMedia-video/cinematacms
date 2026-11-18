@@ -71,13 +71,13 @@ server, set a lower count for each service in `/etc/cinematacms/app.env`:
 
 | Key | Sets | Default | Trial value |
 | --- | --- | ---: | ---: |
-| `CINEMATA_WEB_WORKERS` | uWSGI workers, each with 10 threads | 8 | 4 |
+| `CINEMATA_WEB_WORKERS` | gunicorn workers, each with 10 threads | 8 | 4 |
 | `CINEMATA_CELERY_LONG_CONCURRENCY` | `celery_long` pool, which runs the encodings | 4 | 1 |
 | `CINEMATA_CELERY_SHORT_CONCURRENCY` | `celery_short` pool | 10 | 2 |
 | `CINEMATA_CELERY_EMAIL_CONCURRENCY` | `celery_email` pool | 4 | 1 |
 | `CINEMATA_CELERY_WHISPER_CONCURRENCY` | `celery_whisper` pool | 1 | 1 |
 
-The defaults live in `uwsgi.ini` and in the `deploy/celery_*.service` units. A
+The defaults live in `deploy/gunicorn.conf.py` and in the `deploy/celery_*.service` units. A
 key in `app.env` replaces its default, and a missing key keeps it. The release
 updater preserves the keys. It accepts only a positive integer for each, with
 no comment on the same line. For any other value it stops before it restarts a
@@ -153,7 +153,7 @@ cd /home/cinemata/cinematacms
 sudo bash -c 'set -a; source /etc/cinematacms/app.env; set +a; /home/cinemata/venv/bin/celery -A cms control pool_shrink 3 -d "long@$(hostname)"'
 ```
 
-Then check the live sizes. The first command counts the uWSGI workers. In the
+Then check the live sizes. The first command counts the gunicorn workers. In the
 output of the second, the length of each `pool.processes` list is the live size
 of that pool. `max-concurrency` keeps the size the worker started with, so it
 does not show a later `pool_shrink`.
@@ -287,11 +287,17 @@ The deployment files split nginx ownership as follows:
   requests (8 MiB tus chunks) without leaving dead client connections open
   indefinitely.
 - `deploy/mediacms.io` owns the public HTTP and HTTPS servers. Each user-facing
-  uWSGI location waits up to 300 seconds between writes to the local uWSGI
-  server and 900 seconds between reads from it. The longer read window covers
-  the synchronous final-chunk combine and media-file save for large uploads.
+  location passes requests over HTTP to the local gunicorn server. It waits up
+  to 300 seconds between writes to gunicorn and 900 seconds between reads from
+  it. The longer read window covers the synchronous final-chunk combine and
+  media-file save for large uploads.
+- `deploy/nginx/cinematacms-proxy.conf` owns the request headers of every
+  location that passes to gunicorn: `Host`, `X-Real-IP`, and
+  `X-Forwarded-Proto`. Each line replaces what the client sent, except that
+  `cinematacms-http.conf` keeps the scheme that Cloudflare reports. See
+  [Application server](#application-server).
 - `deploy/nginx/cinematacms-metrics.conf` owns the loopback-only `/metrics`
-  location. It is not a user-request path, so it keeps the nginx uWSGI timeout
+  location. It is not a user-request path, so it keeps the nginx proxy timeout
   defaults.
 - `deploy/nginx/cinematacms-rate-limits.conf` owns per-client-network request
   limits for `/view` (10 r/s, burst 40), media reactions (5 r/s, burst 20), and
@@ -303,7 +309,7 @@ The deployment files split nginx ownership as follows:
   logs in `/var/log/cinematacms/nginx/` daily and deletes them after 14 days.
   These logs hold raw client IPs, so the directory (`root:www-data`, `0750`)
   admits only root and processes running as `www-data`: the nginx workers,
-  which reopen the logs after rotation, uWSGI and the Celery services. The
+  which reopen the logs after rotation, gunicorn and the Celery services. The
   installer also grants the full-stack observability collector an ACL entry so
   it can ingest them.
   The release updater points an existing site's logs there; files already
@@ -312,8 +318,8 @@ The deployment files split nginx ownership as follows:
 - `deploy/cloudflare_real_ip.conf` owns the trusted Cloudflare address ranges
   installed when the deployment uses `--proxy cloudflare`.
 
-The public uWSGI locations explicitly keep `uwsgi_request_buffering on`.
-Nginx therefore receives each upload request (one tus `PATCH`) before assigning a uWSGI
+The public locations explicitly keep `proxy_request_buffering on`.
+Nginx therefore receives each upload request (one tus `PATCH`) before assigning a gunicorn
 worker and can retry an upstream that has not received the request body. Turning
 buffering off would occupy an application worker for the duration of a slow
 client upload and would prevent retry after nginx starts sending the body.
@@ -323,8 +329,7 @@ The public servers use the `cinematacms` format from
 `deploy/nginx/cinematacms-http.conf`. Both record `$request_time`,
 `$upstream_response_time`, and `$request_length` so an operator can distinguish
 a slow client transfer from slow application work. The timeout values are
-initial operational bounds. Tune them from production logs rather than copying
-proxy timeouts: the application locations use `uwsgi_pass`, not `proxy_pass`.
+initial operational bounds. Tune them from the access logs.
 
 Run a dry run to validate installer options without changing the server:
 
@@ -336,6 +341,94 @@ Run a dry run to validate installer options without changing the server:
   --observability none \
   --dry-run
 ```
+
+## Application server
+
+`deploy/mediacms.service` runs gunicorn with the settings in
+`deploy/gunicorn.conf.py`: `CINEMATA_WEB_WORKERS` workers of 10 threads each on
+`127.0.0.1:9000`, as `www-data`. Gunicorn writes its own messages and the output
+of the application to `logs/errorlog.txt`. It reopens that log on `SIGUSR1`,
+which the full-stack log rotation sends after it renames the log.
+
+The application takes the client address from `X-Real-IP` and the scheme from
+`X-Forwarded-Proto` only when nginx on the same host sends the request over
+loopback. nginx sets both on every request: the client address after realip,
+and the scheme the request reached nginx with. A request that realip accepted
+from Cloudflare keeps Cloudflare's `X-Forwarded-Proto`, which holds the
+visitor's scheme. A client that reaches nginx directly cannot set either
+header.
+
+`sudo systemctl reload mediacms` starts new workers with the code on disk and
+stops the old ones after their requests finish. A restart also lets requests in
+progress finish, for up to 25 seconds, but nginx answers `502` until gunicorn
+listens again.
+
+Releases before gunicorn ran uWSGI behind `uwsgi_pass`. On such a server the
+release updater turns every pass to `127.0.0.1:9000` into the gunicorn form and
+stops when a `uwsgi_pass` names any other address. When the full observability
+stack is installed, it also renders that stack's nginx listener and log rotation
+again. The web unit reloads nginx each time gunicorn starts, so the first deploy
+of gunicorn switches nginx as soon as gunicorn listens instead of after the
+Celery restarts.
+
+### Roll back to a uWSGI release
+
+`rollback.sh` refuses to go from a gunicorn release to a uWSGI release, because
+it installs neither the units nor the nginx files of its target. Run
+`sudo ./rollback.sh --dry-run` first. It lists the commits to revert and the
+apps whose migrations changed, then stops at this refusal.
+
+Save the following script as `/root/rollback-to-uwsgi.sh` and run it with
+`sudo bash /root/rollback-to-uwsgi.sh`. It stops at the first command that
+fails. Fix the reported cause and run the remaining commands by hand.
+
+```bash
+set -Eeuo pipefail
+cd /home/cinemata
+source bin/activate
+cd cinematacms
+source restart_script.sh
+TARGET="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f2)"
+DEPLOYED="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f3)"
+[ "$(git rev-parse HEAD)" = "$DEPLOYED" ] || { echo "HEAD is not the last deployed commit" >&2; exit 1; }
+
+# The same steps as rollback.sh: the code, the Python packages and the frontend.
+adopt_served_frontend
+git checkout --detach "$TARGET"
+install_python_requirements
+roll_back_static_release "$TARGET"
+reset_app_ownership
+
+# Undo the conversion of the site to gunicorn.
+sed -i \
+  -e 's|^\([[:space:]]*\)include /etc/nginx/snippets/cinematacms-proxy\.conf;|\1include /etc/nginx/sites-enabled/uwsgi_params;|' \
+  -e 's|^\([[:space:]]*\)proxy_read_timeout 900s;|\1uwsgi_read_timeout 900s;|' \
+  -e 's|^\([[:space:]]*\)proxy_send_timeout 300s;|\1uwsgi_send_timeout 300s;|' \
+  -e 's|^\([[:space:]]*\)proxy_request_buffering on;|\1uwsgi_request_buffering on;|' \
+  -e 's|^\([[:space:]]*\)proxy_pass http://127\.0\.0\.1:9000;|\1uwsgi_pass 127.0.0.1:9000;|' \
+  /etc/nginx/sites-available/mediacms.io
+# The full observability stack, when installed, gets its uWSGI nginx listener and
+# log rotation back. At a uWSGI release, render_nginx_app_metrics writes its file.
+if [ -f /etc/cinematacms-observability/stack.env ]; then
+  (
+    set -a; source /etc/cinematacms-observability/stack.env; set +a
+    source deploy/observability/install.sh
+    render_nginx_app_metrics
+    render_app_log_rotation > /etc/cinematacms-observability/app-logs.logrotate
+  )
+fi
+# Installs the target's uwsgi_params, nginx snippets and units, then runs nginx -t.
+deploy/apply-release-config.sh --no-restart
+
+systemctl restart mediacms
+systemctl reload nginx
+systemctl restart celery_long celery_short celery_whisper celery_email celery_beat
+printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DEPLOYED" "$TARGET" rollback >> /var/log/cinemata/deploy.log
+```
+
+Requests fail with `502` between the restart of `mediacms` and the reload of
+nginx, usually for a few seconds. Then reverse the migrations that the dry run
+listed, as its warning describes.
 
 ## Apply release configuration
 

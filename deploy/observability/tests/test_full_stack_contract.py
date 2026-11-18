@@ -8,6 +8,7 @@ import sys
 import tempfile
 import textwrap
 import threading
+import time
 import unittest
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,19 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
+# Stands in for the gunicorn master: creates the file named by its argument, then
+# appends a line to it for each SIGUSR1.
+WEB_SERVER_RECORDING_USR1 = """
+import signal, sys, time
+received = sys.argv[1]
+def record(*_):
+    with open(received, "a") as out:
+        out.write("USR1\\n")
+signal.signal(signal.SIGUSR1, record)
+open(received, "w").close()
+while True:
+    time.sleep(1)
+"""
 
 
 def nginx_error_redactor():
@@ -478,7 +492,7 @@ class FullStackContractTests(unittest.TestCase):
     def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
-        uwsgi = (ROOT / "uwsgi.ini").read_text()
+        installer = (OBSERVABILITY / "install.sh").read_text()
         settings = (ROOT / "cms/settings.py").read_text()
 
         # A log truncated in place drops the lines written after the last read, and a Collector that
@@ -489,14 +503,26 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(settings.count('"class": "logging.handlers.WatchedFileHandler"'), 2)
         self.assertNotIn('"class": "logging.FileHandler"', settings)
 
-        reopen_marker = re.search(
-            r'(?m)^\s+runuser -u www-data -- touch "\$\{APP_SERVICE_LOG_DIR\}/(\.\S+)"$', rotation
-        ).group(1)
-        uwsgi_log_directory = re.search(r"(?m)^logto = (\S+)/errorlog\.txt$", uwsgi).group(1)
-        self.assertIn(f"touch-logreopen = {uwsgi_log_directory}/{reopen_marker}\n", uwsgi)
+        # The rotation signals the web unit, whose gunicorn writes errorlog.txt in the rotated directory.
+        main_pid_of_web_unit = r'(?m)^\s+web_server_pid="\$\(systemctl show --property=MainPID --value (\S+)\)"$'
+        web_unit = re.search(main_pid_of_web_unit, rotation).group(1)
+        unit = (ROOT / "deploy" / web_unit).read_text()
+        gunicorn_config = re.search(r"(?m)^ExecStart=\S+/gunicorn --config /home/cinemata/cinematacms/(\S+) ", unit)
+        errorlog = re.search(r'(?m)^errorlog = "(\S+)"$', (ROOT / gunicorn_config.group(1)).read_text()).group(1)
+        self.assertEqual(Path(errorlog).name, "errorlog.txt")
+        self.assertIn(f'APP_LOG_PATH="${{APP_LOG_PATH:-{Path(errorlog).parent}/app.json.log}}"', installer)
+        # The master reopens the log after the signal. As root it would follow a link that www-data planted.
+        self.assertIn("\nUser=www-data\n", unit)
 
-    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
-    def test_rotation_keeps_the_open_file_as_the_rotated_copy_and_signals_uwsgi(self):
+    def wait_until(self, condition, timeout=5):
+        deadline = time.monotonic() + timeout
+        while not condition():
+            if time.monotonic() > deadline:
+                self.fail(f"the condition did not hold within {timeout} s")
+            time.sleep(0.02)
+
+    def rotate_twice_with_web_server(self, main_pid, after_each_rotation=lambda rotations: None):
+        """Rotate a log twice with a systemctl stub that reports main_pid as the web unit's main PID."""
         with tempfile.TemporaryDirectory() as directory:
             logs = Path(directory) / "logs"
             logs.mkdir()
@@ -506,37 +532,65 @@ class FullStackContractTests(unittest.TestCase):
             config = Path(directory) / "rotate.conf"
             config.write_text(self.render_unprivileged_app_log_rotation(str(live), str(logs)))
             config.chmod(0o644)
+            stubs = Path(directory) / "bin"
+            stubs.mkdir()
+            systemctl = stubs / "systemctl"
+            systemctl.write_text(f"#!/bin/sh\necho {main_pid}\n")
+            systemctl.chmod(0o755)
 
             def rotate():
                 subprocess.run(
                     ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
                     check=True,
                     capture_output=True,
+                    env={**os.environ, "PATH": f"{stubs}:{os.environ['PATH']}"},
                 )
 
             rotate()
+            after_each_rotation(1)
 
             rotated = logs / "app.json.log.1"
             self.assertEqual(rotated.stat().st_ino, open_inode)
             self.assertEqual(rotated.stat().st_size, 2000)
             self.assertEqual(live.stat().st_mode & 0o777, 0o640)
-            self.assertTrue((logs / ".uwsgi-logreopen").exists())
 
             # Two logs that start alike would share a Collector fingerprint.
             first_marker = live.read_text()
             self.assertEqual(json.loads(first_marker)["event"], "log_rotated")
             rotate()
+            after_each_rotation(2)
             self.assertNotEqual(live.read_text(), first_marker)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_keeps_the_open_file_as_the_rotated_copy_and_signals_the_web_server(self):
+        with tempfile.TemporaryDirectory() as directory:
+            received = Path(directory) / "received"
+            web_server = subprocess.Popen([sys.executable, "-c", WEB_SERVER_RECORDING_USR1, str(received)])
+            self.addCleanup(web_server.wait)
+            self.addCleanup(web_server.kill)
+            self.wait_until(received.exists)
+
+            self.rotate_twice_with_web_server(
+                web_server.pid,
+                lambda rotations: self.wait_until(lambda: received.read_text().count("USR1") == rotations),
+            )
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_succeeds_while_the_web_server_is_stopped(self):
+        self.rotate_twice_with_web_server(0)
 
     def test_rotation_scripts_touch_the_www_data_directory_only_as_www_data(self):
         rotation = (OBSERVABILITY / "templates" / "app-logs.logrotate").read_text()
         script = rotation[rotation.index("postrotate\n") : rotation.index("endscript")]
         commands = [line for line in map(str.strip, script.splitlines()[1:]) if line and not line.startswith("#")]
+        log_commands = [command for command in commands if "$1" in command or "APP_SERVICE_LOG_DIR" in command]
 
-        self.assertTrue(commands)
-        for command in commands:
+        self.assertTrue(log_commands)
+        for command in log_commands:
             self.assertIn("runuser -u www-data -- ", command)
+        for command in commands:
             self.assertNotIn(">>", command, "a root shell opens the target of a redirect")
+            self.assertNotRegex(command, r"(?<![\w-])/(?!dev/null)", "a root command names a path")
 
     def test_installer_refuses_a_linked_app_log_instead_of_taking_ownership_of_its_target(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -726,7 +780,7 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("listen 127.0.0.1:${APP_METRICS_PORT};", nginx)
         self.assertIn("location = /metrics", nginx)
         self.assertIn("location = /internal/observability/references", nginx)
-        self.assertIn("uwsgi_pass 127.0.0.1:9000", nginx)
+        self.assertEqual(nginx.count("proxy_pass http://127.0.0.1:9000;"), 2)
         self.assertIn("render_nginx_app_metrics", installer)
         self.assertIn('content="${content//\\$\\{APP_METRICS_PORT\\}/$APP_METRICS_PORT}"', installer)
         self.assertIn("http://127.0.0.1:${APP_METRICS_PORT}/metrics", installer)
@@ -1099,7 +1153,7 @@ class FullStackContractTests(unittest.TestCase):
         prefix = "2026/10/30 10:00:00 [error] 12#12: *3 "
         fields = (
             'server: cinemata.example, request: "POST /secret-admin?token=abc123 HTTP/1.1", '
-            'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+            'upstream: "http://127.0.0.1:9000/secret-admin?token=abc123", host: "cinemata.example", '
             'referrer: "https://other.example/page?user=jane"'
         )
         for client in ("203.0.113.9", "2001:db8::17"):
@@ -1146,7 +1200,7 @@ class FullStackContractTests(unittest.TestCase):
             "2026/10/30 10:00:00 [error] 12#12: *3 upstream timed out (110: Connection timed out) "
             "while reading response header from upstream, client: 203.0.113.9, server: cinemata.example, "
         )
-        real_tail = 'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", referrer: "https://r.example/p"'
+        real_tail = 'upstream: "http://127.0.0.1:9000/a", host: "cinemata.example", referrer: "https://r.example/p"'
         redacted_head = head.replace("203.0.113.9", "<redacted-ip>")
         redacted_tail = 'request: "<redacted-request>"'
 
@@ -1155,7 +1209,7 @@ class FullStackContractTests(unittest.TestCase):
         hostile = {
             "quote_in_request": f'request: "GET /a?t=1" SENT_QUOTE_IN_REQUEST HTTP/1.1", {real_tail}',
             "quote_in_referrer": (
-                'request: "GET /a HTTP/1.1", upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+                'request: "GET /a HTTP/1.1", upstream: "http://127.0.0.1:9000/a", host: "cinemata.example", '
                 'referrer: "https://r.example/p" SENT_QUOTE_IN_REFERRER x"'
             ),
             "fake_referrer_without_real_one": 'request: "GET /a", referrer: "SENT_FAKE_REFERRER HTTP/1.1"',
@@ -1178,11 +1232,11 @@ class FullStackContractTests(unittest.TestCase):
             "fake_server_in_request": f'request: "GET /a", server: "SENT_FAKE_SERVER", {real_tail}',
             "fake_client_in_request": f'request: "GET /a, client: SENT_FAKE_CLIENT", {real_tail}',
             "fake_field_before_the_real_one": (
-                'request: "GET /a", host: "SENT_FAKE_HOST", upstream: "uwsgi://127.0.0.1:9000"'
+                'request: "GET /a", host: "SENT_FAKE_HOST", upstream: "http://127.0.0.1:9000/a"'
             ),
             "fake_upstream_beside_the_real_one": (
                 'request: "GET /a", upstream: "http://SENT_FAKE_UPSTREAM/x HTTP/1.1", '
-                'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example"'
+                'upstream: "http://127.0.0.1:9000/a", host: "cinemata.example"'
             ),
             "lone_fake_upstream_with_client_text_as_host": (
                 'request: "GET /x", upstream: "http://SENT_LONE_UPSTREAM-token=abc HTTP/1.1", host: "cinemata.example"'

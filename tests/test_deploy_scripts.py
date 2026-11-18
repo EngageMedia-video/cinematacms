@@ -4,6 +4,7 @@ import io
 import json
 import os
 import re
+import runpy
 import shlex
 import shutil
 import signal
@@ -14,8 +15,10 @@ import tarfile
 import tempfile
 import textwrap
 import time
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -100,21 +103,67 @@ def pack_frontend_artifact(build, commit, artifact):
         raise AssertionError(result.stderr)
 
 
+def gunicorn_settings(environment):
+    """The settings gunicorn resolves from deploy/gunicorn.conf.py, as the text it prints for each."""
+    result = subprocess.run(
+        [
+            str(Path(sys.executable).parent / "gunicorn"),
+            "--config",
+            str(PROJECT_ROOT / "deploy/gunicorn.conf.py"),
+            "--print-config",
+            "wsgiref.simple_server:demo_app",
+        ],
+        env={"PATH": os.environ["PATH"], **environment},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
+    return dict(re.findall(r"(?m)^(\w+) +=(?: (.*))?$", result.stdout))
+
+
+def application_locations(config):
+    """Bodies of the locations that pass requests to the application server."""
+    return [
+        match.group("body")
+        for match in re.finditer(r"location\s+[^{]+\{(?P<body>(?:[^{}]|\{[^{}]*\})*)\}", config)
+        if "proxy_pass http://127.0.0.1:9000;" in match.group("body")
+    ]
+
+
 class NginxConfigTests(unittest.TestCase):
-    def test_user_facing_uwsgi_locations_define_upload_policy(self):
-        config = (PROJECT_ROOT / "deploy/mediacms.io").read_text()
-        location_bodies = [
-            match.group("body")
-            for match in re.finditer(r"location\s+[^\s{]+\s*\{(?P<body>[^{}]*)\}", config)
-            if "uwsgi_pass" in match.group("body")
-        ]
+    def test_user_facing_locations_define_upload_policy(self):
+        location_bodies = application_locations((PROJECT_ROOT / "deploy/mediacms.io").read_text())
 
         self.assertEqual(len(location_bodies), 2)
         for body in location_bodies:
             with self.subTest(body=body):
-                self.assertIn("uwsgi_read_timeout 900s;", body)
-                self.assertIn("uwsgi_send_timeout 300s;", body)
-                self.assertIn("uwsgi_request_buffering on;", body)
+                self.assertIn("proxy_read_timeout 900s;", body)
+                self.assertIn("proxy_send_timeout 300s;", body)
+                self.assertIn("proxy_request_buffering on;", body)
+
+    def test_every_location_that_reaches_the_application_replaces_the_client_headers(self):
+        for name, passes in (
+            ("mediacms.io", 2),
+            ("nginx/cinematacms-metrics.conf", 2),
+            ("nginx/cinematacms-rate-limits.conf", 3),
+        ):
+            config = (PROJECT_ROOT / "deploy" / name).read_text()
+            with self.subTest(name=name):
+                self.assertNotIn("uwsgi", config)
+                location_bodies = application_locations(config)
+                self.assertEqual(len(location_bodies), passes)
+                for body in location_bodies:
+                    self.assertIn("include /etc/nginx/snippets/cinematacms-proxy.conf;", body)
+
+    def test_the_application_reads_its_client_headers_from_nginx_variables(self):
+        snippet = (PROJECT_ROOT / "deploy/nginx/cinematacms-proxy.conf").read_text()
+
+        self.assertEqual(
+            dict(re.findall(r"(?m)^proxy_set_header (\S+) (\S+);$", snippet)),
+            {"Host": "$http_host", "X-Real-IP": "$remote_addr", "X-Forwarded-Proto": "$cinematacms_forwarded_proto"},
+        )
 
     def test_client_body_timeout_allows_slow_upload_chunks(self):
         config = (PROJECT_ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
@@ -207,6 +256,89 @@ class NginxConfigTests(unittest.TestCase):
         directives = re.findall(r"\bclient_max_body_size\s+\S+;", "\n".join(configs))
 
         self.assertEqual(directives, ["client_max_body_size 5800M;"])
+
+
+class GunicornConfigTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.metrics_directory = Path(directory.name)
+        environment = mock.patch.dict(os.environ, {"PROMETHEUS_MULTIPROC_DIR": directory.name})
+        environment.start()
+        self.addCleanup(environment.stop)
+        from prometheus_client import values
+
+        self.addCleanup(setattr, values, "ValueClass", values.ValueClass)
+        self.hooks = runpy.run_path(str(PROJECT_ROOT / "deploy/gunicorn.conf.py"))
+        # The arbiter's table of live workers, keyed by pid.
+        self.arbiter = types.SimpleNamespace(WORKERS={})
+        self.pids = iter(range(1000, 2000))
+
+    def start_worker(self):
+        """Fork a worker as the arbiter does, then count one request in it."""
+        from prometheus_client import CollectorRegistry, Counter, Gauge
+
+        worker = types.SimpleNamespace()
+        self.hooks["pre_fork"](self.arbiter, worker)
+        self.arbiter.WORKERS[next(self.pids)] = worker
+        self.hooks["post_fork"](self.arbiter, worker)
+        registry = CollectorRegistry()
+        Counter("requests", "Requests.", registry=registry).inc()
+        Gauge("configured", "Configured.", multiprocess_mode="livemin", registry=registry).set(1)
+        return worker
+
+    def reap(self, worker):
+        pid = next(pid for pid, live in self.arbiter.WORKERS.items() if live is worker)
+        del self.arbiter.WORKERS[pid]
+        self.hooks["child_exit"](self.arbiter, worker)
+
+    def requests_counted(self):
+        from prometheus_client import CollectorRegistry, multiprocess
+
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry)
+        return registry.get_sample_value("requests_total")
+
+    def metric_files(self, kind):
+        return sorted(path.name for path in self.metrics_directory.glob(f"{kind}_*.db"))
+
+    def test_only_the_scheme_header_that_nginx_overwrites_is_trusted_and_only_from_loopback(self):
+        settings = gunicorn_settings({})
+
+        self.assertEqual(settings["secure_scheme_headers"], "{'X-FORWARDED-PROTO': 'https'}")
+        self.assertEqual(settings["forwarded_allow_ips"], "['127.0.0.1', '::1']")
+
+    def test_the_master_opens_no_control_socket(self):
+        settings = gunicorn_settings({})
+
+        self.assertEqual(settings["control_socket_disable"], "True")
+
+    def test_a_replacement_worker_continues_the_files_of_the_one_it_replaces(self):
+        first = self.start_worker()
+        self.start_worker()
+
+        self.reap(first)
+        replacement = self.start_worker()
+
+        self.assertEqual(replacement.metrics_slot, first.metrics_slot)
+        self.assertEqual(self.requests_counted(), 3)
+        self.assertEqual(self.metric_files("counter"), ["counter_1.db", "counter_2.db"])
+
+    def test_reloads_keep_the_files_within_twice_the_worker_count(self):
+        workers = [self.start_worker(), self.start_worker()]
+        for _reload in range(3):
+            replacements = [self.start_worker(), self.start_worker()]
+            for worker in workers:
+                self.reap(worker)
+            workers = replacements
+
+        self.assertEqual(self.requests_counted(), 8)
+        self.assertEqual(len(self.metric_files("counter")), 4)
+        # Only live workers hold a live gauge, so a reaped worker's value no longer counts.
+        self.assertEqual(
+            self.metric_files("gauge_livemin"),
+            sorted(f"gauge_livemin_{worker.metrics_slot}.db" for worker in workers),
+        )
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -1200,27 +1332,8 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         return sizes[-1]
 
     def web_workers(self, environment):
-        """Ask uWSGI for the worker count that the repository uwsgi.ini gives it."""
-        bound_to_the_server = ("chdir", "virtualenv", "module", "uid", "gid", "socket", "logto", "touch-logreopen")
-        portable = Path(self.temp_dir.name) / "uwsgi.ini"
-        portable.write_text(
-            "".join(
-                line
-                for line in (PROJECT_ROOT / "uwsgi.ini").read_text().splitlines(keepends=True)
-                if line.split("=")[0].strip() not in bound_to_the_server
-            )
-        )
-        result = subprocess.run(
-            [str(Path(sys.executable).parent / "uwsgi"), "--ini", str(portable), "--show-config", "--no-server"],
-            cwd=self.temp_dir.name,
-            env={"PATH": os.environ["PATH"], **environment},
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        # uWSGI applies its options in order, so the last count is the one it uses.
-        return re.findall(r"^(?:workers|processes) = (\d+)$", result.stderr, re.MULTILINE)[-1]
+        """Ask gunicorn for the worker count that deploy/gunicorn.conf.py gives it."""
+        return gunicorn_settings(environment)["workers"]
 
     def render_app_env(self, existing):
         output = Path(self.temp_dir.name) / "app.env"
@@ -1370,11 +1483,10 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         unit = (self.deploy_root / "etc/systemd/system/mediacms.service").read_text()
         self.assertNotIn("ExecStop=", unit)
         self.assertNotIn("killall", unit)
-        self.assertIn("TimeoutStopSec=30s", unit)
-
-        for path in (PROJECT_ROOT / "uwsgi.ini", PROJECT_ROOT / "deploy/uwsgi.ini"):
-            with self.subTest(path=path):
-                self.assertIn("die-on-term     = true", path.read_text())
+        self.assertIn("KillMode=mixed", unit)
+        stop_timeout = int(re.search(r"(?m)^TimeoutStopSec=(\d+)s$", unit).group(1))
+        # Gunicorn must finish its graceful stop before systemd kills what is left.
+        self.assertLess(int(gunicorn_settings({})["graceful_timeout"]), stop_timeout)
 
     def test_installed_celery_long_unit_sends_sigterm_only_to_celery(self):
         result = self.run_updater(
@@ -1535,36 +1647,116 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())
 
-    def test_second_apply_upgrades_legacy_nginx_upload_policy(self):
-        first = self.run_updater(
-            "--domain",
-            "video.example.org",
-            "--proxy",
-            "none",
-            "--observability",
-            "none",
-            "--no-restart",
-        )
-        self.assertEqual(first.returncode, 0, first.stderr)
+    GUNICORN_PASS = (
+        "        include /etc/nginx/snippets/cinematacms-proxy.conf;\n"
+        "        proxy_read_timeout 900s;\n"
+        "        proxy_send_timeout 300s;\n"
+        "        proxy_request_buffering on;\n"
+        "        proxy_pass http://127.0.0.1:9000;\n"
+    )
+    # The application locations of earlier releases, before and after they set an upload policy.
+    UWSGI_PASSES = {
+        "uwsgi without upload policy": (
+            "        include /etc/nginx/sites-enabled/uwsgi_params;\n        uwsgi_pass 127.0.0.1:9000;\n"
+        ),
+        "uwsgi with upload policy": (
+            "        include /etc/nginx/sites-enabled/uwsgi_params;\n"
+            "        uwsgi_read_timeout 900s;\n"
+            "        uwsgi_send_timeout 300s;\n"
+            "        uwsgi_request_buffering on;\n"
+            "        uwsgi_pass 127.0.0.1:9000;\n"
+        ),
+    }
 
-        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
-        legacy_site = site_path.read_text()
-        for directive in (
-            "        uwsgi_read_timeout 900s;\n",
-            "        uwsgi_send_timeout 300s;\n",
-            "        uwsgi_request_buffering on;\n",
-        ):
-            legacy_site = legacy_site.replace(directive, "")
-        legacy_site = legacy_site.replace(" cinematacms;", ";")
-        site_path.write_text(legacy_site)
+    def apply_new_site(self):
+        result = self.run_updater(
+            "--domain", "video.example.org", "--proxy", "none", "--observability", "none", "--no-restart"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+
+    def test_second_apply_moves_a_uwsgi_site_to_gunicorn_and_a_third_changes_nothing(self):
+        site_path = self.apply_new_site()
+        released_site = site_path.read_text()
+        self.assertEqual(released_site.count(self.GUNICORN_PASS), 2)
+        uwsgi_params = self.deploy_root / "etc/nginx/sites-enabled/uwsgi_params"
+
+        for name, uwsgi_pass in self.UWSGI_PASSES.items():
+            with self.subTest(name):
+                site_path.write_text(
+                    released_site.replace(self.GUNICORN_PASS, uwsgi_pass).replace(" cinematacms;", ";")
+                )
+                uwsgi_params.write_text("uwsgi_param  QUERY_STRING  $query_string;\n")
+
+                converted = self.run_updater("--no-restart")
+
+                self.assertEqual(converted.returncode, 0, converted.stderr)
+                self.assertEqual(site_path.read_text(), released_site)
+                self.assertFalse(uwsgi_params.exists())
+
+                again = self.run_updater("--no-restart")
+
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertEqual(site_path.read_text(), released_site)
+
+    def test_apply_stops_at_a_uwsgi_pass_to_another_server_before_it_reloads_anything(self):
+        site_path = self.apply_new_site()
+        foreign_site = site_path.read_text().replace(
+            "    location / {",
+            "    location /legacy/ {\n        uwsgi_pass 127.0.0.1:9001;\n    }\n\n    location / {",
+            1,
+        )
+        site_path.write_text(foreign_site)
+        self.command_log.write_text("")
+
+        result = self.run_updater("--no-restart")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("uWSGI server other than 127.0.0.1:9000", result.stderr)
+        self.assertEqual(site_path.read_text(), foreign_site)
+        self.assertNotIn("systemctl", self.command_log.read_text())
+
+    def test_apply_renders_again_the_full_stack_files_that_reach_the_web_server(self):
+        self.apply_new_site()
+        full_stack = self.deploy_root / "etc/cinematacms-observability"
+        full_stack.mkdir()
+        (full_stack / "stack.env").write_text(
+            "APP_METRICS_PORT=8123\nAPP_LOG_PATH=/srv/logs/app.json.log\nAPP_SERVICE_LOG_DIR=/srv/logs\n"
+        )
+        app_metrics = self.deploy_root / "etc/nginx/conf.d/cinematacms-app-metrics.conf"
+        app_metrics.write_text(
+            "server {\n    listen 127.0.0.1:8123;\n"
+            "    location = /metrics {\n        include uwsgi_params;\n        uwsgi_pass 127.0.0.1:9000;\n    }\n}\n"
+        )
+        rotation = full_stack / "app-logs.logrotate"
+        rotation.write_text('/srv/logs/*.log {\n  postrotate\n    touch "/srv/logs/.uwsgi-logreopen"\n  endscript\n}\n')
+
+        result = self.run_updater("--no-restart")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        listener = app_metrics.read_text()
+        self.assertIn("listen 127.0.0.1:8123;", listener)
+        self.assertEqual(listener.count("proxy_pass http://127.0.0.1:9000;"), 2)
+        self.assertNotIn("uwsgi", listener)
+        rendered_rotation = rotation.read_text()
+        self.assertIn("/srv/logs/errorlog.txt", rendered_rotation)
+        self.assertIn("systemctl show --property=MainPID --value mediacms.service", rendered_rotation)
+        self.assertNotIn("uwsgi", rendered_rotation)
+
+    def test_apply_writes_no_full_stack_file_where_that_stack_is_absent(self):
+        self.apply_new_site()
+
+        self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cinematacms-app-metrics.conf").exists())
+        self.assertFalse((self.deploy_root / "etc/cinematacms-observability").exists())
+
+    def test_second_apply_upgrades_legacy_access_log_and_http_policy(self):
+        site_path = self.apply_new_site()
+        site_path.write_text(site_path.read_text().replace(" cinematacms;", ";"))
 
         second = self.run_updater("--no-restart")
 
         self.assertEqual(second.returncode, 0, second.stderr)
         site = site_path.read_text()
-        self.assertEqual(site.count("uwsgi_read_timeout 900s;"), 2)
-        self.assertEqual(site.count("uwsgi_send_timeout 300s;"), 2)
-        self.assertEqual(site.count("uwsgi_request_buffering on;"), 2)
         self.assertEqual(site.count("access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;"), 2)
         http_policy = (self.deploy_root / "etc/nginx/conf.d/cinematacms-http.conf").read_text()
         self.assertIn("client_body_timeout 300s;", http_policy)

@@ -47,18 +47,22 @@ that failed keeps its role at 0 while healthy siblings report 1.
 
 A process stops counting when its file leaves `PROMETHEUS_MULTIPROC_DIR`. A
 Celery child removes its own live gauge files from `worker_process_shutdown`
-when it exits, including when its service stops. A uWSGI worker keys its files
-by worker id, so the worker that replaces it overwrites its value. Some exits
-leave a stale 0 behind:
+when it exits, including when its service stops. A gunicorn worker keys its
+files by slot, the lowest number that no live worker holds, so the worker that
+replaces it overwrites its value. The gunicorn master removes a worker's live
+gauge files when it reaps that worker. During a reload the old and new workers
+overlap, so the directory holds at most twice the worker count. Some exits leave
+a stale 0 behind:
 
 - A Celery child killed before its exit hook runs, for example by `SIGKILL`,
   the out-of-memory killer, or the systemd stop timeout.
-- A uWSGI worker whose role then has tracing disabled or runs fewer workers,
-  because nothing writes that worker id again.
+- A gunicorn master killed before it reaps its workers, for example by the
+  systemd stop timeout, when its role then has tracing disabled or runs fewer
+  workers, because nothing writes that slot again.
 
 Delete the stale process's `gauge_livemin_<pid>.db` file, where `<pid>` is the
-Celery child's process id or the uWSGI worker id, or clear the directory while
-the application units are stopped.
+Celery child's process id or the gunicorn worker slot, or clear the directory
+while the application units are stopped.
 `CinemataTracingUnconfigured` fires when a role reports 0 for five minutes.
 Restart that role's services and read their logs for the configuration error.
 A process that keeps running after the Python packages change can import new
@@ -134,8 +138,8 @@ with mode `0640`. It then writes a `log_rotated` line to the new log, because th
 Collector identifies a file by its first 1000 bytes and Celery lines carry no
 timestamp, so a quiet log could otherwise start exactly like its `.1` copy and
 never be read. Django and Celery reopen the log by name through
-`WatchedFileHandler`. uWSGI reopens `errorlog.txt` after logrotate touches
-`logs/.uwsgi-logreopen`. A line written before its process reopens the log lands
+`WatchedFileHandler`. Gunicorn reopens `errorlog.txt` when logrotate sends its
+master `SIGUSR1`. A line written before its process reopens the log lands
 in the `.1` copy, which the Collector still reads, so a rotation neither drops
 nor repeats lines. The `log_rotated` line can land after other lines, so a writer
 that emits more than 1000 bytes of the same text as the `.1` copy before that line

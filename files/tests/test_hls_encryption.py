@@ -688,7 +688,7 @@ class EncryptionKeyLostUpdateTests(TestCase):
         """Return (stale, key): an instance loaded before the key was written."""
         # media_type="video": MediaForm drops the is_encrypted field otherwise.
         media = create_test_media(self.user, is_encrypted=True, media_type="video")
-        # Loaded while encryption_key was still blank, as a uWSGI worker or a
+        # Loaded while encryption_key was still blank, as a web worker or a
         # Celery task holding the row across a long encode would be.
         stale = Media.objects.get(pk=media.pk)
         # Meanwhile create_hls generates and stores the key on its own instance.

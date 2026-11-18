@@ -41,7 +41,7 @@ state every upload shares in `uploader/sessions.py` and the `uploader.UploadSess
   - A body that would pass `Upload-Length` gets `413` and changes nothing.
   - Only one request writes an upload at a time (a file lock). A second request gets `423` and
     retries.
-  - nginx buffers each request (`uwsgi_request_buffering on`), so an interrupted `PATCH` stores
+  - nginx buffers each request (`proxy_request_buffering on`), so an interrupted `PATCH` stores
     nothing. The browser therefore sends 8 MiB per `PATCH` (`UPLOAD_CHUNK_SIZE`).
 - `DELETE` cancels an upload and deletes its bytes. Later requests get `410`. For a completed upload it
   ends the upload resource only; the media stays.

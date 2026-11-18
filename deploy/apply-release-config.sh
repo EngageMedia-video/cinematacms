@@ -239,6 +239,7 @@ fi
 
 NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
 NGINX_RATE_LIMITS="$(root_path /etc/nginx/snippets/cinematacms-rate-limits.conf)"
+NGINX_PROXY="$(root_path /etc/nginx/snippets/cinematacms-proxy.conf)"
 NGINX_HTTP_POLICY="$(root_path /etc/nginx/conf.d/cinematacms-http.conf)"
 NGINX_LOG_DIR="$(root_path /var/log/cinematacms/nginx)"
 NGINX_LOGROTATE="$(root_path /etc/logrotate.d/cinematacms-nginx)"
@@ -250,13 +251,19 @@ NGINX_CLOUDFLARE="$(root_path /etc/nginx/conf.d/cloudflare_real_ip.conf)"
 
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-metrics.conf" "$NGINX_SNIPPET"
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-rate-limits.conf" "$NGINX_RATE_LIMITS"
+install_managed_file "$SCRIPT_DIR/nginx/cinematacms-proxy.conf" "$NGINX_PROXY"
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-http.conf" "$NGINX_HTTP_POLICY"
 install_managed_file "$SCRIPT_DIR/logrotate-cinematacms-nginx" "$NGINX_LOGROTATE"
 # Site logs hold raw client IPs. Only root and the nginx workers, which must
 # reopen the logs after rotation, may enter the directory.
 install -d -m 0750 "$NGINX_LOG_DIR"
 chgrp www-data "$NGINX_LOG_DIR"
-install_managed_file "$SCRIPT_DIR/uwsgi_params" "$NGINX_UWSGI_PARAMS"
+# Earlier releases installed this for uWSGI. Nothing includes it after the site
+# conversion below.
+if [ -e "$NGINX_UWSGI_PARAMS" ]; then
+    backup_file "$NGINX_UWSGI_PARAMS"
+    rm -f "$NGINX_UWSGI_PARAMS"
+fi
 if [ ! -e "$NGINX_MAIN" ]; then
     install_managed_file "$SCRIPT_DIR/nginx.conf" "$NGINX_MAIN"
 fi
@@ -302,12 +309,39 @@ if ! grep -q 'cinematacms-rate-limits\.conf' "$NGINX_SITE"; then
     include_before_root_locations "/etc/nginx/snippets/cinematacms-rate-limits.conf"
 fi
 
+# Each location that passes to the application server ends in the same five
+# lines. The lines held before a pass are replaced by them; held lines before
+# anything else are printed unchanged. Earlier releases passed with uwsgi_pass,
+# so that pass becomes proxy_pass and every uWSGI directive goes.
 rendered_site="$(mktemp)"
 awk '
-    /^[[:space:]]*uwsgi_(read_timeout|send_timeout|request_buffering)[[:space:]]+/ {
+    function print_held(i) {
+        for (i = 1; i <= held; i++) {
+            print held_line[i]
+        }
+        held = 0
+    }
+    /^[[:space:]]*uwsgi_(param|read_timeout|send_timeout|request_buffering)[[:space:]]/ ||
+    /^[[:space:]]*include[[:space:]]+[^;]*uwsgi_params;/ {
+        next
+    }
+    /^[[:space:]]*(include[[:space:]]+\/etc\/nginx\/snippets\/cinematacms-proxy\.conf|proxy_(read_timeout|send_timeout|request_buffering)[[:space:]][^;]*);[[:space:]]*$/ {
+        held_line[++held] = $0
+        next
+    }
+    /^[[:space:]]*(uwsgi_pass[[:space:]]+127\.0\.0\.1:9000|proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:9000);[[:space:]]*$/ {
+        held = 0
+        match($0, /^[[:space:]]*/)
+        indent = substr($0, RSTART, RLENGTH)
+        print indent "include /etc/nginx/snippets/cinematacms-proxy.conf;"
+        print indent "proxy_read_timeout 900s;"
+        print indent "proxy_send_timeout 300s;"
+        print indent "proxy_request_buffering on;"
+        print indent "proxy_pass http://127.0.0.1:9000;"
         next
     }
     {
+        print_held()
         if ($0 ~ /^[[:space:]]*(access|error)_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\./) {
             sub(/\/var\/log\/nginx\/mediacms\.io\./, "/var/log/cinematacms/nginx/mediacms.io.")
         }
@@ -315,16 +349,15 @@ awk '
             sub(/mediacms\.io\.access\.log[[:space:]]+[^[:space:];]+/, "mediacms.io.access.log cinematacms")
             sub(/mediacms\.io\.access\.log;[[:space:]]*$/, "mediacms.io.access.log cinematacms;")
         }
-        if ($0 ~ /^[[:space:]]*uwsgi_pass[[:space:]]+/) {
-            match($0, /^[[:space:]]*/)
-            indent = substr($0, RSTART, RLENGTH)
-            print indent "uwsgi_read_timeout 900s;"
-            print indent "uwsgi_send_timeout 300s;"
-            print indent "uwsgi_request_buffering on;"
-        }
         print
     }
+    END { print_held() }
 ' "$NGINX_SITE" > "$rendered_site"
+if grep -qE '^[[:space:]]*uwsgi_pass[[:space:]]' "$rendered_site"; then
+    rm -f "$rendered_site"
+    rollback
+    fail "$NGINX_SITE passes requests to a uWSGI server other than 127.0.0.1:9000; move that location to proxy_pass by hand"
+fi
 if ! cmp -s "$NGINX_SITE" "$rendered_site"; then
     install_managed_file "$rendered_site" "$NGINX_SITE"
 fi
@@ -406,6 +439,34 @@ if ! cmp -s "$NGINX_SITE" "$rendered_site"; then
     install_managed_file "$rendered_site" "$NGINX_SITE"
 fi
 rm -f "$rendered_site"
+
+# deploy/observability/install.sh renders these two files only when an operator
+# runs it. Both depend on how nginx and logrotate reach the application server,
+# so each release renders them again from the values that installer saved.
+OBSERVABILITY_STACK_ENV="$(root_path /etc/cinematacms-observability/stack.env)"
+render_full_stack_file() {
+    local render_function="$1"
+    local target="$2"
+    local rendered
+    rendered="$(mktemp)"
+    (
+        set -a
+        # shellcheck source=/dev/null
+        source "$OBSERVABILITY_STACK_ENV"
+        set +a
+        # shellcheck source=deploy/observability/install.sh
+        source "$SCRIPT_DIR/observability/install.sh"
+        "$render_function"
+    ) > "$rendered"
+    if ! cmp -s "$target" "$rendered"; then
+        install_managed_file "$rendered" "$target"
+    fi
+    rm -f "$rendered"
+}
+if [ -f "$OBSERVABILITY_STACK_ENV" ]; then
+    render_full_stack_file render_nginx_app_metrics "$(root_path /etc/nginx/conf.d/cinematacms-app-metrics.conf)"
+    render_full_stack_file render_app_log_rotation "$(root_path /etc/cinematacms-observability/app-logs.logrotate)"
+fi
 
 if [ ! -e "$NGINX_ENABLED" ] && [ ! -L "$NGINX_ENABLED" ]; then
     backup_file "$NGINX_ENABLED"

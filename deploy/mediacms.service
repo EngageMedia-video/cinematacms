@@ -1,16 +1,26 @@
 [Unit]
-Description=uwsgi cinemata
+Description=CinemataCMS web application (gunicorn)
 
 [Service]
+Type=notify
+NotifyAccess=main
+User=www-data
+Group=www-data
+WorkingDirectory=/home/cinemata/cinematacms
 EnvironmentFile=/etc/cinematacms/app.env
 Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 Environment=OTEL_SERVICE_ROLE="web"
-ExecStartPre=/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
-ExecStart=/home/cinemata/venv/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini --virtualenv /home/cinemata/venv
+ExecStartPre=+/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
+ExecStart=/home/cinemata/venv/bin/gunicorn --config /home/cinemata/cinematacms/deploy/gunicorn.conf.py cms.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+# The nginx site speaks this server's protocol. A deploy script that was loaded
+# before its checkout moved restarts nginx only after every application unit,
+# so nginx reloads here as soon as the server listens.
+ExecStartPost=+/bin/systemctl --no-block try-reload-or-restart nginx.service
+KillMode=mixed
 TimeoutStopSec=30s
 RestartSec=3
 Restart=always
-
 
 [Install]
 WantedBy=multi-user.target

@@ -111,7 +111,7 @@ IGNORED_LEGACY_SETTINGS = {
     "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_SUBDOMAIN",  # No application consumer exists.
 }
-# Optional overrides of the process counts in uwsgi.ini and the Celery units.
+# Optional overrides of the process counts in deploy/gunicorn.conf.py and the Celery units.
 PROCESS_COUNT_SETTINGS = (
     "CINEMATA_WEB_WORKERS",
     "CINEMATA_CELERY_LONG_CONCURRENCY",
@@ -142,8 +142,8 @@ def is_positive_integer(raw):
 
 
 def check_process_counts(values):
-    # uWSGI starts no worker for an empty count, and Celery reads 0 as one
-    # process for each CPU core.
+    # Gunicorn starts no worker for 0 and fails on an empty count, and Celery
+    # reads 0 as one process for each CPU core.
     invalid = [key for key in PROCESS_COUNT_SETTINGS if key in values and not is_positive_integer(values[key])]
     if invalid:
         raise RuntimeError("process counts must be positive integers: " + ", ".join(invalid))

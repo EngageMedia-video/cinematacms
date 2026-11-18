@@ -29,7 +29,10 @@ def _error(status, message, headers=None):
 
 
 def _drain(request):
-    """Read the rest of a refused request body, which uWSGI expects the application to consume."""
+    """Read the rest of a refused request body, so the server does not close a socket that still holds it.
+
+    A close with unread bytes resets the connection, and nginx can lose the response.
+    """
     try:
         while request.read(tus.READ_SIZE):
             pass
