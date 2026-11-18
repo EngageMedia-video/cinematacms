@@ -2740,10 +2740,26 @@ class StaticFilesSettingsTests(unittest.TestCase):
 
 
 class RestartScriptTests(unittest.TestCase):
+    # The mediacms unit of the uWSGI releases. Their restart_script.sh restarts it when a
+    # deploy to this release stops before apply-release-config.sh installs the gunicorn unit.
+    UWSGI_RELEASE_EXEC_START = "/home/cinemata/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini"
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.test_root = Path(self.temp_dir.name)
+
+    def test_a_deploy_from_a_uwsgi_release_that_stops_early_can_restart_uwsgi(self):
+        installed_ini = Path(self.UWSGI_RELEASE_EXEC_START.split(" --ini ")[1])
+        ini = PROJECT_ROOT / installed_ini.relative_to("/home/cinemata/cinematacms")
+        settings = {
+            tuple(part.strip() for part in line.split("=", 1))
+            for line in ini.read_text().splitlines()
+            if "=" in line and not line.startswith("#")
+        }
+
+        self.assertIn(("module", "cms.wsgi"), settings)
+        self.assertIn(("socket", "127.0.0.1:9000"), settings)
 
     def run_restart_functions(self, arguments, *, then=""):
         fake_bin = self.test_root / "bin"
