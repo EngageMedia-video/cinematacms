@@ -2046,7 +2046,7 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         )
         self.write_command(venv / "bin/pip", 'log "$0 $*"')
 
-    def migrate(self, *arguments, check_exit="0"):
+    def environment(self, check_exit="0"):
         env = os.environ.copy()
         env.update(
             {
@@ -2059,9 +2059,16 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
                 "PATH": f"{self.fake_bin}:{env['PATH']}",
             }
         )
+        return env
+
+    def migrate(self, *arguments, check_exit="0"):
         self.command_log.write_text("")
         result = subprocess.run(
-            ["bash", str(MIGRATOR), *arguments], env=env, capture_output=True, text=True, check=False
+            ["bash", str(MIGRATOR), *arguments],
+            env=self.environment(check_exit),
+            capture_output=True,
+            text=True,
+            check=False,
         )
         commands = self.command_log.read_text().replace(str(self.deploy_root), "").splitlines()
         return result, commands
@@ -2202,6 +2209,38 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         self.assertFalse(uv.exists())
         self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
         self.assertEqual(commands, [])
+
+    def test_missing_uv_is_not_reported_as_a_failure_by_the_installer(self):
+        # install.sh sources this file and reports every command that fails, even in a
+        # command substitution. Only the checksum mismatch below is a failure.
+        self.deploy_root.joinpath("opt/cinematacms/bin/uv").unlink()
+        self.write_command(self.fake_bin / "uname", "echo x86_64")
+        self.write_command(
+            self.fake_bin / "curl",
+            'while [ "$1" != --output ]; do shift; done\nprintf "not uv" > "$2"',
+        )
+        installer = textwrap.dedent(
+            f"""\
+            set -Eeuo pipefail
+            trap 'echo "installation failed at line $LINENO" >&2; exit 1' ERR
+            source "{MIGRATOR}"
+            install_uv
+            """
+        )
+
+        result = subprocess.run(
+            ["bash", "-c", installer],
+            env=self.environment(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+
+        before_download, _, _ = result.stdout.partition("Installing uv")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not match the checksum pinned", result.stdout)
+        self.assertNotIn("installation failed", before_download)
 
 
 class FrontendArtifactTests(unittest.TestCase):

@@ -32,7 +32,8 @@ uv_archive_sha256() {
 
 install_uv() {
     local architecture expected archive work
-    case "$("$UV" --version 2>/dev/null)" in
+    # No uv yet is the usual case, not a failure. install.sh traps every failing command.
+    case "$("$UV" --version 2>/dev/null || true)" in
         "uv $UV_VERSION" | "uv $UV_VERSION "*) return 0 ;;
     esac
     architecture=$(uname -m)
