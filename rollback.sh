@@ -61,6 +61,12 @@ echo -e "${GREEN}Starting Cinemata rollback...${NC}"
 cd "$CINEMATA_HOME"
 # shellcheck disable=SC1091
 source "${CINEMATA_HOME}/bin/activate"
+# Django reads its settings, SECRET_KEY among them, from this file. The frontend
+# rebuild below runs collectstatic.
+set -a
+# shellcheck source=/etc/cinematacms/app.env
+source /etc/cinematacms/app.env
+set +a
 cd "$REPO_DIR"
 # Loaded before the checkout below replaces the file on disk.
 # shellcheck source=restart_script.sh
