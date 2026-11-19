@@ -1847,6 +1847,18 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertEqual(site_path.read_text(), uwsgi_site)
 
+    def test_the_readme_rollback_loads_the_runtime_environment_before_django_runs(self):
+        # cms/settings.py reads SECRET_KEY from app.env. Without it collectstatic is unknown to manage.py.
+        script = re.search(
+            r"^Save the following script as `/root/rollback-to-uwsgi\.sh`.*?```bash\n(.*?)```",
+            DEPLOY_README.read_text(),
+            re.MULTILINE | re.DOTALL,
+        ).group(1)
+
+        loads_environment = script.index("set -a; source /etc/cinematacms/app.env; set +a")
+        self.assertLess(loads_environment, script.index("install_python_requirements"))
+        self.assertLess(loads_environment, script.index("roll_back_static_release"))
+
     def test_apply_renders_again_the_full_stack_files_that_reach_the_web_server(self):
         self.apply_new_site()
         full_stack = self.deploy_root / "etc/cinematacms-observability"

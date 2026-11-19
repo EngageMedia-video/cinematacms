@@ -412,6 +412,8 @@ cd /home/cinemata/cinematacms
 source restart_script.sh
 deploy/migrate-python-runtime.sh --adopt-legacy-venv
 source /home/cinemata/venv/bin/activate
+# Django reads its settings, SECRET_KEY among them, from this file.
+set -a; source /etc/cinematacms/app.env; set +a
 TARGET="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f2)"
 DEPLOYED="$(tail -n 1 /var/log/cinemata/deploy.log | cut -f3)"
 [ "$(git rev-parse HEAD)" = "$DEPLOYED" ] || { echo "HEAD is not the last deployed commit" >&2; exit 1; }
