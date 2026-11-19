@@ -87,6 +87,11 @@ area you changed.
 The Django test suite requires the PostgreSQL and Redis services described in
 the developer onboarding guide.
 
+CI runs the lint and the Django tests on Python 3.10 and Python 3.14, and each
+required check passes only when both pass. To run a command on Python 3.14
+without replacing `.venv`, prefix it with
+`UV_PYTHON=3.14 UV_PROJECT_ENVIRONMENT=.venv-3.14`.
+
 ### Frontend checks
 
 ```bash

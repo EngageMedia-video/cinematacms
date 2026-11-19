@@ -6,7 +6,7 @@ EnvironmentFile=/etc/cinematacms/app.env
 Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 Environment=OTEL_SERVICE_ROLE="web"
 ExecStartPre=/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
-ExecStart=/home/cinemata/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini
+ExecStart=/home/cinemata/venv/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini --virtualenv /home/cinemata/venv
 TimeoutStopSec=30s
 RestartSec=3
 Restart=always

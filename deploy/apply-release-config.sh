@@ -80,6 +80,10 @@ if [ "$SKIP_ROOT_CHECK" != "1" ] && [ "$(id -u)" -ne 0 ]; then
     fail "run this command as root"
 fi
 
+# The units below run from /home/cinemata/venv. A deploy runs the restart script
+# of the release it replaces, and that script calls this one before it installs them.
+"$SCRIPT_DIR/migrate-python-runtime.sh" --adopt-legacy-venv
+
 CONFIG_DIR="$(root_path /etc/cinematacms)"
 CONFIG_FILE="$CONFIG_DIR/deployment.env"
 DOMAIN=""
