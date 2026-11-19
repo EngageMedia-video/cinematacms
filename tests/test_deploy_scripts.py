@@ -2343,6 +2343,14 @@ class RestartScriptTests(unittest.TestCase):
         self.assertLess(main.index("trap - EXIT"), main.index("systemctl restart nginx"))
         self.assertNotIn("systemctl restart mediacms", main)
 
+    def test_rollback_loads_the_runtime_environment_before_it_changes_anything(self):
+        # cms/settings.py reads SECRET_KEY from app.env. Without it collectstatic is unknown to manage.py.
+        rollback = (PROJECT_ROOT / "rollback.sh").read_text()
+        loads_environment = rollback.index("\nsource /etc/cinematacms/app.env\nset +a\n")
+
+        self.assertLess(loads_environment, rollback.index('\ngit checkout --detach "$TARGET_SHA"\n'))
+        self.assertLess(loads_environment, rollback.index('\nroll_back_static_release "$TARGET_SHA"\n'))
+
     def test_rollback_restarts_services_once_packages_may_have_changed(self):
         rollback = (PROJECT_ROOT / "rollback.sh").read_text()
         arm = "trap restart_application_services_after_interrupted_deploy EXIT\n"
