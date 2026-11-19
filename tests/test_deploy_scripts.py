@@ -792,6 +792,19 @@ class InstallScriptTests(unittest.TestCase):
         self.assertNotIn("libncurses5-dev", packages)
         self.assertNotIn("libncursesw5-dev", packages)
 
+    def test_application_role_owns_its_database(self):
+        # PostgreSQL 15 and later let only the database owner create tables in the
+        # public schema, and Ubuntu 24.04 ships PostgreSQL 16.
+        script = INSTALLER.read_text()
+        create_role = script.index("CREATE USER mediacms ")
+        create_database = script.index("CREATE DATABASE mediacms OWNER mediacms")
+
+        self.assertLess(create_role, create_database)
+
+    def test_installer_runs_as_the_documented_command(self):
+        # deploy/README.md runs it as `sudo ./install.sh`.
+        self.assertTrue(os.access(INSTALLER, os.X_OK))
+
     def test_installer_leaves_certbot_storage_to_a_single_certbot_run(self):
         script = INSTALLER.read_text()
 

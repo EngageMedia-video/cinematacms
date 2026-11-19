@@ -369,9 +369,8 @@ install_bento4 "$SYSTEM_ARCHITECTURE"
 echo 'Creating database to be used in CinemataCMS'
 
 CURRENT_STEP="database initialization"
-su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
 su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" postgres
-su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
+su -c "psql -c \"CREATE DATABASE mediacms OWNER mediacms\"" postgres
 
 CURRENT_STEP="Node.js and npm installation"
 echo 'Installing Node.js v26 LTS...'
