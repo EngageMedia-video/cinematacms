@@ -309,8 +309,8 @@ reduced-motion behavior. Check each affected viewport and theme.
 
 - Change a dependency declaration and its lockfile in the same change.
 - Use the package manager and version declared by the repository.
-- Do not regenerate `frontend/package-lock.json` with npm 10. The frontend uses
-  the npm version declared in `frontend/package.json`.
+- Regenerate `frontend/package-lock.json` only with the npm version that
+  `packageManager` declares in `frontend/package.json`.
 - Explain why a new production dependency is necessary.
 - Keep dependency-only updates separate from feature work unless the feature
   requires the update.

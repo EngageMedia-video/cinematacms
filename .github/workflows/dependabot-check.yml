@@ -11,12 +11,11 @@ on:
       - 'frontend/package-lock.json'
       - 'frontend/packages/*/package.json'
       - 'frontend/packages/*/package-lock.json'
-      - 'frontend/pnpm-lock.yaml'
   workflow_dispatch:  # Allow manual triggering
 
 env:
   PYTHON_VERSION: '3.10'
-  NODE_VERSION: '22'
+  NODE_VERSION: '26'
 
 jobs:
   detect-changes:
@@ -44,7 +43,6 @@ jobs:
               - 'frontend/package-lock.json'
               - 'frontend/packages/*/package.json'
               - 'frontend/packages/*/package-lock.json'
-              - 'frontend/pnpm-lock.yaml'
 
   python-dependency-check:
     name: Python Dependencies Check
@@ -254,8 +252,8 @@ jobs:
             frontend/packages/vjs-plugin/package-lock.json
             frontend/packages/media-player/package-lock.json
 
-      # Node 22 bundles npm 10, which cannot resolve this repository's npm 11
-      # lockfile reliably. Use the package manager version declared by frontend.
+      # setup-node installs the newest Node 26 release, and the npm it bundles
+      # can differ between releases. Use the npm version declared by frontend.
       - name: Pin npm to the version in packageManager
         working-directory: frontend
         run: |

@@ -246,6 +246,34 @@ Configure `OBSERVABILITY_REFERENCE_ALLOWED_IPS` with explicit addresses or CIDR
 ranges only when the monitoring service runs on another host, and use HTTPS or
 mTLS for that connection.
 
+### Upgrade Node.js on an existing server
+
+`install.sh` runs `install-nodejs.sh`, which installs the Node.js LTS release
+line that the frontend requires, makes it the nvm default for root, and points
+`/usr/local/bin/node`, `npm` and `npx` at it. `restart_script.sh` finds Node.js
+through those links, because `sudo` does not load nvm. When a
+release raises that line, run the release's `install-nodejs.sh` on each
+existing server before you deploy the release. Otherwise the server builds the
+frontend with the old Node.js. The script also installs `libatomic1` with
+`apt-get`, because Node.js 26 does not start without `libatomic.so.1`.
+
+```bash
+cd /home/cinemata/cinematacms
+git fetch origin
+git show <commit-sha>:install-nodejs.sh > /tmp/install-nodejs.sh
+sudo bash /tmp/install-nodejs.sh
+sudo sh -c 'command -v node; node --version; npm --version'
+```
+
+Use the commit that you are about to deploy as `<commit-sha>`. The last
+command shows the `node` that `restart_script.sh` finds on the `PATH` that
+`sudo` sets. It must be `/usr/local/bin/node` and report the major version in
+`frontend/.nvmrc`. If `command -v node` shows another path, an earlier entry on
+the `sudo` `PATH` holds an old Node.js. Remove that install before you deploy.
+
+The deploy runs `npm ci`, which installs from the lockfile and does not rewrite
+it, so the npm that the new Node.js bundles is enough.
+
 ## Nginx request handling
 
 The deployment files split nginx ownership as follows:
