@@ -894,8 +894,8 @@ class Media(models.Model):
         # column from memory, so that blank would overwrite the stored key while
         # is_encrypted stayed True. The key is the only copy, so the encrypted .ts
         # segments become undecryptable and playback breaks silently.
-        # The stored value is re-read rather than trusted from memory because uWSGI
-        # and the Celery workers are separate processes sharing only the row.
+        # The stored value is re-read rather than trusted from memory because the web
+        # and Celery workers are separate processes sharing only the row.
         # is_encrypted distinguishes an accidental blank from an intentional clear:
         # disabling encryption sets it False, so that blank still persists.
         # Django accepts any iterable for update_fields, and both the membership

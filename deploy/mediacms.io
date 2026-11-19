@@ -60,11 +60,11 @@ server {
     location / {
 
 
-        include /etc/nginx/sites-enabled/uwsgi_params;
-        uwsgi_read_timeout 900s;
-        uwsgi_send_timeout 300s;
-        uwsgi_request_buffering on;
-        uwsgi_pass 127.0.0.1:9000;
+        include /etc/nginx/snippets/cinematacms-proxy.conf;
+        proxy_read_timeout 900s;
+        proxy_send_timeout 300s;
+        proxy_request_buffering on;
+        proxy_pass http://cinematacms_app;
     }
 }
 
@@ -127,10 +127,10 @@ server {
 
     location / {
 
-        include /etc/nginx/sites-enabled/uwsgi_params;
-        uwsgi_read_timeout 900s;
-        uwsgi_send_timeout 300s;
-        uwsgi_request_buffering on;
-        uwsgi_pass 127.0.0.1:9000;
+        include /etc/nginx/snippets/cinematacms-proxy.conf;
+        proxy_read_timeout 900s;
+        proxy_send_timeout 300s;
+        proxy_request_buffering on;
+        proxy_pass http://cinematacms_app;
     }
 }

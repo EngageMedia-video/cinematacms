@@ -349,7 +349,10 @@ install_configuration() {
   install_grafana_provisioning
   if command -v nginx >/dev/null 2>&1; then
     install -m 0644 "${TEMPLATE_DIR}/nginx-stub-status.conf" /etc/nginx/conf.d/cinematacms-observability.conf
-    render_nginx_app_metrics
+    # The application metrics listener passes to this upstream, which an apply of
+    # this release installs too.
+    install -m 0644 "${SCRIPT_DIR}/../nginx/cinematacms-upstream.conf" /etc/nginx/conf.d/cinematacms-upstream.conf
+    render_nginx_app_metrics > /etc/nginx/conf.d/cinematacms-app-metrics.conf
     nginx -t
   fi
   configure_postgres_monitor_role
@@ -400,7 +403,7 @@ own_app_log() {
 
 prepare_service_logs() {
   local filename
-  # setgid keeps files created later (celery, uwsgi, logrotate) in the collector's group.
+  # setgid keeps files created later (celery, gunicorn, logrotate) in the collector's group.
   install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
   for filename in errorlog.txt celery_long.log celery_short.log celery_whisper.log celery_email.log beatcelery_beat.log; do
     own_app_log "${APP_SERVICE_LOG_DIR}/${filename}"
@@ -421,7 +424,7 @@ render_nginx_app_metrics() {
   local content
   content="$(<"${TEMPLATE_DIR}/nginx-app-metrics.conf")"
   content="${content//\$\{APP_METRICS_PORT\}/$APP_METRICS_PORT}"
-  printf '%s\n' "$content" > /etc/nginx/conf.d/cinematacms-app-metrics.conf
+  printf '%s\n' "$content"
 }
 
 configure_postgres_monitor_role() {

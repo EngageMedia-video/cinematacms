@@ -70,3 +70,27 @@ def get_remote_ip(request):
         return str(ip_address(request.META.get("REMOTE_ADDR", "").strip()))
     except ValueError:
         return None
+
+
+def _is_loopback(address):
+    try:
+        return ip_address(address).is_loopback
+    except ValueError:
+        return False
+
+
+def take_client_address_from_local_proxy(app):
+    """Wrap a WSGI app so REMOTE_ADDR is the client nginx saw, not nginx itself.
+
+    nginx on this host connects over loopback and overwrites X-Real-IP with its
+    own $remote_addr (deploy/nginx/cinematacms-proxy.conf). A peer that is not
+    loopback did not come through that nginx, so its header is ignored.
+    """
+
+    def application(environ, start_response):
+        client_address = environ.get("HTTP_X_REAL_IP")
+        if client_address and _is_loopback(environ.get("REMOTE_ADDR", "")):
+            environ["REMOTE_ADDR"] = client_address
+        return app(environ, start_response)
+
+    return application

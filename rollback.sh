@@ -153,6 +153,17 @@ if [ -n "$MIGRATION_DIFF" ]; then
   echo
 fi
 
+# Releases before deploy/gunicorn.conf.py ran uWSGI behind uwsgi_pass. This script
+# installs neither their units nor their nginx files, so that switch is reversed
+# by hand.
+if git cat-file -e "${DEPLOYED_SHA}:deploy/gunicorn.conf.py" 2>/dev/null &&
+  ! git cat-file -e "${TARGET_SHA}:deploy/gunicorn.conf.py" 2>/dev/null; then
+  echo -e "${RED}$TARGET_SHA runs uWSGI, and the deployed release runs gunicorn.${NC}" >&2
+  echo -e "${YELLOW}This script cannot cross that change. Follow 'Roll back to a uWSGI release'${NC}" >&2
+  echo -e "${YELLOW}in deploy/README.md instead.${NC}" >&2
+  exit 1
+fi
+
 if [ "$DRY_RUN" -eq 1 ]; then
   echo -e "${GREEN}Dry run complete. No changes made.${NC}"
   exit 0
@@ -200,7 +211,6 @@ systemctl daemon-reload
 echo -e "${YELLOW}Restarting services...${NC}"
 restart_application_services
 trap - EXIT
-systemctl restart nginx
 
 # Audit entry so a subsequent rollback (or the next forward deploy) can
 # trace the chain. Field 4 is "rollback" instead of a branch name.

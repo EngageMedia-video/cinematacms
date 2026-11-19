@@ -73,8 +73,8 @@ Restart your CinemataCMS application to apply the changes:
 # For systemd services:
 sudo systemctl restart your-service-name
 
-# For uWSGI:
-pkill -HUP -f "uwsgi"
+# To replace the gunicorn workers without stopping the service:
+sudo systemctl reload mediacms
 
 # For development server:
 python manage.py runserver

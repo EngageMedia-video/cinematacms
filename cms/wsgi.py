@@ -4,22 +4,11 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cms.settings")
 
-# Under uWSGI, key each worker's multiprocess metric files by uWSGI worker id
-# instead of the default pid. A respawned worker then reuses its predecessor's
-# files rather than leaving orphans behind in PROMETHEUS_MULTIPROC_DIR.
-# Must run before the first metric is constructed, hence before everything else.
-try:
-    import uwsgi
-    from prometheus_client import values
-
-    values.ValueClass = values.MultiProcessValue(process_identifier=uwsgi.worker_id)
-except ImportError:
-    pass
-
 from cms.error_tracking import configure_error_tracking  # noqa: E402
 from cms.observability import configure_django_observability  # noqa: E402
+from cms.request_utils import take_client_address_from_local_proxy  # noqa: E402
 
 configure_error_tracking()
 configure_django_observability()
 
-application = get_wsgi_application()
+application = take_client_address_from_local_proxy(get_wsgi_application())

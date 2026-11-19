@@ -24,7 +24,7 @@ from .utils import is_valid_uuid_format
 
 FINGERPRINT_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 # An assembly that has not finished in this time is treated as abandoned by a dead worker.
-# It must exceed the proxy read timeout (nginx uwsgi_read_timeout 900s), so a slow
+# It must exceed the proxy read timeout (nginx proxy_read_timeout 900s), so a slow
 # request that is still running is never reclaimed by its own retry.
 ASSEMBLY_TIMEOUT = timedelta(minutes=30)
 

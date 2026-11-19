@@ -1,6 +1,6 @@
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from cms.request_utils import client_network, get_client_ip
+from cms.request_utils import client_network, get_client_ip, take_client_address_from_local_proxy
 
 CLOUDFLARE_EDGE = "162.158.1.1"
 CLOUDFLARE_RANGE = "162.158.0.0/15"
@@ -76,3 +76,28 @@ class ClientNetworkTests(SimpleTestCase):
         for value in ("", "unix:/run/app.sock", None):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 client_network(value)
+
+
+class TakeClientAddressFromLocalProxyTests(SimpleTestCase):
+    def _remote_addr_seen_by_app(self, **environ):
+        seen = {}
+
+        def app(app_environ, start_response):
+            seen["REMOTE_ADDR"] = app_environ.get("REMOTE_ADDR")
+            return []
+
+        take_client_address_from_local_proxy(app)(environ, lambda status, headers: None)
+        return seen["REMOTE_ADDR"]
+
+    def test_local_proxy_passes_on_the_client_address(self):
+        for proxy in ("127.0.0.1", "::1"):
+            with self.subTest(proxy=proxy):
+                seen = self._remote_addr_seen_by_app(REMOTE_ADDR=proxy, HTTP_X_REAL_IP="203.0.113.10")
+                self.assertEqual(seen, "203.0.113.10")
+
+    def test_remote_peer_cannot_set_its_address(self):
+        seen = self._remote_addr_seen_by_app(REMOTE_ADDR="198.51.100.7", HTTP_X_REAL_IP="127.0.0.1")
+        self.assertEqual(seen, "198.51.100.7")
+
+    def test_local_peer_without_the_header_keeps_its_address(self):
+        self.assertEqual(self._remote_addr_seen_by_app(REMOTE_ADDR="127.0.0.1"), "127.0.0.1")

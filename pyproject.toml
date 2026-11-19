@@ -25,7 +25,7 @@ dependencies = [
     "requests==2.34.2",
     "urllib3>=2.7.0",
     "fido2==2.2.1",
-    "uwsgi==2.0.31",
+    "gunicorn==27.0.1",
     "qrcode==8.2",
     "django-tinymce==5.0.0",
     "django-maintenance-mode==0.23.0",

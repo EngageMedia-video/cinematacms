@@ -108,6 +108,8 @@ filetype==1.2.0
     # via cinemata
 googleapis-common-protos==1.76.0
     # via opentelemetry-exporter-otlp-proto-http
+gunicorn==27.0.1
+    # via cinemata
 idna==3.20
     # via requests
 kombu==5.6.2
@@ -262,8 +264,6 @@ urllib3==2.8.0
     #   cinemata
     #   requests
     #   sentry-sdk
-uwsgi==2.0.31
-    # via cinemata
 vine==5.1.0
     # via
     #   amqp
