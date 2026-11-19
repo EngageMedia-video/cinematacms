@@ -332,18 +332,22 @@ class GunicornConfigTests(unittest.TestCase):
             "upstream cinematacms_app {server 127.0.0.1:9001;server 127.0.0.1:9002;}",
             'upstream cinematacms_app {server 127.0.0.1:9001;"server" 127.0.0.1:9002;}',
             "upstream cinematacms_app {server 127.0.0.1:9001; keepalive 8;}",
+            # nginx accepts this file: the first match is a quoted map value,
+            # and the real upstream has a quoted name and two servers.
+            'map "" $unused {\n    default "upstream cinematacms_app {server 127.0.0.1:9001;}";\n}\n'
+            'upstream "cinematacms_app" {\n    server 127.0.0.1:9001;\n    server 127.0.0.1:9002;\n}\n',
         ):
-            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "exactly one directive, found 2"):
+            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "must contain only"):
                 self.hooks["application_server"](config)
 
     def test_bind_rejects_a_server_with_parameters_or_another_host(self):
         for server in ("127.0.0.1:9001 weight=2", "0.0.0.0:9001", "unix:/run/app.sock"):
-            with self.subTest(server=server), self.assertRaises(ValueError):
+            with self.subTest(server=server), self.assertRaisesRegex(ValueError, "must contain only"):
                 self.hooks["application_server"](f"upstream cinematacms_app {{ server {server}; }}")
 
     def test_bind_rejects_a_missing_upstream(self):
         for config in ("", "upstream other { server 127.0.0.1:9001; }"):
-            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "found 0"):
+            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "must contain only"):
                 self.hooks["application_server"](config)
 
     def start_worker(self):

@@ -17,22 +17,19 @@ def application_server(upstream_config):
     """The one address of the upstream that nginx passes application requests to.
 
     nginx balances across every server in the upstream, and gunicorn binds one
-    address. The block may therefore hold only `server 127.0.0.1:<port>;`:
-    anything else, however nginx would read it, is a configuration error.
+    address. The whole file, comments aside, must therefore be exactly
+    `upstream cinematacms_app { server 127.0.0.1:<port>; }`. Matching the whole
+    file leaves no quoting or second block for nginx to read differently.
     """
     config = re.sub(r"#[^\n]*", "", upstream_config)
-    blocks = re.findall(rf"\bupstream\s+{APPLICATION_UPSTREAM}\s*\{{([^}}]*)\}}", config)
-    if len(blocks) != 1:
-        raise ValueError(f"expected one upstream {APPLICATION_UPSTREAM} block, found {len(blocks)}")
-    directives = [directive.split() for directive in blocks[0].split(";") if directive.strip()]
-    if len(directives) != 1:
-        raise ValueError(f"upstream {APPLICATION_UPSTREAM} must hold exactly one directive, found {len(directives)}")
-    words = directives[0]
-    if len(words) != 2 or words[0] != "server" or not re.fullmatch(r"127\.0\.0\.1:\d+", words[1]):
+    match = re.fullmatch(
+        rf"\s*upstream\s+{APPLICATION_UPSTREAM}\s*\{{\s*server\s+(127\.0\.0\.1:\d+)\s*;\s*\}}\s*", config
+    )
+    if match is None:
         raise ValueError(
-            f"upstream {APPLICATION_UPSTREAM} must hold only server 127.0.0.1:<port>, got {' '.join(words)!r}"
+            f"the upstream file must contain only: upstream {APPLICATION_UPSTREAM} {{ server 127.0.0.1:<port>; }}"
         )
-    return words[1]
+    return match[1]
 
 
 bind = application_server((Path(__file__).parent / "nginx/cinematacms-upstream.conf").read_text())
