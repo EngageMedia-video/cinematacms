@@ -296,12 +296,19 @@ take in step 2.
    `/usr/bin/python3.10` stops working after the upgrade:
 
    ```bash
-   readlink -f /home/cinemata/venv/bin/python /home/cinemata/bin/python 2>/dev/null
+   readlink -f /home/cinemata/venv/bin/python 2>/dev/null || readlink -f /home/cinemata/bin/python
    ```
 
-   If a path starts with `/usr/bin/python3`, move the application to the
-   uv-managed interpreter first ([#1072](https://github.com/EngageMedia-video/cinematacms/issues/1072)).
+   The command shows the interpreter that the services run: the one behind
+   the `/home/cinemata/venv` link, or the one in `/home/cinemata` on an install
+   that has no link yet. If the path starts with `/usr/bin/python3`, move the
+   application to the uv-managed interpreter first ([#1072](https://github.com/EngageMedia-video/cinematacms/issues/1072)).
    Do not continue until the check shows no `/usr/bin` interpreter.
+
+   After that move, `/home/cinemata/bin/python` still points at
+   `/usr/bin/python3.10`. It belongs to the previous virtualenv that
+   `migrate-python-runtime.sh --rollback` returns to. The upgrade breaks that
+   virtualenv, so after the upgrade the Python rollback has nothing to return to.
 2. Take a snapshot of the whole server disk from the hosting provider. Also
    copy these off the server: a database backup made with your usual backup
    procedure, `/home/cinemata/cinematacms/media_files/`, `/etc/cinematacms/`,
