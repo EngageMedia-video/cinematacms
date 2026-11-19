@@ -1,5 +1,5 @@
 #!/bin/bash
-# should be run as root and only on Ubuntu 22
+# should be run as root and only on Ubuntu 24.04
 
 usage() {
     cat <<'EOF'
@@ -43,8 +43,8 @@ check_supported_platform() {
     [ -r "$os_release_file" ] || fail "cannot read OS information from $os_release_file"
     os_id=$(read_os_release_value ID "$os_release_file")
     os_version=$(read_os_release_value VERSION_ID "$os_release_file")
-    [ "$os_id" = "ubuntu" ] && [ "$os_version" = "22.04" ] || \
-        fail "Ubuntu 22.04 is required; found ${os_id:-unknown} ${os_version:-unknown}"
+    [ "$os_id" = "ubuntu" ] && [ "$os_version" = "24.04" ] || \
+        fail "Ubuntu 24.04 is required; found ${os_id:-unknown} ${os_version:-unknown}"
     command -v dpkg >/dev/null 2>&1 || fail "dpkg is required to detect the system architecture"
 
     SYSTEM_ARCHITECTURE=$(dpkg --print-architecture)
@@ -53,7 +53,7 @@ check_supported_platform() {
         *) fail "supported architectures are amd64 and arm64; found $SYSTEM_ARCHITECTURE" ;;
     esac
 
-    echo "Supported platform: Ubuntu 22.04 ($SYSTEM_ARCHITECTURE)"
+    echo "Supported platform: Ubuntu 24.04 ($SYSTEM_ARCHITECTURE)"
 }
 
 validate_domain() {
@@ -354,7 +354,7 @@ CURRENT_STEP="platform validation"
 check_supported_platform
 CURRENT_STEP="system dependency installation"
 echo 'Performing system update and dependency installation, this will take a few minutes'
-apt-get update && apt-get -y upgrade && apt-get install python3-venv python3-dev python3-virtualenv python3-pip virtualenv redis-server postgresql nginx git gcc vim unzip ffmpeg imagemagick telnet htop certbot make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl python3-certbot cmake libpq-dev python3-certbot-nginx -y
+apt-get update && apt-get -y upgrade && apt-get install python3-venv python3-dev python3-virtualenv python3-pip virtualenv redis-server postgresql nginx git gcc vim unzip ffmpeg imagemagick telnet htop certbot make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl python3-certbot cmake libpq-dev python3-certbot-nginx -y
 
 CURRENT_STEP="PostgreSQL and Redis startup"
 ensure_services_ready
@@ -369,9 +369,8 @@ install_bento4 "$SYSTEM_ARCHITECTURE"
 echo 'Creating database to be used in CinemataCMS'
 
 CURRENT_STEP="database initialization"
-su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
 su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" postgres
-su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
+su -c "psql -c \"CREATE DATABASE mediacms OWNER mediacms\"" postgres
 
 CURRENT_STEP="Node.js and npm installation"
 echo 'Installing Node.js v26 LTS...'

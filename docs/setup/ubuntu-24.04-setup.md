@@ -1,6 +1,6 @@
-# Install CinemataCMS on Ubuntu 22.04
+# Install CinemataCMS on Ubuntu 24.04
 
-Use Ubuntu 22.04 on an `amd64` or `arm64` host. The installer configures nginx,
+Use Ubuntu 24.04 on an `amd64` or `arm64` host. The installer configures nginx,
 PostgreSQL, and Redis. Run it only on a new host that does not already use those
 services.
 
@@ -17,7 +17,7 @@ Check the host before installing:
 
 ```bash
 # ./install.sh --check-platform
-Supported platform: Ubuntu 22.04 (amd64)
+Supported platform: Ubuntu 24.04 (amd64)
 ```
 
 Run the interactive installer:

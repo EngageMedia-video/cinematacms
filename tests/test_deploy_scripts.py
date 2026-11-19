@@ -443,7 +443,7 @@ class InstallScriptTests(unittest.TestCase):
             check=False,
         )
 
-    def platform_env(self, version="22.04", architecture="amd64"):
+    def platform_env(self, version="24.04", architecture="amd64"):
         os_release = self.test_root / "os-release"
         os_release.write_text(f'ID=ubuntu\nVERSION_ID="{version}"\n')
         fake_bin = self.test_root / "bin"
@@ -694,23 +694,23 @@ class InstallScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "noninteractive")
 
-    def test_platform_check_accepts_ubuntu_22_arm64(self):
+    def test_platform_check_accepts_ubuntu_24_arm64(self):
         result = self.run_installer(
             "--check-platform",
             env=self.platform_env(architecture="arm64"),
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Supported platform: Ubuntu 22.04 (arm64)", result.stdout)
+        self.assertIn("Supported platform: Ubuntu 24.04 (arm64)", result.stdout)
 
     def test_platform_check_rejects_other_ubuntu_release(self):
         result = self.run_installer(
             "--check-platform",
-            env=self.platform_env(version="24.04"),
+            env=self.platform_env(version="22.04"),
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Ubuntu 22.04 is required", result.stderr)
+        self.assertIn("Ubuntu 24.04 is required", result.stderr)
 
     def test_platform_check_rejects_unsupported_architecture(self):
         result = self.run_installer(
@@ -781,6 +781,29 @@ class InstallScriptTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("observability=managed", result.stdout)
+
+    def test_system_packages_use_ubuntu_24_04_names(self):
+        script = INSTALLER.read_text()
+        install_line = re.search(r"apt-get install (python3-venv [^\n]*) -y\n", script)
+        packages = install_line.group(1).split()
+
+        self.assertIn("libncurses-dev", packages)
+        self.assertIn("xz-utils", packages)
+        self.assertNotIn("libncurses5-dev", packages)
+        self.assertNotIn("libncursesw5-dev", packages)
+
+    def test_application_role_owns_its_database(self):
+        # PostgreSQL 15 and later let only the database owner create tables in the
+        # public schema, and Ubuntu 24.04 ships PostgreSQL 16.
+        script = INSTALLER.read_text()
+        create_role = script.index("CREATE USER mediacms ")
+        create_database = script.index("CREATE DATABASE mediacms OWNER mediacms")
+
+        self.assertLess(create_role, create_database)
+
+    def test_installer_runs_as_the_documented_command(self):
+        # deploy/README.md runs it as `sudo ./install.sh`.
+        self.assertTrue(os.access(INSTALLER, os.X_OK))
 
     def test_installer_leaves_certbot_storage_to_a_single_certbot_run(self):
         script = INSTALLER.read_text()

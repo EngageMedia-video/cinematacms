@@ -5,7 +5,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 ## 🚀 Getting Started
 
 ### Installation & Setup
-- [🐧 Ubuntu 22.04 Setup](setup/ubuntu-22.04-setup.md)
+- [🐧 Ubuntu 24.04 Setup](setup/ubuntu-24.04-setup.md)
 - [📋 Post-Installation Guide](setup/Post-installation-guide.md)
 - [👑 Creating Superuser](setup/creating_superuser.md)
 - [🧑‍💻 Developer Onboarding](setup/Developer-Onboarding.md)

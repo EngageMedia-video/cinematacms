@@ -1963,13 +1963,22 @@ class FullStackContractTests(unittest.TestCase):
             self.assertIn(f"{component}_AMD64_SHA256", manifest)
             self.assertIn(f"{component}_ARM64_SHA256", manifest)
 
-    def test_celery_exporter_supports_ubuntu_2204_python(self):
+    def test_celery_exporter_supports_ubuntu_2404_python(self):
         manifest = (OBSERVABILITY / "manifest.env").read_text()
         installer = (OBSERVABILITY / "install.sh").read_text()
 
-        self.assertIn('CELERY_EXPORTER_VERSION="0.10.10"', manifest)
-        self.assertIn('CELERY_EXPORTER_COMMIT="041ccf66d337852626acf6310b6b81c6d6165b74"', manifest)
+        # The exporter venv uses the system python3, 3.12 on Ubuntu 24.04. 0.12.2 declares >=3.11,<3.14.
+        self.assertIn('CELERY_EXPORTER_VERSION="0.12.2"', manifest)
+        self.assertIn('CELERY_EXPORTER_COMMIT="219ab3a1ce501b7153eb9825caa4558c0a74bc45"', manifest)
         self.assertIn("sed -n 's/^Version: //p' || true", installer)
+
+    def test_celery_exporter_installs_the_redis_transport_dependencies(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+
+        # kombu 5.7 imports packaging in its Redis transport but lists it only under the redis extra.
+        self.assertRegex(
+            installer, r'celery-exporter/archive/\$\{CELERY_EXPORTER_COMMIT\}\.tar\.gz" \\\n\s+"celery\[redis\]"'
+        )
 
     def test_celery_exporter_runtime_buckets_cover_tasks_that_run_for_hours(self):
         unit = (OBSERVABILITY / "templates/celery-exporter.service").read_text()

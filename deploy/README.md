@@ -1,8 +1,10 @@
 # Deploy CinemataCMS
 
-Use `install.sh` for a new Ubuntu 22.04 server. Use
+Use `install.sh` for a new Ubuntu 24.04 server. Use
 `deploy/apply-release-config.sh` after an application upgrade. Both commands use
-the same nginx, systemd, and observability files.
+the same nginx, systemd, and observability files. To move an existing Ubuntu
+22.04 server to 24.04, follow
+[Upgrade a server from Ubuntu 22.04 to 24.04](#upgrade-a-server-from-ubuntu-2204-to-2404).
 
 ## Runtime configuration
 
@@ -276,6 +278,156 @@ the `sudo` `PATH` holds an old Node.js. Remove that install before you deploy.
 
 The deploy runs `npm ci`, which installs from the lockfile and does not rewrite
 it, so the npm that the new Node.js bundles is enough.
+
+## Upgrade a server from Ubuntu 22.04 to 24.04
+
+This procedure moves an existing server to Ubuntu 24.04 with
+`do-release-upgrade`. It does not change the PostgreSQL cluster. Run it on a
+test copy of the server before you run it on a server that serves visitors.
+
+An in-place release upgrade cannot be undone. Ubuntu has no downgrade path, so
+the only rollback is to restore the whole server from the snapshot that you
+take in step 2.
+
+### Before the upgrade
+
+1. Check that the application does not run on Ubuntu's Python. Ubuntu 24.04
+   does not ship Python 3.10, so an application virtualenv built from
+   `/usr/bin/python3.10` stops working after the upgrade:
+
+   ```bash
+   readlink -f /home/cinemata/venv/bin/python 2>/dev/null || readlink -f /home/cinemata/bin/python
+   ```
+
+   The command shows the interpreter that the services run: the one behind
+   the `/home/cinemata/venv` link, or the one in `/home/cinemata` on an install
+   that has no link yet. If the path starts with `/usr/bin/python3`, move the
+   application to the uv-managed interpreter first ([#1072](https://github.com/EngageMedia-video/cinematacms/issues/1072)).
+   Do not continue until the check shows no `/usr/bin` interpreter.
+
+   After that move, `/home/cinemata/bin/python` still points at
+   `/usr/bin/python3.10`. It belongs to the previous virtualenv that
+   `migrate-python-runtime.sh --rollback` returns to. The upgrade breaks that
+   virtualenv, so after the upgrade the Python rollback has nothing to return to.
+2. Take a snapshot of the whole server disk from the hosting provider. Also
+   copy these off the server: a database backup made with your usual backup
+   procedure, `/home/cinemata/cinematacms/media_files/`, `/etc/cinematacms/`,
+   `/etc/nginx/`, `/etc/letsencrypt/`, and `/etc/cinematacms-observability/`
+   when it exists.
+3. Bring Ubuntu 22.04 fully up to date, and reboot if the system asks for it:
+
+   ```bash
+   sudo apt-get update && sudo apt-get full-upgrade
+   [ -f /var/run/reboot-required ] && sudo reboot
+   ```
+
+4. List held packages. The upgrader cannot upgrade a held package and can stop
+   on one. Release each hold that you do not need, and note the rest:
+
+   ```bash
+   apt-mark showhold
+   sudo apt-mark unhold <package>
+   ```
+
+5. List the third-party apt sources. The upgrader disables them, and you
+   re-enable them in step 3 of the next section. Record each file and its
+   suite, such as the PostgreSQL project's repository (PGDG) or Grafana:
+
+   ```bash
+   grep -rh '^deb\|^Suites\|^URIs' /etc/apt/sources.list.d/
+   ```
+
+6. Check the free space on `/` and `/boot`. The upgrader calculates the space
+   that it needs and stops before it changes anything when the space is too
+   small:
+
+   ```bash
+   df -h / /boot
+   ```
+
+7. Stop the application units so that no upload or encode starts during the
+   upgrade:
+
+   ```bash
+   sudo systemctl stop mediacms celery_long celery_short celery_whisper celery_email celery_beat
+   ```
+
+### Run the upgrade
+
+1. Start the upgrade. Over SSH, the upgrader also starts a fallback SSH server
+   on port 1022:
+
+   ```bash
+   sudo do-release-upgrade
+   ```
+
+2. When the upgrader asks about a configuration file that you or CinemataCMS
+   changed, such as `/etc/nginx/nginx.conf` or `/etc/redis/redis.conf`, keep
+   the installed version. `deploy/apply-release-config.sh` owns the nginx
+   files.
+3. Reboot when the upgrader finishes.
+
+### After the upgrade
+
+1. Confirm the release:
+
+   ```bash
+   cd /home/cinemata/cinematacms && sudo ./install.sh --check-platform
+   ```
+
+   The command prints `Supported platform: Ubuntu 24.04 (amd64)` or `(arm64)`.
+2. Check that no unit failed:
+
+   ```bash
+   systemctl --failed
+   systemctl status nginx redis-server postgresql mediacms celery_long celery_short celery_whisper celery_email celery_beat
+   ```
+
+3. Re-enable each third-party source that you recorded, with its Ubuntu 24.04
+   (`noble`) suite where the source has one, then run `sudo apt-get update`.
+4. Apply the release configuration. It validates nginx with `nginx -t` and
+   restarts the application units:
+
+   ```bash
+   sudo ./deploy/apply-release-config.sh
+   ```
+
+5. If the full observability stack is installed, run its installer again with
+   the environment file that you installed it with. It rebuilds the Celery
+   exporter virtualenv with Ubuntu 24.04's `python3` (3.12), because the
+   virtualenv built with Python 3.10 cannot run any more. Do not run this
+   installer before the upgrade: the pinned exporter needs Python 3.11 or
+   later, and Ubuntu 22.04 has 3.10. Then verify the stack:
+
+   ```bash
+   sudo deploy/observability/install.sh --env <environment file>
+   sudo deploy/observability/install.sh --env <environment file> --verify-only
+   ```
+
+6. Check that the media tools still run:
+
+   ```bash
+   ffmpeg -version | head -1
+   convert -version | head -1
+   /opt/bento4/bin/mp4hls --help | head -1
+   /home/cinemata/whisper.cpp/build/bin/whisper-cli --help | head -1
+   ```
+
+7. Upload a short video with an audio track. Confirm that the encodings, the
+   poster, the sprite sheet, the animated preview, and HLS playback all
+   complete, and that a transcription request produces subtitles.
+8. Check that Certbot can still renew the certificate:
+
+   ```bash
+   sudo certbot renew --dry-run
+   ```
+
+### Roll back
+
+Restore the snapshot from step 2 of the preparation. Content uploaded after the
+snapshot is lost unless you copy it out first. Redis 7 on Ubuntu 24.04 writes
+its dump file in a format that Redis 6 on Ubuntu 22.04 cannot read, so do not
+copy `/var/lib/redis/dump.rdb` back to the restored server.
 
 ## Nginx request handling
 
@@ -757,7 +909,7 @@ The release that it creates has no `REVISION` file.
 ### Swap the directories by hand
 
 The swap needs Linux 3.15 or later, glibc 2.28 or later, and a filesystem that
-supports `RENAME_EXCHANGE`, such as ext4, XFS, Btrfs, or overlayfs. Ubuntu 22.04
+supports `RENAME_EXCHANGE`, such as ext4, XFS, Btrfs, or overlayfs. Ubuntu 24.04
 has both. Every deploy and every rollback needs the two links, with or without
 an artifact. If the script reports `Error: static_collected is still a directory`,
 it stopped before it moved the checkout. The served frontend, the code, and the
