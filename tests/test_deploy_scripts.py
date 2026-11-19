@@ -330,8 +330,10 @@ class GunicornConfigTests(unittest.TestCase):
         for config in (
             "upstream cinematacms_app {\n    server 127.0.0.1:9001;\n    server 127.0.0.1:9002;\n}\n",
             "upstream cinematacms_app {server 127.0.0.1:9001;server 127.0.0.1:9002;}",
+            'upstream cinematacms_app {server 127.0.0.1:9001;"server" 127.0.0.1:9002;}',
+            "upstream cinematacms_app {server 127.0.0.1:9001; keepalive 8;}",
         ):
-            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "exactly one server, found 2"):
+            with self.subTest(config=config), self.assertRaisesRegex(ValueError, "exactly one directive, found 2"):
                 self.hooks["application_server"](config)
 
     def test_bind_rejects_a_server_with_parameters_or_another_host(self):
