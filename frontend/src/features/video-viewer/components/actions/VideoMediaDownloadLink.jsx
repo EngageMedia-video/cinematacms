@@ -37,6 +37,7 @@ function downloadOptionsList(siteUrl) {
 								linkAttr: {
 									target: '_blank',
 									download: downloaded_filename,
+									'data-analytics-file': k + '-' + g,
 								},
 							};
 						}
@@ -54,6 +55,7 @@ function downloadOptionsList(siteUrl) {
 		linkAttr: {
 			target: '_blank',
 			download: originalDownloadFilename(media_data.title, media_data.original_media_url),
+			'data-analytics-file': 'original',
 		},
 	};
 

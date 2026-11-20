@@ -8,7 +8,13 @@ import { originalDownloadFilename } from './originalDownloadFilename';
 export function OtherMediaDownloadLink({ link, title }) {
 	return (
 		<div className="download hidden-only-in-small">
-			<a href={link} target="_blank" download={originalDownloadFilename(title, link)} title="Download">
+			<a
+				href={link}
+				target="_blank"
+				download={originalDownloadFilename(title, link)}
+				title="Download"
+				data-analytics-file="original"
+			>
 				<CircleIconButton type="span">
 					<MaterialIcon type="arrow_downward" />
 				</CircleIconButton>

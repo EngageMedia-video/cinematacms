@@ -63,6 +63,8 @@
     const screenSize = /^\d{1,5}x\d{1,5}$/;
     const languageTag = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8}){0,2}$/;
     const webVitals = ['lcp', 'inp', 'cls', 'fcp', 'ttfb'];
+    // ENCODE_RESOLUTIONS and CODECS in files/models.py.
+    const downloadFile = /^(original|(2160|1440|1080|720|480|360|240)-(h264|h265|vp9))$/;
     const shareNetworks = ['email', 'fb', 'tw', 'reddit', 'tumblr', 'pinterest', 'vk', 'linkedin', 'mix', 'whatsapp', 'telegram'];
     function browserFields(payload) {
         return {
@@ -137,6 +139,9 @@
         }
         if (payload.name === 'media_share_click' && shareNetworks.includes(payload.data?.network)) {
             data.network = payload.data.network;
+        }
+        if (payload.name === 'download_click' && typeof payload.data?.file === 'string' && downloadFile.test(payload.data.file)) {
+            data.file = payload.data.file;
         }
         if (payload.name === 'media_view' && !privacy.nonpublic &&
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
@@ -555,7 +560,7 @@
         let destination;
         try { destination = new URL(link.href, window.location.href); } catch { return; }
         const actionData = action?.dataset.analyticsNetwork ? { network: action.dataset.analyticsNetwork } : {};
-        if (link.hasAttribute('download')) send('download_click');
+        if (link.hasAttribute('download')) send('download_click', { file: link.dataset.analyticsFile });
         if (action && !destination.protocol.startsWith('http')) send(action.dataset.analyticsAction, actionData);
         if (destination.origin === window.location.origin) {
             const path = destination.pathname;

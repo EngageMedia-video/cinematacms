@@ -879,6 +879,50 @@ describe('Playlists and public profiles named in Umami page and event reports', 
 	});
 });
 
+describe('Downloaded file version on download clicks', () => {
+	function clickDownload(file) {
+		const track = loadTracker({ nonpublic: false, title: 'Rivers of Java' });
+		const link = document.createElement('a');
+		link.href = '/media/original/user/private-name/Rivers_of_Java.mp4';
+		link.setAttribute('download', 'Rivers of Java.mp4');
+		if (file !== undefined) link.dataset.analyticsFile = file;
+		document.body.append(link);
+		link.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		return track.mock.calls.map(([build]) => window.cinemataAnalyticsBeforeSend('event', build({})));
+	}
+
+	it.each(['original', '720-h264', '1080-vp9', '2160-h265', '240-h264'])(
+		'reports the chosen file version %s with the film title',
+		(file) => {
+			const payloads = clickDownload(file);
+			expect(payloads).toHaveLength(1);
+			expect(payloads[0]).toMatchObject({
+				name: 'download_click',
+				data: { media_id: mediaId, media_title: 'Rivers of Java', file },
+			});
+		}
+	);
+	it.each(['Rivers of Java.mp4', '720-av1', '999-h264', '720-H264', '/media/original/secret.mp4', '', undefined])(
+		'counts the click without a file version it cannot recognise: %j',
+		(file) => {
+			const [payload] = clickDownload(file);
+			expect(payload.name).toBe('download_click');
+			expect(payload.data).not.toHaveProperty('file');
+			expect(JSON.stringify(payload)).not.toMatch(/private-name|Rivers_of_Java|\.mp4|secret/);
+		}
+	);
+	it('keeps the file property to download clicks', () => {
+		loadTracker({ nonpublic: false });
+		expect(
+			window.cinemataAnalyticsBeforeSend('event', {
+				name: 'like',
+				tag: `media:${mediaId}`,
+				data: { file: 'original' },
+			}).data
+		).not.toHaveProperty('file');
+	});
+});
+
 describe('Previous Cinemata page on Umami page views', () => {
 	const storageKey = 'cinemata-previous-path';
 	const now = new Date('2026-11-20T09:00:00Z').getTime();

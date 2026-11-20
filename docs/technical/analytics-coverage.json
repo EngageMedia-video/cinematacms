@@ -208,7 +208,7 @@
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
-          "contains": "send('download_click')"
+          "contains": "send('download_click', { file: link.dataset.analyticsFile })"
         },
         {
           "path": "templates/cms/edit_subtitle.html",
