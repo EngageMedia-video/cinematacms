@@ -345,10 +345,9 @@ describe('Cinemata Umami privacy boundary', () => {
 				expect(referredBy(value).referrer).toBe('');
 			}
 		);
-		it('truncates a referrer to the 500 characters Umami stores', () => {
-			const payload = referredBy(`https://publisher.example/reviews?q=${'a'.repeat(600)}`);
-			expect(payload.referrer).toHaveLength(500);
-			expect(payload.referrer.startsWith('https://publisher.example/reviews?q=aaa')).toBe(true);
+		it('sends a long referrer whole, since Umami cuts its domain, path and query separately', () => {
+			const longReferrer = `https://publisher.example/reviews?q=${'a'.repeat(600)}&page=2`;
+			expect(referredBy(`${longReferrer}#comments`).referrer).toBe(longReferrer);
 		});
 	});
 
