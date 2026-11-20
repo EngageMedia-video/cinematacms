@@ -83,6 +83,46 @@ wait_for_service() {
     fail "$service_name did not become ready after $attempts attempts"
 }
 
+POSTGRESQL_MAJOR_VERSION=18
+PGDG_SIGNING_KEY_URL="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+PGDG_SIGNING_KEY_FINGERPRINT="B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8"
+
+# signed-by trusts every key in the keyring file, so it must hold exactly one
+# primary key, the pinned one.
+keyring_holds_only_pgdg_key() {
+    awk -F: -v pinned="$PGDG_SIGNING_KEY_FINGERPRINT" '
+        $1 == "pub" { primary_keys++; awaiting_primary_fingerprint = 1; next }
+        $1 == "fpr" && awaiting_primary_fingerprint { primary = $10; awaiting_primary_fingerprint = 0 }
+        END { exit !(primary_keys == 1 && primary == pinned) }
+    ' <<<"$1"
+}
+
+# Follows https://wiki.postgresql.org/wiki/Apt: the key is trusted only for the
+# PGDG source through signed-by, never added to /etc/apt/trusted.gpg.d.
+install_postgresql() {
+    local os_release_file="${CINEMATA_OS_RELEASE_FILE:-/etc/os-release}"
+    local keyring="${CINEMATA_PGDG_KEYRING:-/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc}"
+    local sources_list="${CINEMATA_PGDG_SOURCES_LIST:-/etc/apt/sources.list.d/pgdg.list}"
+    local codename
+    local key_fingerprints
+
+    codename=$(read_os_release_value VERSION_CODENAME "$os_release_file")
+    [ -n "$codename" ] || fail "cannot read the Ubuntu codename from $os_release_file"
+
+    mkdir -p "$(dirname "$keyring")"
+    curl -fsSL -o "$keyring" "$PGDG_SIGNING_KEY_URL" || \
+        fail "could not download the PostgreSQL apt signing key"
+    key_fingerprints=$(gpg --show-keys --with-colons "$keyring") || \
+        fail "could not read the PostgreSQL apt signing key"
+    keyring_holds_only_pgdg_key "$key_fingerprints" || \
+        fail "the downloaded keyring is not only the PGDG signing key $PGDG_SIGNING_KEY_FINGERPRINT"
+
+    echo "deb [signed-by=$keyring] https://apt.postgresql.org/pub/repos/apt $codename-pgdg main" > "$sources_list"
+    apt-get update || fail "could not read the PostgreSQL apt repository"
+    apt-get install -y "postgresql-$POSTGRESQL_MAJOR_VERSION" || \
+        fail "could not install PostgreSQL $POSTGRESQL_MAJOR_VERSION"
+}
+
 ensure_services_ready() {
     systemctl enable --now postgresql redis-server || \
         fail "could not start PostgreSQL and Redis"
@@ -354,7 +394,12 @@ CURRENT_STEP="platform validation"
 check_supported_platform
 CURRENT_STEP="system dependency installation"
 echo 'Performing system update and dependency installation, this will take a few minutes'
-apt-get update && apt-get -y upgrade && apt-get install python3-venv python3-dev python3-virtualenv python3-pip virtualenv redis-server postgresql nginx git gcc vim unzip ffmpeg imagemagick telnet htop certbot make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl python3-certbot cmake libpq-dev python3-certbot-nginx -y
+apt-get update
+apt-get -y upgrade
+apt-get install python3-venv python3-dev python3-virtualenv python3-pip virtualenv redis-server nginx git gcc vim unzip ffmpeg imagemagick telnet htop certbot make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl gnupg llvm libncurses-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl python3-certbot cmake libpq-dev python3-certbot-nginx -y
+
+CURRENT_STEP="PostgreSQL installation"
+install_postgresql
 
 CURRENT_STEP="PostgreSQL and Redis startup"
 ensure_services_ready

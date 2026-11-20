@@ -153,7 +153,7 @@ These versions are tested and confirmed working:
 |------------|---------|-------|
 | **Python** | 3.14 | `uv` installs it from `.python-version` |
 | **Node.js** | 26.x | Active LTS. Tested with v26.13.1 |
-| **PostgreSQL** | 14+ | Via Docker (14-alpine) |
+| **PostgreSQL** | 18 | Via Docker (18-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
 | **FFmpeg** | 4.4+ | For video processing |
 | **Docker** | 20.10+ | Docker Compose included |
@@ -1967,11 +1967,29 @@ uv run manage.py migrate --fake <app_name> <migration_number>
 
 # Option 3: Start fresh with database
 make docker-down
-docker volume rm cinematacms_postgres_data
+docker volume rm cinematacms_postgres18_data
 make docker-up
 uv run manage.py migrate
 uv run manage.py createsuperuser
 ```
+
+#### Error: "relation does not exist" after moving to PostgreSQL 18
+
+The dev database now runs PostgreSQL 18 on a new `postgres18_data` volume. Your PostgreSQL 14 data is still in the old `postgres_data` volume, but nothing mounts it, so `make docker-up` starts an empty database.
+
+To start fresh, run `uv run manage.py migrate` and `uv run manage.py createsuperuser`.
+
+To keep your local data, run the migration script from the repository root. It dumps the database from the old volume with a PostgreSQL 14 container, then restores it into an empty 18 database in one transaction. It leaves the old volume and the dump in place:
+
+```bash
+scripts/migrate-dev-postgres-18.sh
+make docker-up
+uv run manage.py migrate
+```
+
+If the 18 volume already exists, for example after a fresh-start `migrate`, the script stops. Re-run it with `--replace-new-volume` to delete that volume and restore into an empty database.
+
+Once the app works with your data, remove the old volume and the dump with the commands the script prints.
 
 ### Static Files Not Loading
 
