@@ -74,12 +74,19 @@ source_psql() {
 # Prints "database schema.table rows" for every user table in every database
 # on the cluster at SOURCE_PORT, which is the new cluster once the upgrade ran.
 count_table_rows() {
-    local databases database counts
+    local databases database quoted_name counts
     databases=$(source_psql "SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate ORDER BY 1") || return 1
     while IFS= read -r database; do
-        counts=$(as_postgres psql -X -p "$SOURCE_PORT" -d "$database" -Atq -v ON_ERROR_STOP=1 <<'SQL'
-SELECT format('SELECT %L || '' '' || count(*) FROM %I.%I', schemaname || '.' || relname, schemaname, relname)
-FROM pg_stat_user_tables ORDER BY schemaname, relname
+        # psql reads a -d value containing "=" as a connection string, so pass
+        # the name as a quoted dbname value.
+        quoted_name=${database//\\/\\\\}
+        quoted_name=${quoted_name//\'/\\\'}
+        # A materialized view created WITH NO DATA cannot be scanned.
+        counts=$(as_postgres psql -X -p "$SOURCE_PORT" -d "dbname='$quoted_name'" -Atq -v ON_ERROR_STOP=1 <<'SQL'
+SELECT format('SELECT %L || '' '' || count(*) FROM %I.%I', s.schemaname || '.' || s.relname, s.schemaname, s.relname)
+FROM pg_stat_user_tables s JOIN pg_class c ON c.oid = s.relid
+WHERE c.relispopulated
+ORDER BY s.schemaname, s.relname
 \gexec
 SQL
         ) || return 1
