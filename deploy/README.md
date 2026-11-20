@@ -778,8 +778,8 @@ second copy of the data, and the script checks it first.
    sudo ./deploy/upgrade-postgresql.sh prepare
    ```
 
-2. In a maintenance window, take a database dump, then stop every database
-   client:
+2. In a maintenance window, stop every database client, then take a database
+   dump. A dump taken before the clients stop misses their last writes:
 
    ```bash
    sudo systemctl stop mediacms celery_beat celery_email celery_long celery_short celery_whisper

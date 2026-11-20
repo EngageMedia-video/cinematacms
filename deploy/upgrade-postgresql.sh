@@ -148,25 +148,38 @@ mount_point() {
     df -Pk "$1" | awk 'NR == 2 { print $6 }'
 }
 
-# Prints "mount_point kilobytes" for each place copy mode writes to: the new
-# data directory and, for each tablespace, a new directory beside the old one.
+# Prints "mount_point kilobytes" for the copy of source_path written to dest_path.
+copy_space_line() {
+    local dest_path=$1 source_path=$2 mount used_kb
+    mount=$(mount_point "$dest_path") || return 1
+    used_kb=$(du -sk "$source_path" | awk '{ print $1 }') || return 1
+    [ -n "$mount" ] && [[ "$used_kb" =~ ^[0-9]+$ ]] || return 1
+    echo "$mount $used_kb"
+}
+
+# Prints one line per place copy mode writes to: the new data directory and,
+# for each tablespace, a new directory beside the old one.
 space_needed_by_copy() {
-    local location
-    echo "$(mount_point "$NEW_CLUSTER_ROOT") $(du -sk "$SOURCE_DATADIR" | awk '{ print $1 }')"
-    source_psql "SELECT pg_tablespace_location(oid) FROM pg_tablespace WHERE pg_tablespace_location(oid) <> ''" |
-        while IFS= read -r location; do
-            echo "$(mount_point "$location") $(du -sk "$location" | awk '{ print $1 }')"
-        done
+    local locations location
+    copy_space_line "$NEW_CLUSTER_ROOT" "$SOURCE_DATADIR" || return 1
+    locations=$(source_psql "SELECT pg_tablespace_location(oid) FROM pg_tablespace WHERE pg_tablespace_location(oid) <> ''") || return 1
+    while IFS= read -r location; do
+        [ -z "$location" ] || copy_space_line "$location" "$location" || return 1
+    done <<<"$locations"
 }
 
 require_free_space_for_copy() {
-    local mount used_kb required_kb available_kb
+    local needed mount used_kb required_kb available_kb
+    needed=$(space_needed_by_copy) || fail "could not measure the space copy mode needs"
+    needed=$(awk '{ needed[$1] += $2 } END { for (mount in needed) print mount, needed[mount] }' <<<"$needed")
+    [ -n "$needed" ] || fail "could not measure the space copy mode needs"
     while read -r mount used_kb; do
         required_kb=$((used_kb * FREE_SPACE_PERCENT / 100))
         available_kb=$(df -Pk "$mount" | awk 'NR == 2 { print $4 }')
+        [[ "$available_kb" =~ ^[0-9]+$ ]] || fail "could not read the free space on $mount"
         [ "$available_kb" -ge "$required_kb" ] || \
             fail "copy mode needs about $((required_kb / 1024)) MiB free on $mount; $((available_kb / 1024)) MiB available"
-    done < <(space_needed_by_copy | awk '{ needed[$1] += $2 } END { for (mount in needed) print mount, needed[mount] }')
+    done <<<"$needed"
 }
 
 prepare() {

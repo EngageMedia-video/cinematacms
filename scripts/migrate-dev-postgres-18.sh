@@ -6,7 +6,6 @@ set -euo pipefail
 
 COMPOSE_FILE="${CINEMATA_COMPOSE_FILE:-docker-compose.dev.yml}"
 OLD_IMAGE="postgres:14-alpine"
-EXPORT_CONTAINER="cinemata-pg14-export"
 DB_USER="mediacms"
 DB_NAME="mediacms"
 READY_ATTEMPTS=60
@@ -55,7 +54,7 @@ wait_until_ready() {
 }
 
 remove_export_container() {
-    docker rm -f "$EXPORT_CONTAINER" >/dev/null 2>&1 || true
+    docker rm -f "$export_container" >/dev/null 2>&1 || true
 }
 
 while [ "$#" -gt 0 ]; do
@@ -88,6 +87,9 @@ project=$(compose config | sed -n 's/^name: //p')
 [ -n "$project" ] || fail "could not read the Compose project name"
 old_volume="${project}_postgres_data"
 new_volume="${project}_postgres18_data"
+# One name per project, so a second migration of the same project fails to
+# start its exporter instead of running a second server on the same volume.
+export_container="${project}-pg14-export"
 
 if ! volume_exists "$old_volume"; then
     echo "No PostgreSQL 14 volume $old_volume found; nothing to migrate."
@@ -101,15 +103,17 @@ echo "Stopping the dev services"
 compose down
 
 echo "Exporting $DB_NAME from $old_volume"
-remove_export_container
+docker run -d --name "$export_container" -v "$old_volume":/var/lib/postgresql/data "$OLD_IMAGE" >/dev/null \
+    || fail "could not start $export_container. If no other migration is running, remove it with: docker rm -f $export_container"
 trap remove_export_container EXIT
-docker run -d --name "$EXPORT_CONTAINER" -v "$old_volume":/var/lib/postgresql/data "$OLD_IMAGE" >/dev/null
-wait_until_ready docker exec "$EXPORT_CONTAINER" || fail "the PostgreSQL 14 server in $old_volume did not start; see: docker logs $EXPORT_CONTAINER"
-docker exec "$EXPORT_CONTAINER" pg_dump -U "$DB_USER" -Fc "$DB_NAME" >"$DUMP_FILE" || fail "pg_dump failed; $old_volume is unchanged"
+wait_until_ready docker exec "$export_container" || fail "the PostgreSQL 14 server in $old_volume did not start; see: docker logs $export_container"
+docker exec "$export_container" pg_dump -U "$DB_USER" -Fc "$DB_NAME" >"$DUMP_FILE" || fail "pg_dump failed; $old_volume is unchanged"
 remove_export_container
 trap - EXIT
 
 if volume_exists "$new_volume"; then
+    [ "$REPLACE_NEW_VOLUME" = true ] || \
+        fail "$new_volume appeared during the export and was kept. The dump is in $DUMP_FILE. Re-run with --replace-new-volume to replace it."
     echo "Deleting $new_volume"
     docker volume rm "$new_volume" >/dev/null
 fi
@@ -120,6 +124,7 @@ wait_until_ready compose exec -T db || fail "the PostgreSQL 18 server did not st
 compose exec -T db pg_restore -U "$DB_USER" -d "$DB_NAME" --no-owner --exit-on-error --single-transaction <"$DUMP_FILE" \
     || fail "pg_restore failed and rolled back; $old_volume and $DUMP_FILE are unchanged"
 
+dump_file_quoted=$(printf '%q' "$DUMP_FILE")
 cat <<EOF
 Done. $DB_NAME now runs on PostgreSQL 18 in $new_volume.
 
@@ -128,5 +133,5 @@ Next:
   uv run manage.py migrate
 Once the app works with your data:
   docker volume rm $old_volume
-  rm $DUMP_FILE
+  rm -- $dump_file_quoted
 EOF

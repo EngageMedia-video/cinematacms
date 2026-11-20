@@ -1191,8 +1191,10 @@ class PostgresqlUpgradeScriptTests(unittest.TestCase):
     def test_prepare_installs_without_prompting_and_keeps_the_modified_createcluster_conf(self):
         # prepare edits createcluster.conf before apt upgrades postgresql-common,
         # whose ucf prompt would otherwise wait on a terminal forever.
-        self.run_upgrade_script("prepare")
+        result = self.run_upgrade_script("prepare")
 
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pg_createcluster", self.commands_run())
         apt_environments = [
             line for line in self.command_log.read_text().splitlines() if line.startswith("apt-get-env")
         ]
