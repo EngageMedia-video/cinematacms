@@ -147,7 +147,9 @@
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
             data.source_domain = payload.data.source_domain;
         }
-        if (!payload.name && !privacy.nonpublic && isTrackerPath(payload.data?.previous_path)) {
+        // Umami's Event data breaks down properties of named events only, so page_view carries it too.
+        const isPageView = !payload.name || payload.name === 'page_view';
+        if (isPageView && !privacy.nonpublic && isTrackerPath(payload.data?.previous_path)) {
             data.previous_path = payload.data.previous_path;
         }
         if (!privatePath) {
@@ -256,7 +258,7 @@
             if (window.umami) emitUmami(view);
             else pending.push(() => emitUmami(view));
         }
-        if (audienceGroup) send('page_view');
+        if (audienceGroup) send('page_view', { previous_path: previousPath });
         send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     }
 
@@ -505,7 +507,7 @@
         },
     };
 
-    if (audienceGroup) send('page_view');
+    if (audienceGroup) send('page_view', { previous_path: landingPreviousPath });
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
 

@@ -942,13 +942,22 @@ describe('Previous Cinemata page on Umami page views', () => {
 
 	afterEach(() => window.history.replaceState(null, '', '/'));
 
-	it('reports the previous page view only on the native page view and records the current page', () => {
+	it('reports the previous page on the page view and its page_view event and records the current page', () => {
 		vi.useFakeTimers({ toFake: ['Date'], now });
 		remember({ path: '/latest', time: now - 29 * 60 * 1000 });
-		const payloads = sent(loadedPage(publicPage));
+		const payloads = sent(loadedPage({ ...publicPage, profile_username: 'ayu.lestari' }));
 		expect(payloads.find((payload) => !payload.name).data.previous_path).toBe('/latest');
-		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).toMatchObject({
+			previous_path: '/latest',
+			profile_username: 'ayu.lestari',
+		});
 		expect(recorded()).toBe('/user/profile/home');
+	});
+	it('keeps the previous page off the media_view event', () => {
+		remember({ path: '/latest', time: Date.now() });
+		const payloads = sent(loadedPage({ nonpublic: false, audience_group: 'regular' }));
+		expect(payloads.find((payload) => payload.name === 'page_view').data.previous_path).toBe('/latest');
+		expect(payloads.find((payload) => payload.name === 'media_view').data).not.toHaveProperty('previous_path');
 	});
 	it('forgets a previous page from an earlier visit', () => {
 		vi.useFakeTimers({ toFake: ['Date'], now });
@@ -980,9 +989,9 @@ describe('Previous Cinemata page on Umami page views', () => {
 		expect(pageView(loadedPage({ nonpublic: true }))).not.toHaveProperty('data.previous_path');
 		expect(recorded()).toBe('/media/view');
 	});
-	it('drops a previous page sent with a named event or a private action', () => {
+	it('drops a previous page sent with another named event or a private action', () => {
 		loadTracker(publicPage);
-		for (const name of ['like', 'journal_create'])
+		for (const name of ['like', 'media_view', 'journal_create'])
 			expect(
 				window.cinemataAnalyticsBeforeSend('event', { name, data: { previous_path: '/latest' } }).data
 			).not.toHaveProperty('previous_path');
@@ -990,10 +999,12 @@ describe('Previous Cinemata page on Umami page views', () => {
 	it('reports the server-rendered page as the previous page of an in-place route view', () => {
 		const track = loadedPage(publicPage);
 		window.CinemataAnalytics.pageview('future_feature');
-		const views = sent(track).filter((payload) => !payload.name);
-		expect(views.map((view) => [view.url, view.data.previous_path])).toEqual([
-			['/user/profile/home', undefined],
-			['/page/future_feature', '/user/profile/home'],
+		const views = sent(track).filter((payload) => !payload.name || payload.name === 'page_view');
+		expect(views.map((view) => [view.name, view.url, view.data.previous_path])).toEqual([
+			['page_view', '/user/profile/home', undefined],
+			[undefined, '/user/profile/home', undefined],
+			[undefined, '/page/future_feature', '/user/profile/home'],
+			['page_view', '/page/future_feature', '/user/profile/home'],
 		]);
 		expect(recorded()).toBe('/page/future_feature');
 	});
@@ -1005,12 +1016,15 @@ describe('Previous Cinemata page on Umami page views', () => {
 			type: 'video',
 			state: 'public',
 			revision: '11111111-2222-4333-8444-555555555555',
+			audience_group: 'regular',
 		});
-		expect(
-			sent(track)
-				.filter((payload) => !payload.name)
-				.map((view) => view.data.previous_path)
-		).toEqual([undefined, '/media/view']);
+		const views = sent(track).filter((payload) => !payload.name || payload.name === 'page_view');
+		expect(views.map((view) => [view.name, view.data.previous_path])).toEqual([
+			['page_view', undefined],
+			[undefined, undefined],
+			[undefined, '/media/view'],
+			['page_view', '/media/view'],
+		]);
 	});
 	it('tracks the page when session storage is unavailable', () => {
 		vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
