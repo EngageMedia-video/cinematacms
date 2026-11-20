@@ -32,12 +32,13 @@
     // Umami v3.4.0 stores at most 500 characters each of a referrer's domain, path and query
     // (referrer_domain, referrer_path and referrer_query in prisma/schema.prisma).
     const referrerLength = 500;
+    const siteHost = (hostname) => hostname.toLowerCase().replace(/^www\./, '');
     function sendableReferrer(value) {
         let url;
         try { url = new URL(value); } catch { return ''; }
         if (!['http:', 'https:'].includes(url.protocol)) return '';
         // Cinemata URLs can hold usernames and access tokens; previous_path reports movement within the site.
-        if (url.hostname === window.location.hostname) return `${url.protocol}//${url.hostname}/`;
+        if (siteHost(url.hostname) === siteHost(window.location.hostname)) return `${url.protocol}//${url.hostname}/`;
         return `${url.origin}${url.pathname}${url.search}`.slice(0, referrerLength);
     }
     let referrer = config.nonpublic ? '' : sendableReferrer(document.referrer);

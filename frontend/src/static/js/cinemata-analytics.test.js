@@ -313,6 +313,28 @@ describe('Cinemata Umami privacy boundary', () => {
 			expect(payload.referrer).toBe(`${window.location.protocol}//${window.location.hostname}/`);
 			expect(JSON.stringify(payload)).not.toMatch(/someone|private/);
 		});
+		it.each([
+			[
+				'https://cinemata.org/view?m=private',
+				'https://www.cinemata.org/user/someone/?token=private',
+				'https://www.cinemata.org/',
+			],
+			[
+				'https://www.cinemata.org/view?m=private',
+				'https://CINEMATA.org/user/someone/?token=private',
+				'https://cinemata.org/',
+			],
+		])('reduces a referrer from the www alias of the Cinemata host to its origin: on %s', (page, value, origin) => {
+			const pageUrl = window.location.href;
+			globalThis.jsdom.reconfigure({ url: page });
+			try {
+				const payload = referredBy(value);
+				expect(payload.referrer).toBe(origin);
+				expect(JSON.stringify(payload)).not.toMatch(/someone|private/);
+			} finally {
+				globalThis.jsdom.reconfigure({ url: pageUrl });
+			}
+		});
 		it('sends no referrer for nonpublic media', () => {
 			expect(referredBy('https://publisher.example/reviews/film', { nonpublic: true }).referrer).toBe('');
 		});
