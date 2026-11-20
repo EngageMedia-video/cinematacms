@@ -788,7 +788,10 @@ second copy of the data, and the script checks it first.
 
 3. Upgrade. The script refuses to start while any client is still connected.
    The new cluster takes the old cluster's port, so the application settings
-   do not change:
+   do not change. The script counts the rows in every table before and after
+   the upgrade, and stops with the differences if any count changed; roll back
+   in that case. Counting reads every table twice, so it adds time in
+   proportion to the data size:
 
    ```bash
    sudo ./deploy/upgrade-postgresql.sh upgrade
