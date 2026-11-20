@@ -142,6 +142,8 @@ def _tracked_page_context(request, audience_group):
     if name not in PUBLIC_ROUTES and request.path not in PUBLIC_PATHS and not opted_in:
         return {}
 
+    playlist = getattr(request, "analytics_playlist", None)
+    profile = None
     if opted_in:
         if not name or not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", name):
             return {}
@@ -154,24 +156,29 @@ def _tracked_page_context(request, audience_group):
             "get_user_impact": "impact",
         }.get(name, "home")
         path = f"/user/profile/{section}"
+        profile = getattr(request, "analytics_profile", None)
     elif name in {"view_channel", "get_playlist"}:
         path = f"/{name}"
     else:
         path = request.path[2:] if name == "get_page" and request.path.startswith("/p/") else request.path
 
     scope = f"page:{request.analytics_text_page}" if name == "get_page" else "home" if path == "/" else "other"
-    return {
-        "ANALYTICS": {
-            "url": url,
-            "website_id": website_id,
-            "path": path,
-            "text_page": name == "get_page",
-            "playlist_id": getattr(request, "analytics_playlist", None),
-            "audience_group": audience_group,
-            "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
-            "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
-        }
+    config = {
+        "url": url,
+        "website_id": website_id,
+        "path": path,
+        "text_page": name == "get_page",
+        "playlist_id": playlist["id"] if playlist else None,
+        "audience_group": audience_group,
+        "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
+        "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
     }
+    if playlist:
+        config["page_title"] = playlist["title"]
+    if profile:
+        config["page_title"] = profile["title"]
+        config["profile_username"] = profile["username"]
+    return {"ANALYTICS": config}
 
 
 def allow_page_analytics(request):
@@ -211,6 +218,16 @@ def queue_action(request, name, media=None):
     events = action_events(request, name, media=media)
     if events:
         request.session["analytics_events"] = (request.session.get("analytics_events", []) + events)[-20:]
+
+
+def allow_playlist_analytics(request, playlist):
+    """Every playlist is public, so its page may report the playlist title."""
+    request.analytics_playlist = {"id": str(playlist.uid), "title": playlist.title}
+
+
+def allow_profile_analytics(request, user):
+    """Called only from a public profile section, which any visitor can open."""
+    request.analytics_profile = {"username": user.username, "title": user.name or user.username}
 
 
 def allow_media_analytics(request, media, context):

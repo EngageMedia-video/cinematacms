@@ -107,6 +107,9 @@ def _profile_context(request, user, active_tab):
 
 
 def _render_profile(request, user, active_tab):
+    from cms.analytics import allow_profile_analytics
+
+    allow_profile_analytics(request, user)
     template = resolve_template(request, "profile")
     return render(request, template, _profile_context(request, user, active_tab))
 

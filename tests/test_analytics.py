@@ -22,7 +22,7 @@ from cms.analytics import action_events, allow_page_analytics, analytics_context
 from cms.creator_analytics import AnalyticsUnavailable, creator_analytics
 from cms.playback_analytics import measurement_token, playback_figures
 from files.management.commands.purge_playback_summaries import twelve_month_cutoff
-from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary
+from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary, Playlist
 from files.tests.helpers import create_test_media, create_test_user
 from files.views import _attach_hero_playback_to_first_featured_item
 
@@ -276,6 +276,62 @@ class AnalyticsTemplateTests(TestCase):
         self.assertEqual(grant, {"scope": f"page:{Page.objects.get(slug='a-story').pk}"})
         missing = self.client.get("/missing-story")
         self.assertNotContains(missing, "cinemata-analytics-config")
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_playlist_page_names_the_playlist_by_its_title(self):
+        playlist = Playlist.objects.create(title="Rivers of Java", user=create_test_user())
+
+        config = self.client.get(f"/playlist/{playlist.friendly_token}").context["ANALYTICS"]
+
+        self.assertEqual(config["path"], "/get_playlist")
+        self.assertEqual(config["playlist_id"], str(playlist.uid))
+        self.assertEqual(config["page_title"], "Rivers of Java")
+        self.assertNotIn("profile_username", config)
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_public_profile_sections_name_the_viewed_profile(self):
+        owner = create_test_user(name="Ayu Lestari")
+        for suffix, section in (
+            ("", "home"),
+            ("/", "home"),
+            ("/media", "media"),
+            ("/playlists", "playlists"),
+            ("/about", "about"),
+            ("/impact", "impact"),
+        ):
+            with self.subTest(section=suffix):
+                config = self.client.get(f"/user/{owner.username}{suffix}").context["ANALYTICS"]
+                self.assertEqual(config["path"], f"/user/profile/{section}")
+                self.assertEqual(config["profile_username"], owner.username)
+                self.assertEqual(config["page_title"], "Ayu Lestari")
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_profile_without_a_display_name_is_titled_by_its_username(self):
+        owner = create_test_user(name="")
+
+        config = self.client.get(f"/user/{owner.username}/about").context["ANALYTICS"]
+
+        self.assertEqual(config["page_title"], owner.username)
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_pages_other_than_public_profiles_and_playlists_send_no_page_name(self):
+        owner = create_test_user(name="Ayu Lestari")
+        media = create_test_media(owner, state="public")
+        self.client.force_login(owner)
+        configs = {
+            "home": self.client.get("/").context["ANALYTICS"],
+            "media": self.client.get(media.get_absolute_url()).context["ANALYTICS"],
+            "owner tab": self.client.get(f"/user/{owner.username}/history").context["ANALYTICS"],
+        }
+        for page, config in configs.items():
+            with self.subTest(page=page):
+                self.assertNotIn("page_title", config)
+                self.assertNotIn("profile_username", config)
+                self.assertNotIn("Ayu Lestari", json.dumps(config))
+
+        missing = self.client.get("/user/no-such-member/about")
+        self.assertEqual(missing.status_code, 302)
+        self.assertNotIn("ANALYTICS", missing.context or {})
 
 
 @override_settings(
