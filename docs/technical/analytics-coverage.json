@@ -614,13 +614,58 @@
         "tests/test_analytics.py",
         "frontend/src/static/js/cinemata-analytics.test.js"
       ]
+    },
+    {
+      "id": "account-pages",
+      "events": [
+        "page_view"
+      ],
+      "trigger": "A non-staff visitor's allauth sign-in, sign-up, sign-out, password, email and MFA page renders successfully, mapped from its route name in cms/analytics.py; the MFA setup success page counts after its owner check.",
+      "privacy": "Counted under a fixed /page/<name> path as a nonpublic page: no browser URL, reset or confirmation key, form value, error text, referrer, previous_path or audience group, and no recorder. Mail renders and error pages on these routes do not count. Link clicks on these pages send only the fixed navigation names and destination category.",
+      "sources": [
+        {
+          "path": "cms/analytics.py",
+          "contains": "ACCOUNT_PAGES = {"
+        },
+        {
+          "path": "cms/analytics.py",
+          "contains": "class AccountPageAnalyticsMiddleware"
+        },
+        {
+          "path": "users/views.py",
+          "contains": "\"mfa_totp_success\""
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "tests/test_analytics_page_coverage.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "owner-curator-pages",
+      "events": [
+        "page_view"
+      ],
+      "trigger": "The creator analytics dashboard loads for the owner of the selected media, or the film impact pages load for a curator, after each view's access check.",
+      "privacy": "Counted under /page/creator_analytics, /page/film_impact and /page/film_impact_edit as nonpublic pages, without the selected media, report filters or audience group. Report filters, CSV exports and report navigation emit no event, so they do not inflate audience figures.",
+      "sources": [
+        {
+          "path": "users/views.py",
+          "contains": "\"creator_analytics\""
+        },
+        {
+          "path": "files/views.py",
+          "contains": "\"film_impact\""
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "tests/test_analytics_page_coverage.py"
+      ]
     }
   ],
   "exclusions": [
-    {
-      "id": "security-forms",
-      "reason": "Password, MFA, email verification and sensitive authentication errors are not tracked."
-    },
     {
       "id": "staff-operations",
       "reason": "Staff, editors, managers and superusers are excluded. A curator is eligible unless also staff."
@@ -632,10 +677,6 @@
     {
       "id": "raw-ticks",
       "reason": "Playback/upload ticks, raw volume values and menu open/close are omitted."
-    },
-    {
-      "id": "owner-reports",
-      "reason": "Report filters, CSV exports and analytics navigation do not inflate audience figures."
     },
     {
       "id": "tool-preview",
