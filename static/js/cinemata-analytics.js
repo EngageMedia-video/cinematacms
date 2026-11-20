@@ -172,18 +172,19 @@
             }
             if (['hero', 'featured', 'recommended', 'recent', 'playlist', 'sidebar', 'topbar', 'search', 'profile'].includes(payload.data?.placement)) data.placement = payload.data.placement;
         }
-        const isPageContext = !privatePath && !mediaId;
+        const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
+        // An in-place route view is a different screen, so the server page's names and tag do not apply.
+        const isPageContext = !privatePath && !mediaId && !virtualPath;
         const playlistId = isPageContext && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
         if (playlistId) data.playlist_id = playlistId;
         if (playlistId && namedPageTitle) data.playlist_title = namedPageTitle;
         if (isPageContext && profileUsername) data.profile_username = profileUsername;
         if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
-        const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
         const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
-            title: viewedPage?.title || (mediaId ? 'Media' : isPageContext && !virtualPath && namedPageTitle || 'Page'),
+            title: viewedPage?.title || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : sendableReferrer(privacy.referrer),
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),

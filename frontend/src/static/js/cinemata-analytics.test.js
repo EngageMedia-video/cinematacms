@@ -926,6 +926,34 @@ describe('Playlists and public profiles named in Umami page and event reports', 
 		for (const payload of [contact, media])
 			expect(JSON.stringify(payload)).not.toMatch(/Ayu Lestari|ayu\.lestari|playlist_title|profile_username/);
 	});
+	it.each([
+		['profile', profilePage],
+		['playlist', playlistPage],
+	])('keeps the names and tag of a %s page off its in-place route views', (kind, page) => {
+		loadedPage({ ...page, audience_group: 'regular' });
+		const views = [];
+		const capture = (build) => views.push(window.cinemataAnalyticsBeforeSend('event', build({})));
+		window.umami.track = capture;
+		window.CinemataAnalytics.pageview('future_feature');
+		delete window.umami;
+		window.CinemataAnalytics.pageview('queued_feature');
+		window.umami = { track: capture };
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		const routeViews = views.filter((view) => view.url.startsWith('/page/'));
+		expect(routeViews.map((view) => [view.name, view.url])).toEqual([
+			[undefined, '/page/future_feature'],
+			['page_view', '/page/future_feature'],
+			[undefined, '/page/queued_feature'],
+			['page_view', '/page/queued_feature'],
+		]);
+		for (const view of routeViews) {
+			expect(view).toMatchObject({ title: 'Page', data: { audience_group: 'regular' } });
+			expect(view).not.toHaveProperty('tag');
+			expect(JSON.stringify(view)).not.toMatch(
+				new RegExp(`Ayu Lestari|ayu\\.lestari|Rivers of Java|${mediaId}|playlist_|profile_username`)
+			);
+		}
+	});
 });
 
 describe('Downloaded file version on download clicks', () => {

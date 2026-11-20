@@ -587,7 +587,7 @@
         "page_view"
       ],
       "trigger": "A tracked page loads, an in-place route view runs, or a playlist item plays in place. Playlist pages and public profile sections also name themselves on every event of the page.",
-      "privacy": "previous_path is the generic tracker path of the tab's previous tracked page in the last 30 minutes, never a browser URL, sent on page views and page_view only and never on nonpublic pages. A playlist page sends the playlist title as page title and playlist_title. A public profile section sends the display name, or the username when the name is blank, as page title and the username as profile_username. Private actions and media events send neither.",
+      "privacy": "previous_path is the generic tracker path of the tab's previous tracked page in the last 30 minutes, never a browser URL, sent on page views and page_view only and never on nonpublic pages. A playlist page sends the playlist title as page title and playlist_title. A public profile section sends the display name, or the username when the name is blank, as page title and the username as profile_username. Private actions, media events and in-place route views send neither.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
