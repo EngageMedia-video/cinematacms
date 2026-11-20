@@ -581,8 +581,7 @@ def view_user_impact(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    template = resolve_template(request, "profile")
-    return render(request, template, _profile_context(request, user, "impact"))
+    return _render_profile(request, user, "impact")
 
 
 def view_user_contact(request, username):
