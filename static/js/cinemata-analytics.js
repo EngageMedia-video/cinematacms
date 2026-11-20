@@ -10,6 +10,24 @@
     const isUmamiPreview = window.top !== window.self &&
         Array.from(window.location.ancestorOrigins || []).includes(analyticsOrigin);
     if (isUmamiPreview) return;
+    // Matches every generic path the server and pageview() give a tracked page.
+    const trackerPath = /^\/(?:media\/(?:view|embed)|user\/profile\/(?:home|media|playlists|about|impact)|page\/[a-zA-Z0-9_-]{1,64}|[a-zA-Z0-9_-]{1,200})?$/;
+    const isTrackerPath = (path) => typeof path === 'string' && trackerPath.test(path);
+    // Umami starts a new visit after 30 minutes without activity.
+    const visitLength = 30 * 60 * 1000;
+    // Returns the tab's previously tracked page within this visit and records the current one.
+    function advancePath(path) {
+        let previous = null;
+        try {
+            const saved = JSON.parse(sessionStorage.getItem('cinemata-previous-path') || 'null');
+            const age = Date.now() - saved?.time;
+            if (age >= 0 && age < visitLength && isTrackerPath(saved.path)) previous = saved.path;
+        } catch { /* Storage may be unavailable in an embed, or hold a value this tracker did not write. */ }
+        try { sessionStorage.setItem('cinemata-previous-path', JSON.stringify({ path, time: Date.now() })); }
+        catch { /* Storage may be unavailable in an embed. */ }
+        return previous;
+    }
+    const landingPreviousPath = advancePath(config.path);
     const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
     let referrer = config.nonpublic || !document.referrer ? '' : (() => {
         try {
@@ -124,6 +142,9 @@
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
             data.source_domain = payload.data.source_domain;
         }
+        if (!payload.name && !privacy.nonpublic && isTrackerPath(payload.data?.previous_path)) {
+            data.previous_path = payload.data.previous_path;
+        }
         if (!privatePath) {
             for (const key of ['target', 'result_type']) {
                 if (['home', 'media', 'profile', 'playlist', 'search', 'article', 'catalogue', 'contact', 'other'].includes(payload.data?.[key])) data[key] = payload.data[key];
@@ -184,8 +205,12 @@
     function pageview(name) {
         if (config.media_id || !routeName.test(name) || hasDoNotTrack()) return;
         if (!config.url || !config.website_id) return;
+        const previousPath = advancePath(`/page/${name}`);
         const track = () => {
-            const payload = { website: config.website_id, url: `/page/${name}`, title: 'Page', referrer };
+            const payload = {
+                website: config.website_id, url: `/page/${name}`, title: 'Page', referrer,
+                data: previousPath ? { previous_path: previousPath } : {},
+            };
             emitUmami(payload);
             if (audienceGroup) emitUmami({ ...payload, name: 'page_view' });
         };
@@ -196,8 +221,15 @@
         track();
     }
 
-    function currentPageview() {
-        return { website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag: config.media_id ? `media:${config.media_id}` : tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined };
+    function currentPageview(previousPath) {
+        return {
+            website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer,
+            tag: config.media_id ? `media:${config.media_id}` : tag,
+            data: {
+                ...(config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : {}),
+                ...(previousPath ? { previous_path: previousPath } : {}),
+            },
+        };
     }
 
     // A playlist item played in place counts like a navigation to its page.
@@ -213,8 +245,9 @@
         referrer = config.nonpublic ? '' : `${window.location.protocol}//${window.location.hostname}/`;
         rememberMediaPage();
         window.CinemataAnalytics.mediaId = media.id;
+        const previousPath = advancePath(config.path);
         if (config.url && config.website_id && !hasDoNotTrack()) {
-            const view = currentPageview();
+            const view = currentPageview(previousPath);
             if (window.umami) emitUmami(view);
             else pending.push(() => emitUmami(view));
         }
@@ -471,7 +504,7 @@
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
 
-    const firstPageview = { ...currentPageview(), url: config.path + campaignQuery };
+    const firstPageview = { ...currentPageview(landingPreviousPath), url: config.path + campaignQuery };
 
     // Umami's recorder sends location.href with heatmap and replay data and has no
     // beforeSend hook, so it runs only where the browser URL holds nothing private.

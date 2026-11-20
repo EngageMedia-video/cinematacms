@@ -12,6 +12,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	vi.useRealTimers();
+	sessionStorage.clear();
 });
 
 function loadTracker(overrides = {}, clearCalls = true) {
@@ -875,6 +876,103 @@ describe('Playlists and public profiles named in Umami page and event reports', 
 		expect(virtualView).toMatchObject({ url: '/page/future_feature', title: 'Page' });
 		for (const payload of [contact, media])
 			expect(JSON.stringify(payload)).not.toMatch(/Ayu Lestari|ayu\.lestari|playlist_title|profile_username/);
+	});
+});
+
+describe('Previous Cinemata page on Umami page views', () => {
+	const storageKey = 'cinemata-previous-path';
+	const now = new Date('2026-11-20T09:00:00Z').getTime();
+	const publicPage = { media_id: null, nonpublic: false, path: '/user/profile/home', audience_group: 'regular' };
+	const remember = (saved) => sessionStorage.setItem(storageKey, JSON.stringify(saved));
+	const recorded = () => JSON.parse(sessionStorage.getItem(storageKey)).path;
+	const sent = (track) =>
+		track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build({}) : build)
+		);
+	const loadedPage = (config) => {
+		const track = loadTracker(config, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		return track;
+	};
+	const pageView = (track) => sent(track).find((payload) => !payload.name);
+
+	afterEach(() => window.history.replaceState(null, '', '/'));
+
+	it('reports the previous page view only on the native page view and records the current page', () => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember({ path: '/latest', time: now - 29 * 60 * 1000 });
+		const payloads = sent(loadedPage(publicPage));
+		expect(payloads.find((payload) => !payload.name).data.previous_path).toBe('/latest');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
+		expect(recorded()).toBe('/user/profile/home');
+	});
+	it('forgets a previous page from an earlier visit', () => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember({ path: '/latest', time: now - 30 * 60 * 1000 });
+		expect(pageView(loadedPage(publicPage)).data).not.toHaveProperty('previous_path');
+	});
+	it.each([
+		{ path: '/user/ayu.lestari/about', time: now },
+		{ path: '/view?m=secret', time: now },
+		{ path: 'https://elsewhere.example/', time: now },
+		{ path: ['/latest'], time: now },
+		{ path: '/latest', time: now + 1000 },
+		{ path: '/latest' },
+		'/latest',
+	])('drops a malformed previous page: %j', (saved) => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember(saved);
+		const payload = pageView(loadedPage(publicPage));
+		expect(payload.data).not.toHaveProperty('previous_path');
+		expect(JSON.stringify(payload)).not.toMatch(/ayu|secret|elsewhere/);
+	});
+	it('ignores stored text that is not JSON', () => {
+		sessionStorage.setItem(storageKey, '{not json');
+		expect(pageView(loadedPage(publicPage)).data).not.toHaveProperty('previous_path');
+		expect(recorded()).toBe('/user/profile/home');
+	});
+	it('sends no previous page from a nonpublic page but still records it', () => {
+		remember({ path: '/latest', time: Date.now() });
+		expect(pageView(loadedPage({ nonpublic: true }))).not.toHaveProperty('data.previous_path');
+		expect(recorded()).toBe('/media/view');
+	});
+	it('drops a previous page sent with a named event or a private action', () => {
+		loadTracker(publicPage);
+		for (const name of ['like', 'journal_create'])
+			expect(
+				window.cinemataAnalyticsBeforeSend('event', { name, data: { previous_path: '/latest' } }).data
+			).not.toHaveProperty('previous_path');
+	});
+	it('reports the server-rendered page as the previous page of an in-place route view', () => {
+		const track = loadedPage(publicPage);
+		window.CinemataAnalytics.pageview('future_feature');
+		const views = sent(track).filter((payload) => !payload.name);
+		expect(views.map((view) => [view.url, view.data.previous_path])).toEqual([
+			['/user/profile/home', undefined],
+			['/page/future_feature', '/user/profile/home'],
+		]);
+		expect(recorded()).toBe('/page/future_feature');
+	});
+	it('reports the previous item as the previous page of a playlist item played in place', () => {
+		const track = loadedPage({ nonpublic: false, audience_group: 'regular', title: 'First film' });
+		window.CinemataAnalytics.switchMedia({
+			id: '87654321-4321-4321-8321-cba987654321',
+			title: 'Second film',
+			type: 'video',
+			state: 'public',
+			revision: '11111111-2222-4333-8444-555555555555',
+		});
+		expect(
+			sent(track)
+				.filter((payload) => !payload.name)
+				.map((view) => view.data.previous_path)
+		).toEqual([undefined, '/media/view']);
+	});
+	it('tracks the page when session storage is unavailable', () => {
+		vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+			throw new Error('Storage disabled');
+		});
+		expect(pageView(loadedPage(publicPage))).toMatchObject({ url: '/user/profile/home' });
 	});
 });
 
