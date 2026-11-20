@@ -18,6 +18,7 @@ afterEach(() => {
 function loadTracker(overrides = {}, clearCalls = true) {
 	document.head.querySelectorAll('script[data-website-id]').forEach((script) => script.remove());
 	for (const target of [document, window]) {
+		target.addEventListener.mockRestore?.();
 		const add = target.addEventListener.bind(target);
 		vi.spyOn(target, 'addEventListener').mockImplementation((name, callback, options) => {
 			listeners.push([target, name, callback, options]);
@@ -1073,6 +1074,23 @@ describe('Previous Cinemata page on Umami page views', () => {
 			[undefined, '/media/view'],
 			['page_view', '/media/view'],
 		]);
+	});
+	it('keeps a Do Not Track page out of the tab history', () => {
+		Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: '1' });
+		try {
+			loadedPage({ nonpublic: false, audience_group: 'regular' });
+			window.CinemataAnalytics.switchMedia({
+				id: '87654321-4321-4321-8321-cba987654321',
+				type: 'video',
+				state: 'public',
+				audience_group: 'regular',
+			});
+		} finally {
+			delete navigator.doNotTrack;
+		}
+		const payloads = sent(loadedPage(publicPage));
+		expect(payloads.find((payload) => !payload.name).data).not.toHaveProperty('previous_path');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
 	});
 	it('tracks the page when session storage is unavailable', () => {
 		vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {

@@ -15,8 +15,13 @@
     const isTrackerPath = (path) => typeof path === 'string' && trackerPath.test(path);
     // Umami starts a new visit after 30 minutes without activity.
     const visitLength = 30 * 60 * 1000;
+    function hasDoNotTrack() {
+        return [navigator.doNotTrack, window.doNotTrack, navigator.msDoNotTrack]
+            .some((value) => value === 1 || value === '1' || value === 'yes');
+    }
     // Returns the tab's previously tracked page within this visit and records the current one.
     function advancePath(path) {
+        if (hasDoNotTrack()) return null;
         let previous = null;
         try {
             const saved = JSON.parse(sessionStorage.getItem('cinemata-previous-path') || 'null');
@@ -183,11 +188,6 @@
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
         };
     };
-
-    function hasDoNotTrack() {
-        return [navigator.doNotTrack, window.doNotTrack, navigator.msDoNotTrack]
-            .some((value) => value === 1 || value === '1' || value === 'yes');
-    }
 
     function send(name, data = {}, media = null) {
         if (!eventName.test(name) || hasDoNotTrack()) return;
