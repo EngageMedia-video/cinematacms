@@ -139,7 +139,7 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.10
+        run: uv python install 3.14
 
       - name: Install system dependencies
         run: |
@@ -168,7 +168,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.14"]
+        python: ["3.14"]
     env:
       UV_PYTHON: ${{ matrix.python }}
 
@@ -229,10 +229,8 @@ jobs:
       matrix:
         include:
           # The coverage series keeps one artifact name per commit, taken from the oldest supported Python.
-          - python: "3.10"
-            uploads-coverage: true
           - python: "3.14"
-            uploads-coverage: false
+            uploads-coverage: true
 
     services:
       postgres:

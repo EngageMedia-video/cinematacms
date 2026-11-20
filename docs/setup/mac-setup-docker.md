@@ -119,11 +119,9 @@ cp .env.example .env
 
 4. ### Prepare Python environment
 
-The `cinematacms` project requires Python 3.10. `uv`, which you'll use in the next step, will create and manage a Python virtual environment for the project using an available Python 3.10 interpreter.
+The `cinematacms` project requires Python 3.14, the version in `.python-version`. `uv`, which you'll use in the next step, downloads that Python when it is missing and creates the project's virtual environment with it.
 
-Ensure you have Python 3.10 installed on your system and accessible in your PATH. `uv` will use this version to create the virtual environment. If Python 3.10 is not installed, you can install it using various methods, for example, directly from [python.org](https://www.python.org/downloads/) or via Homebrew (`brew install python@3.10`).
-
-After ensuring Python 3.10 is available, navigate into the `cinematacms` project directory to continue:
+Navigate into the `cinematacms` project directory to continue:
 
 ```zsh
 # Navigate into the cinematacms project directory
@@ -134,7 +132,7 @@ The virtual environment itself will be created by `uv` in the next step. You won
 
 5. ### Install Python packages and create virtual environment
 
-Ensuring you are in the `cinematacms` directory (after setting the `pyenv local` version), install the required Python packages using the Makefile command. This step will also automatically create a virtual environment (typically named `.venv` in the `cinematacms` directory) if one doesn't already exist, using the Python 3.10 version set previously.
+Ensuring you are in the `cinematacms` directory, install the required Python packages using the Makefile command. This step will also automatically create a virtual environment (typically named `.venv` in the `cinematacms` directory) if one doesn't already exist, using Python 3.14.
 
 ```zsh
 make sync

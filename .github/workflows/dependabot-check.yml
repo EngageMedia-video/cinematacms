@@ -14,7 +14,7 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 env:
-  PYTHON_VERSION: '3.10'
+  PYTHON_VERSION: '3.14'
   NODE_VERSION: '26'
 
 jobs:

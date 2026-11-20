@@ -50,7 +50,7 @@ Welcome to the CinemataCMS development team! This comprehensive guide will help 
 CinemataCMS is a Django-based video content management system built on MediaCMS, specifically enhanced for Asia-Pacific social issue filmmaking.
 
 **Technology Stack:**
-- **Backend:** Django (Python 3.10+), PostgreSQL (Docker), Redis (Docker)
+- **Backend:** Django (Python 3.14), PostgreSQL (Docker), Redis (Docker)
 - **Frontend:** React 19, Vite, SCSS
 - **Task Processing:** Celery (beat, long, short, whisper queues)
 - **Media Processing:** FFmpeg, WhisperCPP (ASR/transcription)
@@ -151,7 +151,7 @@ These versions are tested and confirmed working:
 
 | Dependency | Version | Notes |
 |------------|---------|-------|
-| **Python** | 3.10+ | 3.10 recommended |
+| **Python** | 3.14 | `uv` installs it from `.python-version` |
 | **Node.js** | 26.x | Active LTS. Tested with v26.13.1 |
 | **PostgreSQL** | 14+ | Via Docker (14-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
@@ -1915,22 +1915,16 @@ taskkill /PID <PID> /F
 
 ### Python Version Errors
 
-#### Error: Python 3.10+ required
+#### Error: Python 3.14 required
+
+`uv` reads `.python-version` and downloads Python 3.14 when it is missing. An
+existing `.venv` built with an older Python keeps that Python. Rebuild it:
 
 ```bash
-# Check current version
-python --version
-python3 --version
-
-# Install Python 3.10 using pyenv (recommended)
-pyenv install 3.10
-pyenv local 3.10
-
-# macOS with Homebrew
-brew install python@3.10
-
-# Ubuntu/Linux
-sudo apt install python3.10 python3.10-venv
+rm -rf .venv
+uv python install
+make sync
+uv run python --version
 ```
 
 ### Node.js Version Errors
