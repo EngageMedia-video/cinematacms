@@ -29,12 +29,18 @@
     }
     const landingPreviousPath = advancePath(config.path);
     const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
-    let referrer = config.nonpublic || !document.referrer ? '' : (() => {
-        try {
-            const url = new URL(document.referrer);
-            return ['http:', 'https:'].includes(url.protocol) ? `${url.protocol}//${url.hostname}/` : '';
-        } catch { return ''; }
-    })();
+    // Umami v3.4.0 stores at most 500 characters each of a referrer's domain, path and query
+    // (referrer_domain, referrer_path and referrer_query in prisma/schema.prisma).
+    const referrerLength = 500;
+    function sendableReferrer(value) {
+        let url;
+        try { url = new URL(value); } catch { return ''; }
+        if (!['http:', 'https:'].includes(url.protocol)) return '';
+        // Cinemata URLs can hold usernames and access tokens; previous_path reports movement within the site.
+        if (url.hostname === window.location.hostname) return `${url.protocol}//${url.hostname}/`;
+        return `${url.origin}${url.pathname}${url.search}`.slice(0, referrerLength);
+    }
+    let referrer = config.nonpublic ? '' : sendableReferrer(document.referrer);
     const pending = [];
     // The function form lets Umami add the screen, language and distinct ID it collects.
     function emitUmami(payload) {
@@ -170,7 +176,7 @@
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
             title: viewedPage?.title || (mediaId ? 'Media' : isPageContext && !virtualPath && namedPageTitle || 'Page'),
-            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
+            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : sendableReferrer(privacy.referrer),
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),

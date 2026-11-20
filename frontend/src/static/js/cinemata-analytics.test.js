@@ -287,20 +287,46 @@ describe('Cinemata Umami privacy boundary', () => {
 		expect(track).toHaveBeenCalledTimes(1);
 	});
 
-	it('keeps only the public referring domain in a URL Umami can parse', () => {
-		Object.defineProperty(document, 'referrer', {
-			configurable: true,
-			value: 'https://publisher.example/secret/film?token=private',
+	describe('Referring URL on public pages', () => {
+		const referredEvent = () =>
+			window.cinemataAnalyticsBeforeSend('event', {
+				name: 'media_view',
+				tag: `media:${mediaId}`,
+				data: { source_domain: 'publisher.example' },
+			});
+		const referredBy = (value, config = {}) => {
+			Object.defineProperty(document, 'referrer', { configurable: true, value });
+			loadTracker({ nonpublic: false, ...config });
+			return referredEvent();
+		};
+		afterEach(() => {
+			delete document.referrer;
 		});
-		loadTracker({ nonpublic: false });
-		const payload = window.cinemataAnalyticsBeforeSend('event', {
-			name: 'media_view',
-			tag: `media:${mediaId}`,
-			data: { source_domain: 'publisher.example' },
+
+		it('sends an external referrer with its path and query as the browser provided it', () => {
+			const payload = referredBy('https://publisher.example/reviews/film?ref=newsletter#comments');
+			expect(payload.referrer).toBe('https://publisher.example/reviews/film?ref=newsletter');
+			expect(payload.data.source_domain).toBe('publisher.example');
 		});
-		expect(payload.referrer).toBe('https://publisher.example/');
-		expect(payload.data.source_domain).toBe('publisher.example');
-		expect(JSON.stringify(payload)).not.toContain('/secret/film');
+		it('reduces a Cinemata referrer to its origin, since internal URLs can hold usernames and tokens', () => {
+			const payload = referredBy(`${window.location.origin}/user/someone/media?token=private`);
+			expect(payload.referrer).toBe(`${window.location.protocol}//${window.location.hostname}/`);
+			expect(JSON.stringify(payload)).not.toMatch(/someone|private/);
+		});
+		it('sends no referrer for nonpublic media', () => {
+			expect(referredBy('https://publisher.example/reviews/film', { nonpublic: true }).referrer).toBe('');
+		});
+		it.each(['javascript:alert(1)', 'data:text/html,<p>film</p>', 'not a url'])(
+			'drops a referrer that is not an http or https URL: %s',
+			(value) => {
+				expect(referredBy(value).referrer).toBe('');
+			}
+		);
+		it('truncates a referrer to the 500 characters Umami stores', () => {
+			const payload = referredBy(`https://publisher.example/reviews?q=${'a'.repeat(600)}`);
+			expect(payload.referrer).toHaveLength(500);
+			expect(payload.referrer.startsWith('https://publisher.example/reviews?q=aaa')).toBe(true);
+		});
 	});
 
 	it.each([
