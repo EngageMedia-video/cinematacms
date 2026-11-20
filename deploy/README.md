@@ -751,6 +751,65 @@ Once a release needs Python 3.14, the order reverses. Roll back the code to a
 release that still supports the old Python, then the interpreter. Never move
 the interpreter back under code that needs the newer one.
 
+## Upgrade PostgreSQL to 18
+
+New servers get PostgreSQL 18 from `install.sh`. A server installed with an
+older PostgreSQL keeps that cluster until you upgrade it with
+`deploy/upgrade-postgresql.sh`. The script handles exactly one cluster older
+than 18 and refuses to run when it finds more than one.
+
+On an Ubuntu 22.04 server, upgrade PostgreSQL before you
+[upgrade the server to Ubuntu 24.04](#upgrade-a-server-from-ubuntu-2204-to-2404).
+The release upgrade then keeps the 18 cluster, and you re-enable PGDG for 24.04
+with the other third-party sources. If the release upgrade runs first, it can
+add a PostgreSQL 16 cluster beside 14, and this script will not choose between
+them.
+
+The upgrade uses `pg_upgradecluster` in copy mode. The old cluster's data
+directory is not changed, so you can roll back until the application writes to
+the new cluster. Copy mode needs free space under `/var/lib/postgresql` for a
+second copy of the data, and the script checks it first.
+
+1. Prepare while the site is live. This installs PostgreSQL 18 from the
+   PostgreSQL apt repository beside the running cluster and runs
+   `pg_upgrade --check` against it:
+
+   ```bash
+   sudo ./deploy/upgrade-postgresql.sh prepare
+   ```
+
+2. In a maintenance window, stop every database client, then take a database
+   dump. A dump taken before the clients stop misses their last writes:
+
+   ```bash
+   sudo systemctl stop mediacms celery_beat celery_email celery_long celery_short celery_whisper
+   sudo systemctl stop postgres-exporter  # if local observability is installed
+   ```
+
+3. Upgrade. The script refuses to start while any client is still connected.
+   The new cluster takes the old cluster's port, so the application settings
+   do not change:
+
+   ```bash
+   sudo ./deploy/upgrade-postgresql.sh upgrade
+   ```
+
+4. Start the services you stopped and check the site.
+
+To roll back before the application writes to PostgreSQL 18, stop the clients
+again, then run:
+
+```bash
+sudo ./deploy/upgrade-postgresql.sh rollback
+```
+
+The rollback stops PostgreSQL 18, gives the old cluster its port back, and
+starts it. Writes made on PostgreSQL 18 are lost. To try the upgrade again
+after a rollback, drop the stopped cluster with `pg_dropcluster 18 main` first.
+
+Once the upgraded server has run long enough that you no longer need a
+rollback, drop the old cluster, for example `pg_dropcluster 14 main`.
+
 ## Deploy a prebuilt frontend
 
 By default, `restart_script.sh` builds the frontend on the server with `npm ci`

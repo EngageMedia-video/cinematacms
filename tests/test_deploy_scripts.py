@@ -27,6 +27,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 MIGRATOR = PROJECT_ROOT / "deploy" / "migrate-python-runtime.sh"
+POSTGRESQL_UPGRADE_SCRIPT = PROJECT_ROOT / "deploy" / "upgrade-postgresql.sh"
+PGDG_FINGERPRINT = "B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
@@ -608,6 +610,79 @@ class InstallScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("PostgreSQL did not become ready", result.stderr)
 
+    def postgres_env(self, key_fingerprints=(PGDG_FINGERPRINT,)):
+        fake_bin = self.test_root / "postgres-bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "postgres-commands.log"
+        os_release = self.test_root / "os-release"
+        os_release.write_text('ID=ubuntu\nVERSION_ID="22.04"\nVERSION_CODENAME=jammy\n')
+        commands = {
+            "apt-get": "exit 0",
+            "su": "exit 0",
+            "curl": 'while [ "$#" -gt 0 ]; do [ "$1" = "-o" ] && printf key > "$2"; shift; done',
+            "gpg": "".join(
+                f'printf "pub:-:4096:1:0:0:::-:::scSC::::::23::0:\\nfpr:::::::::{fingerprint}:\\n"; '
+                for fingerprint in key_fingerprints
+            ),
+        }
+        for name, result in commands.items():
+            command = fake_bin / name
+            command.write_text(f'#!/bin/sh\nprintf "%s\\n" "{name} $*" >> "$FAKE_COMMAND_LOG"\n{result}\n')
+            command.chmod(command.stat().st_mode | stat.S_IXUSR)
+        keyring = self.test_root / "pgdg" / "apt.postgresql.org.asc"
+        sources_list = self.test_root / "pgdg.list"
+        env = os.environ.copy()
+        env.update(
+            {
+                "CINEMATA_OS_RELEASE_FILE": str(os_release),
+                "CINEMATA_PGDG_KEYRING": str(keyring),
+                "CINEMATA_PGDG_SOURCES_LIST": str(sources_list),
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        return env, command_log, keyring, sources_list
+
+    def test_postgresql_18_installs_from_a_repository_trusted_only_by_its_own_key(self):
+        env, command_log, keyring, sources_list = self.postgres_env()
+
+        result = self.run_installer_function("install_postgresql", env=env)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            sources_list.read_text(),
+            f"deb [signed-by={keyring}] https://apt.postgresql.org/pub/repos/apt jammy-pgdg main\n",
+        )
+        self.assertEqual(
+            command_log.read_text().splitlines(),
+            [
+                f"curl -fsSL -o {keyring} https://www.postgresql.org/media/keys/ACCC4CF8.asc",
+                f"gpg --show-keys --with-colons {keyring}",
+                "apt-get update",
+                "apt-get install -y postgresql-18",
+            ],
+        )
+
+    def test_postgresql_install_rejects_a_signing_key_with_another_fingerprint(self):
+        env, command_log, _, sources_list = self.postgres_env(key_fingerprints=("0" * 40,))
+
+        result = self.run_installer_function("install_postgresql", env=env)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("is not only the PGDG signing key", result.stderr)
+        self.assertFalse(sources_list.exists())
+        self.assertNotIn("apt-get", command_log.read_text())
+
+    def test_postgresql_install_rejects_a_keyring_with_an_extra_key(self):
+        env, command_log, _, sources_list = self.postgres_env(key_fingerprints=(PGDG_FINGERPRINT, "0" * 40))
+
+        result = self.run_installer_function("install_postgresql", env=env)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("is not only the PGDG signing key", result.stderr)
+        self.assertFalse(sources_list.exists())
+        self.assertNotIn("apt-get", command_log.read_text())
+
     def test_bento4_build_target_matches_supported_architecture(self):
         expected_targets = {
             "amd64": "x86_64-unknown-linux",
@@ -1028,6 +1103,112 @@ class NodeInstallerTests(unittest.TestCase):
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
         self.assertEqual((self.link_dir / "node").resolve(), (self.new_bin / "node").resolve())
+
+
+class PostgresqlUpgradeScriptTests(unittest.TestCase):
+    CLUSTER_14 = "14 main 5432 online postgres /var/lib/postgresql/14/main /var/log/postgresql/postgresql-14-main.log"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        root = Path(self.temp_dir.name)
+        fake_bin = root / "bin"
+        fake_bin.mkdir()
+        self.command_log = root / "commands.log"
+        self.command_log.touch()
+        commands = {
+            "id": "printf '0\\n'",
+            "pg_lsclusters": 'printf "%s\\n" "$FAKE_CLUSTERS"',
+            "runuser": 'case "$*" in *pg_stat_activity*) [ -z "$FAKE_CLIENTS" ] || printf "%s\\n" "$FAKE_CLIENTS" ;; esac',
+            "pg_upgradecluster": "exit 0",
+            "pg_createcluster": "exit 1",
+            "apt-get": 'printf "apt-get-env %s %s\\n" "${DEBIAN_FRONTEND:-unset}" "${UCF_FORCE_CONFFOLD:-unset}" >> "$FAKE_COMMAND_LOG"',
+            "curl": 'while [ "$#" -gt 0 ]; do [ "$1" = "-o" ] && printf key > "$2"; shift; done',
+            "gpg": f'printf "pub:-:4096:1:0:0:::-:::scSC::::::23::0:\\nfpr:::::::::{PGDG_FINGERPRINT}:\\n"',
+        }
+        for name, result in commands.items():
+            command = fake_bin / name
+            command.write_text(f'#!/bin/sh\nprintf "%s\\n" "{name} $*" >> "$FAKE_COMMAND_LOG"\n{result}\n')
+            command.chmod(command.stat().st_mode | stat.S_IXUSR)
+        self.env = os.environ.copy()
+        self.createcluster_conf = root / "createcluster.conf"
+        self.createcluster_conf.write_text("#create_main_cluster = true\n")
+        os_release = root / "os-release"
+        os_release.write_text('ID=ubuntu\nVERSION_ID="22.04"\nVERSION_CODENAME=jammy\n')
+        self.env.pop("DEBIAN_FRONTEND", None)
+        self.env.pop("UCF_FORCE_CONFFOLD", None)
+        self.env.update(
+            {
+                "CINEMATA_CREATECLUSTER_CONF": str(self.createcluster_conf),
+                "CINEMATA_OS_RELEASE_FILE": str(os_release),
+                "CINEMATA_PGDG_KEYRING": str(root / "pgdg" / "apt.postgresql.org.asc"),
+                "CINEMATA_PGDG_SOURCES_LIST": str(root / "pgdg.list"),
+                "FAKE_COMMAND_LOG": str(self.command_log),
+                "FAKE_CLUSTERS": self.CLUSTER_14,
+                "FAKE_CLIENTS": "",
+                "PATH": f"{fake_bin}:{self.env['PATH']}",
+            }
+        )
+
+    def run_upgrade_script(self, command, **env_updates):
+        return subprocess.run(
+            ["bash", str(POSTGRESQL_UPGRADE_SCRIPT), command],
+            cwd=PROJECT_ROOT,
+            env=self.env | env_updates,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def commands_run(self):
+        return [line.split()[0] for line in self.command_log.read_text().splitlines()]
+
+    def test_upgrade_refuses_while_a_database_client_is_connected(self):
+        result = self.run_upgrade_script("upgrade", FAKE_CLIENTS="mediacms uwsgi local")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("still connected:\nmediacms uwsgi local", result.stderr)
+        self.assertNotIn("pg_upgradecluster", self.commands_run())
+
+    def test_upgrade_refuses_when_more_than_one_cluster_could_be_upgraded(self):
+        clusters = f"{self.CLUSTER_14}\n15 other 5433 online postgres /var/lib/postgresql/15/other /var/log/x.log"
+
+        result = self.run_upgrade_script("upgrade", FAKE_CLUSTERS=clusters)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("more than one cluster could be upgraded", result.stderr)
+        self.assertNotIn("pg_upgradecluster", self.commands_run())
+
+    def test_upgrade_refuses_when_the_target_cluster_already_exists(self):
+        clusters = f"{self.CLUSTER_14}\n18 main 5433 down postgres /var/lib/postgresql/18/main /var/log/x.log"
+
+        result = self.run_upgrade_script("upgrade", FAKE_CLUSTERS=clusters)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cluster 18/main already exists", result.stderr)
+        self.assertNotIn("pg_upgradecluster", self.commands_run())
+
+    def test_prepare_installs_without_prompting_and_keeps_the_modified_createcluster_conf(self):
+        # prepare edits createcluster.conf before apt upgrades postgresql-common,
+        # whose ucf prompt would otherwise wait on a terminal forever.
+        result = self.run_upgrade_script("prepare")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pg_createcluster", self.commands_run())
+        apt_environments = [
+            line for line in self.command_log.read_text().splitlines() if line.startswith("apt-get-env")
+        ]
+        self.assertEqual(apt_environments, ["apt-get-env noninteractive 1", "apt-get-env noninteractive 1"])
+        self.assertIn("create_main_cluster = false", self.createcluster_conf.read_text())
+
+    def test_prepare_refuses_before_installing_when_the_target_cluster_already_exists(self):
+        clusters = f"{self.CLUSTER_14}\n18 main 5433 online postgres /var/lib/postgresql/18/main /var/log/x.log"
+
+        result = self.run_upgrade_script("prepare", FAKE_CLUSTERS=clusters)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cluster 18/main already exists", result.stderr)
+        self.assertNotIn("apt-get", self.commands_run())
 
 
 class LocalObservabilityInstallerTests(unittest.TestCase):
