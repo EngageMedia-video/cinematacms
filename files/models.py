@@ -2739,9 +2739,6 @@ def media_save(sender, instance, created, update_fields=None, **kwargs):
     if created:
         instance.media_init()
         notify_users(friendly_token=instance.friendly_token, action="media_added")
-        # TODO: When subscription system exists, notify followers:
-        # from notifications.tasks import notify_followers_new_media
-        # notify_followers_new_media.delay(instance.user_id, instance.id)
 
     # Invalidate query cache
     invalidate_media_cache(instance.friendly_token)

@@ -10,8 +10,6 @@ class NotificationType(models.TextChoices):
     MENTION = "mention", "You were mentioned in a comment"
     NEW_MEDIA = "new_media", "New upload from someone you follow"
     ADDED_TO_PLAYLIST = "added_to_playlist", "Your media was added to a playlist"
-    MEDIA_REPORT = "media_report", "Media was reported"
-    SYSTEM_ANNOUNCEMENT = "system_announcement", "System announcement"
 
 
 class NotificationChannel(models.TextChoices):
@@ -114,16 +112,6 @@ class NotificationPreference(models.Model):
         choices=NotificationChannel,
         default=NotificationChannel.IN_APP,
     )
-    filter_topics = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Topic slugs to filter new_media notifications. Empty = all.",
-    )
-    filter_categories = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Category slugs to filter new_media notifications. Empty = all.",
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -131,16 +119,6 @@ class NotificationPreference(models.Model):
         return f"NotificationPreference for {self.user.username}"
 
     def get_channel_for_type(self, notification_type):
-        # system_announcement is always delivered (non-disableable)
-        if notification_type == NotificationType.SYSTEM_ANNOUNCEMENT:
-            return NotificationChannel.IN_APP
-
-        # media_report is admin-facing (delivered to staff via existing
-        # notify_users flow in files/tasks.py). Always in-app here;
-        # moderation queue may replace this in a future milestone.
-        if notification_type == NotificationType.MEDIA_REPORT:
-            return NotificationChannel.IN_APP
-
         channel_map = {
             NotificationType.COMMENT: self.on_comment,
             NotificationType.REPLY: self.on_reply,

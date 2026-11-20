@@ -1,6 +1,5 @@
 import logging
 
-from celery import shared_task
 from django.conf import settings
 
 from email_delivery.models import EmailKind
@@ -45,22 +44,3 @@ def send_notification_email(notification_id):
 
 
 send_notification_email.delay = send_notification_email
-
-
-@shared_task(name="notify_followers_new_media", queue="short_tasks")
-def notify_followers_new_media(actor_id, media_id):
-    from django.contrib.auth import get_user_model
-
-    from files.models import Media
-
-    from .services import NotificationService
-
-    User = get_user_model()
-    try:
-        actor = User.objects.get(id=actor_id)
-        media = Media.objects.get(id=media_id)
-    except User.DoesNotExist, Media.DoesNotExist:
-        logger.warning("notify_followers_new_media: actor=%s or media=%s not found", actor_id, media_id)
-        return
-
-    NotificationService.on_new_media(actor=actor, media=media)
