@@ -232,7 +232,7 @@ def _registry_has_value(spec, value):
         try:
             if int(start) <= int(value) <= int(end):
                 return True
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             continue
     return False
 
@@ -280,7 +280,7 @@ def _validate_registries(matrix, errors):
         if isinstance(spec, Mapping) and "pattern" in spec:
             try:
                 re.compile(spec["pattern"])
-            except (re.error, TypeError):
+            except re.error, TypeError:
                 errors.append(f"registries.{name}.pattern: invalid regular expression")
     return registries
 
@@ -378,7 +378,7 @@ def _validate_log_correlation(matrix, schemas, event_names, errors):
         errors.append(f"{prefix}.max_length: must be an integer from 1 to {MAX_CORRELATION_ID_LENGTH}")
     try:
         re.compile(spec.get("pattern") or "")
-    except (re.error, TypeError):
+    except re.error, TypeError:
         errors.append(f"{prefix}.pattern: not a valid regular expression")
     events = spec.get("events")
     if not isinstance(events, list) or not events:

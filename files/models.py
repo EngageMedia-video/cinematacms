@@ -330,7 +330,7 @@ def get_language_choices():
 
     try:
         return Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
-    except (OperationalError, ProgrammingError, AppRegistryNotReady):
+    except OperationalError, ProgrammingError, AppRegistryNotReady:
         # Return empty choices if database is not ready (during migrations)
         return []
 

@@ -15,7 +15,7 @@ import json
 import logging
 import re
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -60,7 +60,7 @@ def generate_token(media_id: str) -> str:
     Returns the token string.
     """
     token = secrets.token_urlsafe(32)
-    data = json.dumps({"media_id": media_id, "created_at": datetime.now(timezone.utc).isoformat()})
+    data = json.dumps({"media_id": media_id, "created_at": datetime.now(UTC).isoformat()})
 
     access_key = ACCESS_KEY_TEMPLATE.format(token=token)
     media_set_key = MEDIA_SET_KEY_TEMPLATE.format(media_id=media_id)
@@ -96,7 +96,7 @@ def validate_token(token: str, expected_media_id: str) -> bool:
 
     try:
         data = json.loads(data_raw)
-    except (json.JSONDecodeError, TypeError):
+    except json.JSONDecodeError, TypeError:
         record_authentication_failure("restricted_media", "media_token", "invalid_token")
         return False
 

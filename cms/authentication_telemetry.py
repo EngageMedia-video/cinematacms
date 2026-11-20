@@ -114,7 +114,7 @@ def _basic_failure_reason(request):
         return "malformed_credentials"
     try:
         decoded = base64.b64decode(parts[1], validate=True).decode("utf-8")
-    except (binascii.Error, UnicodeDecodeError):
+    except binascii.Error, UnicodeDecodeError:
         return "malformed_credentials"
     if ":" not in decoded:
         return "malformed_credentials"

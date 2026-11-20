@@ -196,7 +196,7 @@ def observability_reference_lookup(request):
         value = payload["value"]
         if not isinstance(kind, str) or not isinstance(value, str) or not value.strip():
             raise ValueError
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+    except json.JSONDecodeError, KeyError, TypeError, ValueError:
         _audit_reference_lookup("warning", "denied", "invalid_request")
         return JsonResponse({"error": "invalid_request"}, status=400)
 

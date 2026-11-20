@@ -1,7 +1,7 @@
 import signal
 import unittest
 from contextlib import ExitStack, contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock, call, mock_open, patch
 
@@ -305,8 +305,8 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
             commands="",
             logs="",
             progress=0,
-            add_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
-            update_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            add_date=datetime(2024, 1, 1, tzinfo=UTC),
+            update_date=datetime(2024, 1, 1, tzinfo=UTC),
             media_file=Mock(),
             save=Mock(),
         )

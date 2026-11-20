@@ -386,7 +386,7 @@ def normalize_method(method: str) -> str:
 def normalize_status_code(status_code: int) -> str:
     try:
         normalized = int(status_code)
-    except (TypeError, ValueError, OverflowError):
+    except TypeError, ValueError, OverflowError:
         _runtime_contract_violation("status_code")
         return "other"
     if 100 <= normalized <= 599:
@@ -398,7 +398,7 @@ def normalize_status_code(status_code: int) -> str:
 def normalize_status_class(status_code: int) -> str:
     try:
         normalized = int(status_code)
-    except (TypeError, ValueError, OverflowError):
+    except TypeError, ValueError, OverflowError:
         _runtime_contract_violation("status_class")
         return "other"
     if 100 <= normalized <= 599:

@@ -1,6 +1,6 @@
 """The sitemap lists only what an anonymous visitor can find in public listings (#870)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.robotparser import RobotFileParser
 from xml.etree import ElementTree
 
@@ -54,7 +54,7 @@ class MediaSitemapTests(SitemapTestCase):
 
     def test_reports_when_the_film_page_last_changed(self):
         media = create_test_media(self.owner, state="public")
-        Media.objects.filter(pk=media.pk).update(edit_date=datetime(2026, 1, 15, 9, 30, tzinfo=timezone.utc))
+        Media.objects.filter(pk=media.pk).update(edit_date=datetime(2026, 1, 15, 9, 30, tzinfo=UTC))
 
         response = self.client.get("/sitemap-media.xml")
 
@@ -121,7 +121,7 @@ class PageSitemapTests(SitemapTestCase):
 
     def test_reports_when_a_text_page_last_changed(self):
         page = Page.objects.create(slug="about", title="About Cinemata")
-        Page.objects.filter(pk=page.pk).update(edit_date=datetime(2026, 3, 4, 10, 0, tzinfo=timezone.utc))
+        Page.objects.filter(pk=page.pk).update(edit_date=datetime(2026, 3, 4, 10, 0, tzinfo=UTC))
 
         response = self.client.get("/sitemap-pages.xml")
 
@@ -169,9 +169,9 @@ class SitemapIndexTests(SitemapTestCase):
         older = create_test_media(self.owner, state="public")
         newer = create_test_media(self.owner, state="public")
         hidden = create_test_media(self.owner, state="private")
-        Media.objects.filter(pk=older.pk).update(edit_date=datetime(2026, 1, 15, 9, 30, tzinfo=timezone.utc))
-        Media.objects.filter(pk=newer.pk).update(edit_date=datetime(2026, 2, 1, 8, 0, tzinfo=timezone.utc))
-        Media.objects.filter(pk=hidden.pk).update(edit_date=datetime(2026, 2, 20, 8, 0, tzinfo=timezone.utc))
+        Media.objects.filter(pk=older.pk).update(edit_date=datetime(2026, 1, 15, 9, 30, tzinfo=UTC))
+        Media.objects.filter(pk=newer.pk).update(edit_date=datetime(2026, 2, 1, 8, 0, tzinfo=UTC))
+        Media.objects.filter(pk=hidden.pk).update(edit_date=datetime(2026, 2, 20, 8, 0, tzinfo=UTC))
 
         response = self.client.get("/sitemap.xml")
 

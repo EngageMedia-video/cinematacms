@@ -9,7 +9,7 @@ def is_valid_password_hash(encoded_password):
     try:
         hasher = identify_hasher(encoded_password)
         hasher.decode(encoded_password)
-    except (AttributeError, KeyError, TypeError, ValueError):
+    except AttributeError, KeyError, TypeError, ValueError:
         return False
 
     return True

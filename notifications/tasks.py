@@ -59,7 +59,7 @@ def notify_followers_new_media(actor_id, media_id):
     try:
         actor = User.objects.get(id=actor_id)
         media = Media.objects.get(id=media_id)
-    except (User.DoesNotExist, Media.DoesNotExist):
+    except User.DoesNotExist, Media.DoesNotExist:
         logger.warning("notify_followers_new_media: actor=%s or media=%s not found", actor_id, media_id)
         return
 

@@ -197,7 +197,7 @@ def view_analytics(request):
             )
             context["umami_unavailable"] = False
             context["unavailable"] = False
-        except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
+        except AnalyticsUnavailable, KeyError, TypeError, AttributeError:
             pass
 
     if context["unavailable"] and selected_media is None:
@@ -319,7 +319,7 @@ def export_analytics(request):
                 all_rows=True,
                 report_timezone=report_timezone,
             )
-        except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
+        except AnalyticsUnavailable, KeyError, TypeError, AttributeError:
             pass
     output = StringIO()
     writer = csv.writer(output)

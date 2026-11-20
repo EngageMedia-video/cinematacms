@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
@@ -1517,7 +1517,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         metrics._stalled_encoding_label_values.clear()
         metrics._stalled_encoding_label_values.add(("720", "h264", "mp4"))
         encoding = SimpleNamespace(
-            update_date=datetime.fromtimestamp(80, tz=timezone.utc),
+            update_date=datetime.fromtimestamp(80, tz=UTC),
             profile=SimpleNamespace(resolution=1080, codec="h265", extension="webm"),
         )
         queryset = Mock()

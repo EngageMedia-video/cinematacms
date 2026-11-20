@@ -85,7 +85,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
             kind = payload["kind"]
             if kind not in {"actor", "media"} or not payload["value"]:
                 raise ValueError
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        except json.JSONDecodeError, KeyError, TypeError, ValueError:
             self.send_error(400)
             return
         prefix = "c" if payload["value"] == "nobody@example.invalid" else "a" if kind == "actor" else "b"

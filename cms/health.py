@@ -93,7 +93,7 @@ def _check_static_manifest() -> tuple[bool, str]:
             # Vite dev server serves assets; no build manifest is expected.
             return True, "ok (dev_mode)"
         path = cfg["manifest_path"]
-    except (AttributeError, KeyError, TypeError):
+    except AttributeError, KeyError, TypeError:
         logger.warning("health: DJANGO_VITE config missing", exc_info=True)
         return False, "not_configured"
     if os.path.exists(path):

@@ -1606,7 +1606,7 @@ class MediaList(APIView):
                             ),
                         }
                     return Response(cached_result)
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 pass  # Invalid page number, skip cache
 
         if author_param:

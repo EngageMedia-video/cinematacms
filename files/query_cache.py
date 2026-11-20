@@ -118,7 +118,7 @@ def _bump_cache_version(scope: str, identifier: str) -> int:
                 logger.debug(f"Bumped cache version for {scope}:{identifier} to {new_version}")
                 return new_version
             raise ValueError("increment did not advance the version")
-        except (AttributeError, ValueError, TypeError):
+        except AttributeError, ValueError, TypeError:
             # Fallback for backends without incr support
             new_version = current_version + 1
             query_version_cache.set(version_key, new_version, CACHE_VERSION_TIMEOUT)

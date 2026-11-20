@@ -62,7 +62,7 @@ def _media_file_path(media):
         if not media.media_file:
             return None
         return media.media_file.path
-    except (NotImplementedError, ValueError):
+    except NotImplementedError, ValueError:
         return None
 
 
