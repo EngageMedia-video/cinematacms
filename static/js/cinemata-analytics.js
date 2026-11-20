@@ -19,9 +19,11 @@
         return [navigator.doNotTrack, window.doNotTrack, navigator.msDoNotTrack]
             .some((value) => value === 1 || value === '1' || value === 'yes');
     }
+    // An embed sits on another site's page, so loading one is not movement within Cinemata.
+    const isEmbed = config.context === 'embed';
     // Returns the tab's previously tracked page within this visit and records the current one.
     function advancePath(path) {
-        if (hasDoNotTrack()) return null;
+        if (hasDoNotTrack() || isEmbed) return null;
         let previous = null;
         try {
             const saved = JSON.parse(sessionStorage.getItem('cinemata-previous-path') || 'null');

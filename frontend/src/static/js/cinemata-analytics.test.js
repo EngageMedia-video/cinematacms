@@ -1092,6 +1092,15 @@ describe('Previous Cinemata page on Umami page views', () => {
 		expect(payloads.find((payload) => !payload.name).data).not.toHaveProperty('previous_path');
 		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
 	});
+	it('keeps embeds on another site out of the tab history', () => {
+		const embed = { nonpublic: false, audience_group: 'regular', path: '/media/embed', context: 'embed' };
+		remember({ path: '/latest', time: Date.now() });
+		loadedPage(embed);
+		const payloads = sent(loadedPage(embed));
+		expect(payloads.find((payload) => !payload.name).data).not.toHaveProperty('previous_path');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
+		expect(recorded()).toBe('/latest');
+	});
 	it('tracks the page when session storage is unavailable', () => {
 		vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
 			throw new Error('Storage disabled');
