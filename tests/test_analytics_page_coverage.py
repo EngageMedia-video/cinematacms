@@ -70,38 +70,6 @@ EXCLUDED_ROUTES = {
 }
 
 
-# Pages a tracked visitor can open that load no tracker yet.
-SILENT_PAGES = {
-    "manage_film_impact",
-    "manage_film_impact_edit",
-    "creator_analytics",
-    "mfa_success",
-    "account_login",
-    "account_logout",
-    "account_inactive",
-    "account_signup",
-    "account_reauthenticate",
-    "account_email",
-    "account_email_verification_sent",
-    "account_change_password",
-    "account_set_password",
-    "account_reset_password",
-    "account_reset_password_done",
-    "account_reset_password_from_key",
-    "account_reset_password_from_key_done",
-    "account_confirm_email",
-    "account_request_login_code",
-    "account_confirm_login_code",
-    "mfa_index",
-    "mfa_authenticate",
-    "mfa_reauthenticate",
-    "mfa_activate_totp",
-    "mfa_deactivate_totp",
-    "mfa_view_recovery_codes",
-    "mfa_generate_recovery_codes",
-}
-
-
 def _route_patterns(patterns=None, prefix=""):
     for pattern in get_resolver().url_patterns if patterns is None else patterns:
         route = prefix + str(pattern.pattern).replace("^", "").removesuffix("$")
@@ -290,7 +258,7 @@ class PageTrackingCoverageTests(TestCase):
             with self.subTest(route=key, visitor=visitor):
                 response = self._open_as(visitor, url)
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(TRACKER_CONFIG in response.content.decode(), key not in SILENT_PAGES)
+                self.assertContains(response, TRACKER_CONFIG)
 
     def test_staff_only_pages_turn_away_every_tracked_role(self):
         staff_only = {

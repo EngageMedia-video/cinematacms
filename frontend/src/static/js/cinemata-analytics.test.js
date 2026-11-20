@@ -1371,3 +1371,74 @@ describe('Umami heatmap preview', () => {
 		expect(window.CinemataAnalytics).toBeDefined();
 	});
 });
+describe('Account pages counted under a generic page path', () => {
+	const resetToken = '4-c3b9f2-reset-token';
+	const accountPage = { path: '/page/password_reset_key', media_id: null, nonpublic: true };
+	// What Umami's script adds from the browser before the payload reaches beforeSend.
+	const browserFields = () => ({
+		url: window.location.pathname + window.location.search,
+		referrer: document.referrer,
+		title: 'Change password',
+	});
+	const sent = (track) =>
+		track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build(browserFields()) : build)
+		);
+	const openResetLink = () => {
+		window.history.replaceState(null, '', `/accounts/password/reset/key/${resetToken}/?next=/upload`);
+		Object.defineProperty(document, 'referrer', {
+			configurable: true,
+			value: `https://mail.example.org/inbox?message=${resetToken}`,
+		});
+		const track = loadTracker(accountPage, false);
+		document.querySelector('script[data-website-id="site-id"]')?.onload();
+		return track;
+	};
+
+	afterEach(() => {
+		window.history.replaceState(null, '', '/');
+		delete document.referrer;
+	});
+
+	it('counts the page without the reset key from its URL or referrer', () => {
+		const payloads = sent(openResetLink());
+		const view = payloads.find((payload) => !payload.name);
+		expect(view).toMatchObject({ url: '/page/password_reset_key', referrer: '' });
+		expect(view).not.toHaveProperty('data.audience_group');
+		expect(view).not.toHaveProperty('data.previous_path');
+		expect(JSON.stringify(payloads)).not.toMatch(/reset-token|mail\.example|next=/);
+	});
+	it('does not load the recorder, which would send the browser URL', () => {
+		openResetLink();
+		expect(document.querySelector('script[src="https://analytics.example.org/recorder.js"]')).toBeNull();
+	});
+	it('gives the next public page only the generic account path as its previous page', () => {
+		openResetLink();
+		vi.restoreAllMocks();
+		window.history.replaceState(null, '', '/');
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false, audience_group: 'regular' }, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		const view = sent(track).find((payload) => !payload.name);
+		expect(view.data.previous_path).toBe('/page/password_reset_key');
+	});
+	it('counts a sign-in link click with only its destination category', () => {
+		const track = openResetLink();
+		track.mockClear();
+		const link = document.createElement('a');
+		link.href = `/accounts/login/?next=/accounts/password/reset/key/${resetToken}/`;
+		document.body.append(link);
+		link.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		const [payload] = sent(track);
+		expect(payload).toMatchObject({ name: 'signin_click', url: '/page/password_reset_key', referrer: '' });
+		expect(payload.data).toEqual({ target: 'other' });
+	});
+	it('sends nothing under Do Not Track', () => {
+		Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: '1' });
+		try {
+			const track = openResetLink();
+			expect(track).not.toHaveBeenCalled();
+		} finally {
+			delete navigator.doNotTrack;
+		}
+	});
+});
