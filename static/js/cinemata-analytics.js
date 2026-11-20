@@ -56,6 +56,10 @@
     let audienceGroup = audienceFor(config.audience_group);
     // Umami stores at most 500 characters of a page title or an event data string.
     const mediaTitle = (title) => typeof title === 'string' && title ? Array.from(title).slice(0, 500).join('') : null;
+    const namedPageTitle = !config.media_id && !config.nonpublic ? mediaTitle(config.page_title) : null;
+    // USERNAME_RE in users/urls.py uses Python's Unicode \w; usernames are at most 150 characters.
+    const profileUsername = typeof config.profile_username === 'string' &&
+        /^[\p{L}\p{N}_@.-]{1,150}$/u.test(config.profile_username) ? config.profile_username : null;
     // Each media item keeps the page context it was viewed with, for events
     // that wait for Umami to load while a playlist moves on in place.
     const mediaPages = new Map();
@@ -82,7 +86,7 @@
             website: config.website_id,
             hostname: window.location.hostname,
             url: config.path,
-            title: mediaPages.get(config.media_id)?.title || (config.media_id ? 'Media' : 'Page'),
+            title: mediaPages.get(config.media_id)?.title || (config.media_id ? 'Media' : namedPageTitle || 'Page'),
             ...browserFields(payload),
         };
         if (type === 'identify') return identity ? { ...page, data: { audience_group: identity.audience_group } } : false;
@@ -126,15 +130,18 @@
             }
             if (['hero', 'featured', 'recommended', 'recent', 'playlist', 'sidebar', 'topbar', 'search', 'profile'].includes(payload.data?.placement)) data.placement = payload.data.placement;
         }
-        const playlistId = !privatePath && !mediaId && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
+        const isPageContext = !privatePath && !mediaId;
+        const playlistId = isPageContext && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
         if (playlistId) data.playlist_id = playlistId;
+        if (playlistId && namedPageTitle) data.playlist_title = namedPageTitle;
+        if (isPageContext && profileUsername) data.profile_username = profileUsername;
         if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
         const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
-            title: viewedPage?.title || (mediaId ? 'Media' : 'Page'),
+            title: viewedPage?.title || (mediaId ? 'Media' : isPageContext && !virtualPath && namedPageTitle || 'Page'),
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),

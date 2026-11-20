@@ -797,6 +797,87 @@ describe('Public media named in Umami page and event reports', () => {
 	});
 });
 
+describe('Playlists and public profiles named in Umami page and event reports', () => {
+	const playlistPage = {
+		media_id: null,
+		nonpublic: false,
+		path: '/get_playlist',
+		playlist_id: mediaId,
+		page_title: 'Rivers of Java',
+	};
+	const profilePage = {
+		media_id: null,
+		nonpublic: false,
+		path: '/user/profile/about',
+		page_title: 'Ayu Lestari',
+		profile_username: 'ayu.lestari',
+	};
+	const loadedPage = (config) => {
+		const track = loadTracker(config, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		return track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build({}) : build)
+		);
+	};
+	const pageView = (payloads) => payloads.find((payload) => !payload.name);
+
+	it('titles a playlist page view with the playlist title and reports it as playlist_title', () => {
+		expect(pageView(loadedPage(playlistPage))).toMatchObject({
+			url: '/get_playlist',
+			title: 'Rivers of Java',
+			tag: `playlist:${mediaId}`,
+			data: { playlist_id: mediaId, playlist_title: 'Rivers of Java' },
+		});
+		window.CinemataAnalytics.track('playlist_link_copy');
+		expect(window.cinemataAnalyticsBeforeSend('event', window.umami.track.mock.lastCall[0]({}))).toMatchObject({
+			name: 'playlist_link_copy',
+			title: 'Rivers of Java',
+			data: { playlist_title: 'Rivers of Java' },
+		});
+	});
+	it('titles a public profile section with the display name and reports the username', () => {
+		const payload = pageView(loadedPage(profilePage));
+		expect(payload).toMatchObject({
+			url: '/user/profile/about',
+			title: 'Ayu Lestari',
+			data: { profile_username: 'ayu.lestari' },
+		});
+		expect(payload).not.toHaveProperty('data.playlist_title');
+	});
+	it('keeps a username in any script that a profile URL accepts', () => {
+		expect(pageView(loadedPage({ ...profilePage, profile_username: 'đặng_văn-ân@1' })).data.profile_username).toBe(
+			'đặng_văn-ân@1'
+		);
+	});
+	it.each(['ayu/../secret', '<script>', 'a'.repeat(151), '', ['ayu']])(
+		'drops a username that no profile URL could carry: %j',
+		(username) => {
+			expect(pageView(loadedPage({ ...profilePage, profile_username: username }))).not.toHaveProperty(
+				'data.profile_username'
+			);
+		}
+	);
+	it('cuts a page title to the 500 characters Umami stores', () => {
+		const payload = pageView(loadedPage({ ...playlistPage, page_title: 'x'.repeat(600) }));
+		expect(payload.title).toHaveLength(500);
+		expect(payload.data.playlist_title).toHaveLength(500);
+	});
+	it('keeps private actions and media events on a named page generic', () => {
+		loadedPage({ ...profilePage, playlist_id: mediaId });
+		window.CinemataAnalytics.track('contact_user_accepted');
+		window.CinemataAnalytics.track('playlist_remove', {}, { id: mediaId, type: 'video', context: 'playlist' });
+		window.CinemataAnalytics.pageview('future_feature');
+		const [contact, media, virtualView] = window.umami.track.mock.calls
+			.slice(-3)
+			.map(([build]) => window.cinemataAnalyticsBeforeSend('event', build({})));
+		expect(contact).toMatchObject({ url: '/page/contact', title: 'Page' });
+		expect(media).toMatchObject({ url: '/media/playlist', title: 'Media' });
+		expect(virtualView).toMatchObject({ url: '/page/future_feature', title: 'Page' });
+		for (const payload of [contact, media])
+			expect(JSON.stringify(payload)).not.toMatch(/Ayu Lestari|ayu\.lestari|playlist_title|profile_username/);
+	});
+});
+
 describe('Umami session, device and page-speed reports', () => {
 	const identity = { id: 'maker', audience_group: 'trusted' };
 	const browserFields = { screen: '1440x900', language: 'en-US', id: 'maker' };
