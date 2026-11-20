@@ -88,7 +88,7 @@ class MediaAdmin(admin.ModelAdmin):
 
                 file_size = os.path.getsize(obj.media_file.path)
                 return helpers.show_file_size(file_size)
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 return "N/A"
         return "N/A"
 

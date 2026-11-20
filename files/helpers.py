@@ -203,7 +203,7 @@ def rm_dir(directory):
             try:
                 shutil.rmtree(directory)
                 return True
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 pass
     return False
 
@@ -414,7 +414,7 @@ def media_file_info(input_file):
     if has_video:
         try:
             video_frame_rate = float(Fraction(video_info["r_frame_rate"]))
-        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+        except TypeError, ValueError, ZeroDivisionError, OverflowError:
             video_frame_rate = 0
         if video_frame_rate <= 0:
             logger.warning("Media inspection failed: incomplete_video_metadata")

@@ -73,7 +73,7 @@ def _normalize(value: Any, allowed: frozenset[str], *, field: str, fallback: str
 def _slow_threshold() -> float:
     try:
         threshold = float(getattr(settings, "OBSERVABILITY_SLOW_CACHE_SECONDS", 0.1))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 0.1
     if not math.isfinite(threshold) or threshold < 0:
         return 0.1

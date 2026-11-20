@@ -2,7 +2,7 @@
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -102,7 +102,7 @@ def _event_counts(rows):
 def _previous_counts(media, days, current_start, current_end, revision, report_timezone):
     if days == 365:
         return None  # A preceding 365-day window falls outside 12-month retention.
-    current_start = current_start.astimezone(timezone.utc)
+    current_start = current_start.astimezone(UTC)
     previous_start = current_start - (current_end - current_start)
     common = {
         "startAt": int(previous_start.timestamp() * 1000),
@@ -185,7 +185,7 @@ def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows
     if media_uid is not None:
         queryset = queryset.filter(uid=media_uid)
     media = list(queryset.order_by("-add_date", "-pk"))
-    current_end = datetime.now(timezone.utc)
+    current_end = datetime.now(UTC)
     zone = ZoneInfo(report_timezone)
     today = current_end.astimezone(zone).date()
     start = datetime.combine(today - timedelta(days=days - 1), datetime.min.time(), tzinfo=zone)

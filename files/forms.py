@@ -273,7 +273,7 @@ class MediaForm(forms.ModelForm):
                         self.add_error("year_produced", "Please select a valid year.")
                     else:
                         cleaned_data["year_produced"] = year_int
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     self.add_error("year_produced", "Please select a valid year.")
         else:
             if not self.has_error("year_produced"):

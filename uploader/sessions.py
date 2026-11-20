@@ -84,7 +84,7 @@ def get_owned(user, target_media, upload_uuid):
     """Return the caller's session for this target, or None. Other accounts' sessions look absent."""
     try:
         session = UploadSession.objects.get(uuid=upload_uuid)
-    except (UploadSession.DoesNotExist, ValueError, ValidationError):
+    except UploadSession.DoesNotExist, ValueError, ValidationError:
         return None
     if session.user_id != user.pk or session.target_media_id != (target_media.pk if target_media else None):
         return None

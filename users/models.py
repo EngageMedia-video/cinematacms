@@ -119,7 +119,7 @@ class User(AbstractUser):
             try:
                 if os.path.isfile(self.logo.path):
                     return helpers.url_from_path(self.logo.path)
-            except (ValueError, FileNotFoundError):
+            except ValueError, FileNotFoundError:
                 pass
         return None
 
@@ -131,7 +131,7 @@ class User(AbstractUser):
             try:
                 if os.path.isfile(c.banner_logo.path):
                     return helpers.url_from_path(c.banner_logo.path)
-            except (ValueError, FileNotFoundError):
+            except ValueError, FileNotFoundError:
                 pass
         return None
 

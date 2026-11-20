@@ -48,7 +48,7 @@ def _safe_filefield_size(field_file, seen_paths):
     local_path = ""
     try:
         local_path = field_file.path
-    except (NotImplementedError, OSError, ValueError):
+    except NotImplementedError, OSError, ValueError:
         local_path = ""
 
     if local_path:

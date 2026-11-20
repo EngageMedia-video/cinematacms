@@ -2,8 +2,7 @@ import csv
 import hashlib
 import json
 import uuid
-from datetime import datetime, timedelta
-from datetime import timezone as utc_timezone
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -897,7 +896,7 @@ class CreatorAnalyticsTests(TestCase):
         owner = create_test_user()
         film = create_test_media(owner)
         self.client.force_login(owner)
-        now = datetime(2026, 10, 1, 18, tzinfo=utc_timezone.utc)
+        now = datetime(2026, 10, 1, 18, tzinfo=UTC)
         PlaybackSummary.objects.create(
             id=uuid.uuid4(),
             media=film,
@@ -941,9 +940,7 @@ class CreatorAnalyticsTests(TestCase):
         owner = create_test_user()
         create_test_media(owner)
         self.client.force_login(owner)
-        current_start = datetime.combine(
-            timezone.now().date() - timedelta(days=6), datetime.min.time(), tzinfo=utc_timezone.utc
-        )
+        current_start = datetime.combine(timezone.now().date() - timedelta(days=6), datetime.min.time(), tzinfo=UTC)
 
         bounds = {}
 
@@ -1235,7 +1232,7 @@ class PlaybackSummaryTests(TestCase):
             "play_id": self.play_id,
             "duration_ms": 100000,
             "coverage": [[0, 25000]],
-            "watch_days": {datetime.now(utc_timezone.utc).date().isoformat(): 25000},
+            "watch_days": {datetime.now(UTC).date().isoformat(): 25000},
             "initiation": "deliberate",
         }
 
@@ -1252,7 +1249,7 @@ class PlaybackSummaryTests(TestCase):
         updated = {
             **self.payload,
             "coverage": [[0, 50000]],
-            "watch_days": {datetime.now(utc_timezone.utc).date().isoformat(): 50000},
+            "watch_days": {datetime.now(UTC).date().isoformat(): 50000},
         }
         self.assertEqual(self.post(updated).status_code, 204)
         self.assertEqual(self.post(self.payload).status_code, 204)
@@ -1286,7 +1283,7 @@ class PlaybackSummaryTests(TestCase):
         self.assertEqual(summary.watch_days, {day: 2001})
 
     def test_minute_snapshots_are_idempotent_and_split_at_local_midnight(self):
-        now = datetime(2026, 10, 1, 18, tzinfo=utc_timezone.utc)
+        now = datetime(2026, 10, 1, 18, tzinfo=UTC)
         buckets = {"2026-10-01T16:59Z": 1000, "2026-10-01T17:00Z": 2000}
         with patch("cms.playback_analytics.datetime", wraps=datetime) as clock:
             clock.now.return_value = now
@@ -1324,7 +1321,7 @@ class PlaybackSummaryTests(TestCase):
         self.assertTrue(all(row["watch_time_status"] == "partial" for row in rows))
 
     def test_watch_bucket_union_and_formats_are_bounded(self):
-        now = datetime.now(utc_timezone.utc).replace(second=0, microsecond=0)
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
         buckets = {(now - timedelta(minutes=index)).strftime("%Y-%m-%dT%H:%MZ"): 1 for index in range(1441)}
         with patch("cms.playback_analytics.datetime", wraps=datetime) as clock:
             clock.now.return_value = now

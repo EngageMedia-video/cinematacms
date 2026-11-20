@@ -253,7 +253,7 @@ def record_segment_event(request):
             or event not in {"text_read_15s", "text_read_30s", "text_read_60s", "text_read_120s", "text_read_300s"}
         ):
             raise ValueError
-    except (ValueError, TypeError, KeyError, json.JSONDecodeError, signing.BadSignature):
+    except ValueError, TypeError, KeyError, json.JSONDecodeError, signing.BadSignature:
         return HttpResponse(status=400)
 
     from files.models import DailySegmentMetric
@@ -315,6 +315,6 @@ def umami_report_url():
             or parsed.fragment
         ):
             return None
-    except (ValueError, TypeError, AttributeError):
+    except ValueError, TypeError, AttributeError:
         return None
     return f"{parsed.geturl().rstrip('/')}/websites/{website_id}"

@@ -128,7 +128,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
                             # Also populate cache for next time
                             maintenance_cache.set(self.CACHE_KEY, start_time, self.CACHE_TIMEOUT)
                             return start_time
-                except (OSError, json.JSONDecodeError):
+                except OSError, json.JSONDecodeError:
                     pass
 
             # Still no valid time, create it

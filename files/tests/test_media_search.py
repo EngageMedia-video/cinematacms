@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, date, datetime
 from io import StringIO
 from unittest.mock import patch
 
@@ -476,12 +475,12 @@ class MediaSearchRelevanceRankingTests(TestCase):
     def test_title_match_outranks_newer_description_only_match(self):
         title_match = self._media(
             "The Train",
-            datetime(2011, 3, 23, tzinfo=dt_timezone.utc),
+            datetime(2011, 3, 23, tzinfo=UTC),
             description="A short film about a journey.",
         )
         description_match = self._media(
             "Harvest Season",
-            datetime(2026, 3, 23, tzinfo=dt_timezone.utc),
+            datetime(2026, 3, 23, tzinfo=UTC),
             description="Filmed near the train station at dawn.",
         )
 
@@ -504,12 +503,12 @@ class MediaSearchRelevanceRankingTests(TestCase):
         """
         the_train = self._media(
             "The Train",
-            datetime(2011, 3, 23, tzinfo=dt_timezone.utc),
+            datetime(2011, 3, 23, tzinfo=UTC),
         )
         for index in range(6):
             self._media(
                 f"Training Session {index}",
-                datetime(2026, 3, index + 1, tzinfo=dt_timezone.utc),
+                datetime(2026, 3, index + 1, tzinfo=UTC),
             )
 
         response = self.client.get("/api/v1/search?q=the+train&page_size=4")
@@ -523,8 +522,8 @@ class MediaSearchRelevanceRankingTests(TestCase):
 
         A visitor who asks for newest-first must still get newest-first.
         """
-        older = self._media("The Train", datetime(2011, 3, 23, tzinfo=dt_timezone.utc))
-        newer = self._media("Training Session", datetime(2026, 3, 23, tzinfo=dt_timezone.utc))
+        older = self._media("The Train", datetime(2011, 3, 23, tzinfo=UTC))
+        newer = self._media("Training Session", datetime(2026, 3, 23, tzinfo=UTC))
 
         response = self.client.get("/api/v1/search?q=the+train&sort_by=add_date")
         self.assertEqual(response.status_code, 200)
@@ -534,9 +533,9 @@ class MediaSearchRelevanceRankingTests(TestCase):
 
     def test_relevance_ordering_survives_a_tag_filter(self):
         """The tag filter adds .distinct(); ranked ordering must still apply."""
-        tagged = self._media("The Train", datetime(2011, 3, 23, tzinfo=dt_timezone.utc))
+        tagged = self._media("The Train", datetime(2011, 3, 23, tzinfo=UTC))
         tagged.tags.add(Tag.objects.create(title="rail", user=self.user))
-        other = self._media("Training Session", datetime(2026, 3, 23, tzinfo=dt_timezone.utc))
+        other = self._media("Training Session", datetime(2026, 3, 23, tzinfo=UTC))
         other.tags.add(Tag.objects.get(title="rail"))
 
         response = self.client.get("/api/v1/search?q=the+train&tag=rail")
@@ -551,11 +550,11 @@ class MediaSearchBackslashTests(TestCase):
         self.user = create_test_user(username="backslash_user")
         self.exact = create_test_media(self.user, media_country="PH")
         self.exact.title = "Aeta"
-        self.exact.add_date = datetime(2011, 3, 23, tzinfo=dt_timezone.utc)
+        self.exact.add_date = datetime(2011, 3, 23, tzinfo=UTC)
         self.exact.save(update_fields=["title", "add_date"])
         self.prefix = create_test_media(self.user, media_country="PH")
         self.prefix.title = "Aetaland"
-        self.prefix.add_date = datetime(2026, 3, 23, tzinfo=dt_timezone.utc)
+        self.prefix.add_date = datetime(2026, 3, 23, tzinfo=UTC)
         self.prefix.save(update_fields=["title", "add_date"])
 
     def test_backslashes_preserve_prefix_matching_and_exact_ranking(self):

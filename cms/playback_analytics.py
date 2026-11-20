@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -69,12 +69,12 @@ def validate_snapshot(body, media):
     days = body["watch_days"]
     if not isinstance(days, dict) or len(days) > MAX_WATCH_BUCKETS:
         raise ValueError
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     formats = set()
     for day, millis in days.items():
         try:
             legacy = len(day) == 10
-            parsed = datetime.strptime(day, "%Y-%m-%d" if legacy else "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
+            parsed = datetime.strptime(day, "%Y-%m-%d" if legacy else "%Y-%m-%dT%H:%MZ").replace(tzinfo=UTC)
         except (TypeError, ValueError) as exc:
             raise ValueError from exc
         formats.add(legacy)
@@ -96,13 +96,13 @@ def validate_snapshot(body, media):
 def playback_figures(owner, days, media_uid=None, revision=None, end_date=None, report_timezone="UTC"):
     """Aggregate measured plays without reading visitor identity or URL data."""
     zone = ZoneInfo(report_timezone)
-    today = end_date or datetime.now(timezone.utc).astimezone(zone).date()
+    today = end_date or datetime.now(UTC).astimezone(zone).date()
     first = today - timedelta(days=days - 1)
     cohort_start = datetime.combine(first, datetime.min.time(), tzinfo=zone)
     cohort_end = datetime.combine(today + timedelta(days=1), datetime.min.time(), tzinfo=zone)
     queryset = PlaybackSummary.objects.filter(
         media__user=owner,
-        started_at__gte=cohort_start.astimezone(timezone.utc) - timedelta(days=1),
+        started_at__gte=cohort_start.astimezone(UTC) - timedelta(days=1),
         started_at__lt=cohort_end,
     )
     if media_uid:
@@ -126,7 +126,7 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None, 
         media_id = str(row["media__uid"])
         row_ms = 0
         for day, millis in row["watch_days"].items():
-            instant = datetime.fromisoformat(day.replace("Z", "+00:00")).replace(tzinfo=timezone.utc)
+            instant = datetime.fromisoformat(day.replace("Z", "+00:00")).replace(tzinfo=UTC)
             if len(day) == 10 and (
                 instant.astimezone(zone).utcoffset() != timedelta(0)
                 or (instant + timedelta(days=1)).astimezone(zone).utcoffset() != timedelta(0)
@@ -215,7 +215,7 @@ def record_playback(request):
                 "revision": media.analytics_revision,
                 "context": grant["context"],
                 "initiation": initiation,
-                "started_at": datetime.now(timezone.utc),
+                "started_at": datetime.now(UTC),
                 "duration_ms": duration,
             },
         )

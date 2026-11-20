@@ -27,7 +27,7 @@ def _parse_encode_media_task_args(task_args):
     elif isinstance(task_args, str):
         try:
             parsed = ast.literal_eval(task_args)
-        except (SyntaxError, ValueError):
+        except SyntaxError, ValueError:
             parsed = None
 
         if isinstance(parsed, (list, tuple)):
@@ -42,7 +42,7 @@ def _parse_encode_media_task_args(task_args):
 
     try:
         return str(parts[0]), int(parts[1])
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

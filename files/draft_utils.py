@@ -40,7 +40,7 @@ def draft_license_error(metadata):
         return None
     try:
         license_id = int(metadata["custom_license"])
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return "Select a valid license."
     if not License.objects.filter(pk=license_id).exists():
         return "Select a valid license."
@@ -60,7 +60,7 @@ def apply_media_draft(media, metadata, user):
     if year not in (None, "", "other"):
         try:
             media.year_produced = int(year)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             pass
 
     if "enable_comments" in metadata:
@@ -75,7 +75,7 @@ def apply_media_draft(media, metadata, user):
     elif metadata.get("custom_license"):
         try:
             license_id = int(metadata["custom_license"])
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             pass
         else:
             if License.objects.filter(pk=license_id).exists():

@@ -347,7 +347,7 @@ def encode_media(
     try:
         media = Media.objects.get(friendly_token=friendly_token)
         profile = EncodeProfile.objects.get(id=profile_id)
-    except (Media.DoesNotExist, EncodeProfile.DoesNotExist):
+    except Media.DoesNotExist, EncodeProfile.DoesNotExist:
         Encoding.objects.filter(id=encoding_id).delete()
         return False
 
@@ -537,7 +537,7 @@ def encode_media(
                                             logger.info(f"Saved {round(percent, 2)}% (iteration {n_times})")
                                         except Exception as e:
                                             logger.warning(f"Failed to save encoding progress: {e}")
-                            except (ValueError, TypeError):
+                            except ValueError, TypeError:
                                 # Could not parse duration, treat as no progress
                                 pass
                         else:
@@ -1565,7 +1565,7 @@ def _session_encoders():
         try:
             if os.getsid(int(pid)) == worker_session:
                 owned.append(pid)
-        except (ProcessLookupError, PermissionError):
+        except ProcessLookupError, PermissionError:
             continue
     return owned
 
@@ -1843,7 +1843,7 @@ def subscribe_user(email, name, country=None):
         if response.status_code == 200:
             try:
                 response_data = response.json()
-            except (json.JSONDecodeError, ValueError):
+            except json.JSONDecodeError, ValueError:
                 logger.error(
                     f"Newsletter subscription for {mask_email(email)}: failed to parse JSON response. "
                     f"Response content: {response.text[:200]}"

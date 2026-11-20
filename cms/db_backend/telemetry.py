@@ -280,7 +280,7 @@ def database_operation(sql: Any) -> str:
 def _slow_query_threshold() -> float:
     try:
         threshold = float(getattr(settings, "OBSERVABILITY_SLOW_QUERY_SECONDS", 1.0))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 1.0
     return threshold if math.isfinite(threshold) and threshold >= 0 else 1.0
 

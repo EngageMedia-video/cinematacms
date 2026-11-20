@@ -3136,7 +3136,7 @@ class RestartScriptTests(unittest.TestCase):
             with self.subTest(required=required):
                 matrix = jobs[per_python]["strategy"]["matrix"]
                 pythons = matrix.get("python") or [leg["python"] for leg in matrix["include"]]
-                self.assertEqual(pythons, ["3.10", "3.14"])
+                self.assertEqual(pythons, ["3.14"])
                 self.assertIs(jobs[per_python]["strategy"]["fail-fast"], False)
                 self.assertEqual(jobs[per_python]["env"]["UV_PYTHON"], "${{ matrix.python }}")
                 self.assertEqual(jobs[required]["needs"], per_python)
@@ -3156,7 +3156,7 @@ class RestartScriptTests(unittest.TestCase):
         self.assertEqual(upload["if"], "matrix.uploads-coverage")
         self.assertEqual(upload["with"]["name"], "backend-coverage-${{ github.sha }}")
         self.assertEqual(
-            [leg["python"] for leg in job["strategy"]["matrix"]["include"] if leg["uploads-coverage"]], ["3.10"]
+            [leg["python"] for leg in job["strategy"]["matrix"]["include"] if leg["uploads-coverage"]], ["3.14"]
         )
 
     def run_with_service_restart_armed(self, command, *, failing_systemctl=""):

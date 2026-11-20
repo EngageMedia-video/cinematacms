@@ -36,7 +36,7 @@ def _drain(request):
     try:
         while request.read(tus.READ_SIZE):
             pass
-    except (OSError, RawPostDataException):
+    except OSError, RawPostDataException:
         pass
 
 

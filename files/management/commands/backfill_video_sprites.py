@@ -16,10 +16,10 @@ def _file_field_exists(field_file):
         return False
     try:
         return field_file.storage.exists(field_file.name)
-    except (NotImplementedError, OSError, ValueError):
+    except NotImplementedError, OSError, ValueError:
         try:
             return os.path.exists(field_file.path)
-        except (NotImplementedError, OSError, ValueError):
+        except NotImplementedError, OSError, ValueError:
             return False
 
 

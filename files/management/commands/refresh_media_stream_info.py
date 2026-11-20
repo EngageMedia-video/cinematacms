@@ -28,7 +28,7 @@ FAILED = "failed"
 def stored_video_stream_is_attached_picture(media_info):
     try:
         return bool(json.loads(media_info)["video_info"]["disposition"]["attached_pic"])
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         return False
 
 

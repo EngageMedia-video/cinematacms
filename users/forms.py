@@ -78,7 +78,7 @@ class SignupForm(forms.Form):
                 # Trigger async task to subscribe user
                 subscribe_user.delay(email=user.email, name=user.name, country=country)
                 logger.info(f"Newsletter subscription task queued for {user.email}")
-            except (ImportError, AttributeError, OperationalError):
+            except ImportError, AttributeError, OperationalError:
                 # Don't fail signup if newsletter subscription fails
                 logger.exception(
                     "Failed to queue newsletter subscription for %s (country=%s)", user.email, country, exc_info=True

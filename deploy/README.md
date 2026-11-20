@@ -691,7 +691,13 @@ reads last.
 
 ### Upgrade
 
-1. Deploy the release as usual. The services still run on the old virtualenv.
+Commit `52e0ac01` is the last release that runs on Python 3.10. Later releases
+neither install nor import on it. A server on Python 3.10 therefore runs the
+migration from commit `52e0ac01` before it deploys anything newer.
+
+1. Deploy commit `52e0ac01` as usual
+   (`sudo /home/cinemata/cinematacms/restart_script.sh --revision 52e0ac010f6ec6312e57b3024bb57ea7aaf901ee`).
+   The services still run on the old virtualenv.
 2. Run the migration:
 
    ```bash
@@ -704,6 +710,8 @@ reads last.
    /home/cinemata/venv/bin/python --version
    systemctl status mediacms celery_long celery_short celery_whisper celery_email celery_beat
    ```
+
+4. Deploy the newer release as usual.
 
 The script installs uv and Python 3.14 when they are missing. It builds
 `/home/cinemata/venvs/py3.14` from `requirements.txt`. It runs
