@@ -83,6 +83,33 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         with override_settings(ANALYTICS_ENABLED=False):
             self.assertEqual(action_events(request, "media_update"), [])
 
+    def test_workflow_events_name_public_media_only(self):
+        request = RequestFactory().post("/edit?m=secret")
+        request.user = AnonymousUser()
+        request.session = {}
+        request.resolver_match = SimpleNamespace(url_name="home")
+        request.path = "/"
+        uid, revision = uuid.uuid4(), uuid.uuid4()
+        media = SimpleNamespace(uid=uid, media_type="video", analytics_revision=revision, title="Rivers of Java")
+        for state in ("public", "private", "restricted", "unlisted"):
+            with self.subTest(state=state):
+                media.state = state
+                expected = {
+                    "id": str(uid),
+                    "type": "video",
+                    "revision": str(revision),
+                    "context": "workflow",
+                    "state": state,
+                    **({"title": "Rivers of Java"} if state == "public" else {}),
+                }
+                self.assertEqual(
+                    action_events(request, "media_update", media=media), [{"name": "media_update", "media": expected}]
+                )
+                queue_action(request, "subtitle_add", media=media)
+                self.assertEqual(
+                    analytics_context(request)["ANALYTICS"]["events"], [{"name": "subtitle_add", "media": expected}]
+                )
+
     def test_authentication_signal_counts_only_completed_eligible_authentication(self):
         from allauth.account.signals import user_logged_in, user_signed_up
 
