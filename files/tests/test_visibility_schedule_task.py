@@ -310,3 +310,30 @@ class VisibilityWindowEndedEmailTest(TestCase):
             "As scheduled, your film is now unlisted, so only people with the link can see it.",
             emails[0].body,
         )
+
+
+PUBLISHED_SUBJECT = "[Cinemata] - Your video is now public"
+
+
+@override_settings(PORTAL_NAME="Cinemata", USERS_NOTIFICATIONS={"MEDIA_PUBLISHED": True})
+class ScheduledPublishEmailTest(TestCase):
+    """Issue #1145: a scheduled publish emails the filmmaker once, not twice."""
+
+    def test_a_window_opening_into_public_sends_one_published_email(self):
+        now = timezone.now()
+        user = create_test_user(username="citra", email="citra@example.com")
+        media = create_test_media(user, state="private")
+        Media.objects.filter(pk=media.pk).update(
+            visibility_start_date=now - timedelta(days=1),
+            visibility_expires_at=now + timedelta(days=1),
+            visibility_after_expiry="private",
+            visibility_window_state="public",
+        )
+        mail.outbox = []
+
+        apply_visibility_schedules()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "public")
+        published = [message.to for message in mail.outbox if message.subject == PUBLISHED_SUBJECT]
+        self.assertEqual(published, [["citra@example.com"]])
