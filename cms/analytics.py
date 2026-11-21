@@ -116,6 +116,11 @@ def umami_distinct_id(username):
     return f"{username[: UMAMI_DISTINCT_ID_LENGTH - len(digest) - 1]}~{digest}"
 
 
+def _may_name_media(state):
+    """Only a public film's title may reach Umami: anyone can open its page."""
+    return state == "public"
+
+
 def _tracked_page_context(request, audience_group):
     url = getattr(settings, "ANALYTICS_URL", "")
     website_id = getattr(settings, "ANALYTICS_WEBSITE_ID", "")
@@ -139,7 +144,7 @@ def _tracked_page_context(request, audience_group):
     if media:
         from cms.playback_analytics import measurement_token
 
-        is_public = media["state"] == "public"
+        is_public = _may_name_media(media["state"])
         config = {
             "url": url,
             "website_id": website_id,
@@ -260,6 +265,8 @@ def action_events(request, *names, media=None):
             "type": media.media_type,
             "revision": str(media.analytics_revision),
             "context": "workflow",
+            "state": media.state,
+            **({"title": media.title} if _may_name_media(media.state) else {}),
         }
         if media
         else None

@@ -117,3 +117,31 @@ class SingleUploadDraftTests(TestCase):
         response = self._submit_details()
 
         self.assertEqual(response.json()["analytics_events"][0]["name"], "media_update")
+
+    @override_settings(PORTAL_WORKFLOW="public")
+    def test_edit_events_name_the_film_only_while_it_is_public(self):
+        for state in ("public", "unlisted", "private"):
+            with self.subTest(state=state):
+                response = self.client.post(
+                    f"/edit?m={self.media.friendly_token}",
+                    {
+                        "title": f"{state} cut",
+                        "summary": "A complete synopsis.",
+                        "year_produced": "2025",
+                        "media_language": "en",
+                        "media_country": "AU",
+                        "category": [self.category.id],
+                        "state": state,
+                    },
+                    headers={"x-requested-with": "XMLHttpRequest"},
+                )
+
+                self.media.refresh_from_db()
+                self.assertEqual(self.media.state, state)
+                media = response.json()["analytics_events"][0]["media"]
+                self.assertEqual(media["state"], state)
+                if state == "public":
+                    self.assertEqual(media["title"], "public cut")
+                else:
+                    self.assertNotIn("title", media)
+                    self.assertNotIn(f"{state} cut", str(response.json()["analytics_events"]))

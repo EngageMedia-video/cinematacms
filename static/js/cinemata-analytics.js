@@ -87,6 +87,7 @@
     let audienceGroup = audienceFor(config.audience_group);
     // Umami stores at most 500 characters of a page title or an event data string.
     const mediaTitle = (title) => typeof title === 'string' && title ? Array.from(title).slice(0, 500).join('') : null;
+    const isPublicMedia = (media) => media?.state === 'public';
     const namedPageTitle = !config.media_id && !config.nonpublic ? mediaTitle(config.page_title) : null;
     // USERNAME_RE in users/urls.py uses Python's Unicode \w; usernames are at most 150 characters.
     const profileUsername = typeof config.profile_username === 'string' &&
@@ -103,7 +104,10 @@
         });
     }
     rememberMediaPage();
-    const heroTitles = new Map();
+    const interactionPaths = { hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' };
+    // Titles of public media acting away from its own page, keyed by path and media ID.
+    // beforeSend reads titles only from here, so a title in an event payload is never trusted.
+    const interactionTitles = new Map();
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -135,10 +139,12 @@
             context: ['page', 'embed', 'hero', 'playlist', 'workflow'].includes(payload.data?.context) ? payload.data.context : 'page',
         } : {};
         if (mediaId && /^[0-9a-f-]{36}$/.test(payload.data?.revision || '')) data.revision = payload.data.revision;
-        const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
+        const interactionPath = mediaId && Object.values(interactionPaths).includes(payload.url) ? payload.url : null;
         const viewedPage = !interactionPath && ['page', 'embed'].includes(data.context) ? mediaPage : null;
-        const heroTitle = interactionPath === '/media/hero' && data.context === 'hero' ? heroTitles.get(mediaId) : null;
-        if (viewedPage?.title || heroTitle) data.media_title = viewedPage?.title || heroTitle;
+        const interactionTitle = interactionPath && interactionPath === interactionPaths[data.context]
+            ? interactionTitles.get(`${interactionPath}:${mediaId}`) : null;
+        if (viewedPage?.title || interactionTitle) data.media_title = viewedPage?.title || interactionTitle;
+        const eventTitle = viewedPage?.title || (interactionPath === interactionPaths.playlist ? interactionTitle : null);
         if (payload.name === 'playback_start' && ['deliberate', 'autoplay', 'unknown'].includes(payload.data?.initiation)) {
             data.initiation = payload.data.initiation;
         }
@@ -181,7 +187,7 @@
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
-            title: viewedPage?.title || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
+            title: eventTitle || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : sendableReferrer(privacy.referrer),
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
@@ -195,12 +201,16 @@
         // Fixed now: events wait for Umami to load, and a playlist can move to
         // its next item in place before then.
         const mediaId = media?.id || config.media_id;
-        const heroTitle = media?.context === 'hero' && media.state === 'public' ? mediaTitle(media.title) : null;
-        if (heroTitle) heroTitles.set(media.id, heroTitle);
+        const interactionPath = media ? interactionPaths[media.context] : null;
+        if (interactionPath) {
+            const title = isPublicMedia(media) ? mediaTitle(media.title) : null;
+            if (title) interactionTitles.set(`${interactionPath}:${media.id}`, title);
+            else interactionTitles.delete(`${interactionPath}:${media.id}`);
+        }
         const event = {
             name,
             tag: mediaId ? `media:${mediaId}` : tag,
-            url: media ? ({ hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' }[media.context] || config.path) : config.path,
+            url: interactionPath || config.path,
             title: mediaId ? 'Media' : 'Page',
             referrer,
             data: {
@@ -251,7 +261,7 @@
         if (!config.media_id || !media?.id) return;
         config.media_id = media.id;
         config.media_type = media.type;
-        config.nonpublic = media.state !== 'public';
+        config.nonpublic = !isPublicMedia(media);
         config.title = media.title;
         config.revision = media.revision;
         config.measurement_token = media.measurement_token || null;

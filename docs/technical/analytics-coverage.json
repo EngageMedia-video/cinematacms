@@ -167,7 +167,7 @@
         "playlist_share"
       ],
       "trigger": "After confirmed removal, final successful reorder, metadata save, deletion, clipboard copy or native share handoff.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. Page events carry the playlist title as page title and playlist_title. playlist_remove of a public film carries the film title as media_title and as its title, on the generic /media/playlist path; a private, unlisted or restricted film sends no title.",
       "sources": [
         {
           "path": "frontend/src/features/playlist/hooks/usePlaylistMediaMutations.js",
@@ -371,7 +371,7 @@
         "subtitle_delete"
       ],
       "trigger": "After successful server save/conversion/write/delete. Bulk submissions forward successful items only.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. An event of a public film carries its title as media_title, with the workflow: tag and the generic /media/workflow path, no audience group and no referrer; a private, unlisted or restricted film's title stays out of the response, the session queue and Umami.",
       "sources": [
         {
           "path": "files/views.py",

@@ -772,18 +772,141 @@ describe('Public media named in Umami page and event reports', () => {
 		expect(event.data.media_title).toBe(mediaTitle);
 	});
 
-	it('keeps a hero title on hero events, not on playlist or workflow events of the same media', () => {
+	it('keeps a hero title off playlist and workflow events of the same media that bring no title', () => {
 		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
 		const hero = { id: nextId, type: 'video', revision: mediaId, state: 'public', title: 'Hero film' };
 		window.CinemataAnalytics.track('play', {}, { ...hero, context: 'hero' });
-		window.CinemataAnalytics.track('playlist_remove', {}, { ...hero, context: 'playlist' });
-		window.CinemataAnalytics.track('play', {}, { ...hero, context: 'workflow' });
+		window.CinemataAnalytics.track('playlist_remove', {}, { id: nextId, type: 'video', context: 'playlist' });
+		window.CinemataAnalytics.track('media_update', {}, { id: nextId, type: 'video', context: 'workflow' });
 
-		expect(sent(track).map((event) => [event.url, event.data.media_title])).toEqual([
-			['/media/hero', 'Hero film'],
-			['/media/playlist', undefined],
-			['/media/workflow', undefined],
+		expect(sent(track).map((event) => [event.url, event.title, event.data.media_title])).toEqual([
+			['/media/hero', 'Media', 'Hero film'],
+			['/media/playlist', 'Media', undefined],
+			['/media/workflow', 'Media', undefined],
 		]);
+	});
+
+	it('names a public film removed from a playlist with its title, on the generic playlist path', () => {
+		const track = loadTracker({
+			media_id: null,
+			nonpublic: false,
+			path: '/get_playlist',
+			playlist_id: nextId,
+			page_title: 'Coastal stories',
+			audience_group: 'regular',
+		});
+		window.CinemataAnalytics.track(
+			'playlist_remove',
+			{},
+			{ id: mediaId, type: 'video', context: 'playlist', state: 'public', title: 'Rivers of Java' }
+		);
+
+		const [event] = sent(track);
+		expect(event).toMatchObject({
+			name: 'playlist_remove',
+			url: '/media/playlist',
+			title: 'Rivers of Java',
+			referrer: '',
+			tag: `media:${mediaId}`,
+			data: { media_id: mediaId, context: 'playlist', media_title: 'Rivers of Java' },
+		});
+		expect(event.data).not.toHaveProperty('playlist_title');
+	});
+
+	it('names a public film in a creator workflow event and keeps it out of audience reports', () => {
+		Object.defineProperty(document, 'referrer', { configurable: true, value: 'https://publisher.example/story' });
+		const track = loadTracker(
+			{
+				...publicFilm,
+				audience_group: 'regular',
+				events: [
+					{
+						name: 'media_update',
+						media: {
+							id: mediaId,
+							type: 'video',
+							context: 'workflow',
+							state: 'public',
+							title: 'Rivers of Java',
+						},
+					},
+				],
+			},
+			false
+		);
+		delete document.referrer;
+
+		const pageEvents = sent(track);
+		expect(pageEvents.find((event) => event.name === 'media_view')).toMatchObject({
+			referrer: 'https://publisher.example/story',
+			data: { audience_group: 'regular' },
+		});
+		const event = pageEvents.find((payload) => payload.name === 'media_update');
+		expect(event).toMatchObject({
+			name: 'media_update',
+			url: '/media/workflow',
+			title: 'Media',
+			referrer: '',
+			tag: `workflow:${mediaId}`,
+			data: { media_id: mediaId, context: 'workflow', media_title: 'Rivers of Java' },
+		});
+		expect(event.data).not.toHaveProperty('audience_group');
+	});
+
+	describe.each(['private', 'unlisted', 'restricted'])('a %s film', (state) => {
+		it.each([
+			['playlist', 'playlist_remove', '/media/playlist'],
+			['workflow', 'media_update', '/media/workflow'],
+		])('sends no title in a %s event', (context, name, url) => {
+			const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+			window.CinemataAnalytics.track(
+				name,
+				{},
+				{ id: mediaId, type: 'video', context, state, title: 'Hidden cut' }
+			);
+
+			const [event] = sent(track);
+			expect(event).toMatchObject({ name, url, title: 'Media' });
+			expect(event.data).not.toHaveProperty('media_title');
+			expect(JSON.stringify(event)).not.toContain('Hidden cut');
+		});
+	});
+
+	it.each([
+		['playlist', '/media/playlist'],
+		['workflow', '/media/workflow'],
+	])('drops the title of a %s event once the film is no longer public', (context, url) => {
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+		const film = { id: mediaId, type: 'video', context, title: 'Rivers of Java' };
+		window.CinemataAnalytics.track('media_update', {}, { ...film, state: 'public' });
+		expect(sent(track).pop()).toMatchObject({ url, data: { media_title: 'Rivers of Java' } });
+		window.CinemataAnalytics.track('media_update', {}, { ...film, state: 'private' });
+
+		const event = sent(track).pop();
+		expect(event.url).toBe(url);
+		expect(event.data).not.toHaveProperty('media_title');
+	});
+
+	it.each([
+		['playlist', '/media/playlist'],
+		['workflow', '/media/workflow'],
+	])('cuts a %s event title to what Umami stores and ignores a forged one', (context, url) => {
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+		window.CinemataAnalytics.track(
+			'media_update',
+			{},
+			{ id: mediaId, type: 'video', context, state: 'public', title: 'x'.repeat(600) }
+		);
+		const forged = window.cinemataAnalyticsBeforeSend('event', {
+			name: 'media_update',
+			url,
+			tag: `media:${nextId}`,
+			data: { context, media_title: 'Forged' },
+		});
+
+		expect(sent(track)[0].data.media_title).toBe('x'.repeat(500));
+		expect(forged.data).not.toHaveProperty('media_title');
+		expect(forged.title).toBe('Media');
 	});
 
 	it.each([
