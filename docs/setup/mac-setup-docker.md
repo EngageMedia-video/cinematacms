@@ -164,53 +164,20 @@ The file will contain pre-filled values from the example. Locate the `SECRET_KEY
 SECRET_KEY='YOUR_SECRET_KEY_HERE'
 ```
 
-Save and close the file.
-
-Next, create the `local_settings.py` file within the `/cms` subfolder.
+In the same file, set these values for a local install:
 
 ```zsh
-cd cms
-touch local_settings.py
-open -a TextEdit local_settings.py
+FRONTEND_HOST=http://127.0.0.1:8000
+ACCOUNT_EMAIL_VERIFICATION=none
+MP4HLS_COMMAND=/opt/homebrew/bin/mp4hls
 ```
 
-The file will open blank. Copy and paste the following content:
+`.env.example` already sets `DEBUG`, `LOCAL_INSTALL`, `REDIS_LOCATION` and
+`MFA_REQUIRED_ROLES` for local development. Keep the `http://` scheme in
+`FRONTEND_HOST` for a local server without TLS. The application derives
+`SSL_FRONTEND_HOST` from `FRONTEND_HOST`, so do not set it.
 
-```python
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
-BASE_DIR = os.path.abspath('.')
-
-FRONTEND_HOST='http://127.0.0.1:8000'
-PORTAL_NAME='CinemataCMS'
-
-# SSL_FRONTEND_HOST: If you intend to push to prod,
-# replace the second argument with 'https'
-SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
-
-SECRET_KEY=os.getenv('SECRET_KEY')
-LOCAL_INSTALL=True
-DEBUG = True
-ACCOUNT_EMAIL_VERIFICATION = "none"  # 'mandatory' 'none'
-USE_X_ACCEL_REDIRECT = False
-
-CORS_ALLOW_ALL_ORIGINS = True
-# Custom MFA settings
-MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
-
-# Explicitly set Redis as broker
-REDIS_LOCATION = "redis://127.0.0.1:6379/1"
-CELERY_BROKER_URL = REDIS_LOCATION
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
-MP4HLS_COMMAND = (
-    "/opt/homebrew/bin/mp4hls" # IMPORTANT: replace with output of `which mp4hls`
-)
-```
-
-The MP4HLS_COMMAND path differs depending on your macOS. Replace the `MP4HLS_COMMAND` path with the output of the following:
+The `MP4HLS_COMMAND` path differs depending on your macOS. Replace it with the output of the following:
 
 ```zsh
 which mp4hls
