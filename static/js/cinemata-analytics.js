@@ -37,15 +37,43 @@
     const landingPreviousPath = advancePath(config.path);
     const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
     const siteHost = (hostname) => hostname.toLowerCase().replace(/^www\./, '');
-    function sendableReferrer(value) {
+    // A public media page needs its m parameter to name the film; other query strings can hold search terms.
+    function publicPageUrl(href, keepsMediaToken) {
+        const url = new URL(href);
+        const token = keepsMediaToken ? url.searchParams.get('m') : null;
+        return `${url.origin}${url.pathname}${token ? `?${new URLSearchParams({ m: token })}` : ''}`;
+    }
+    // Public pages give the next page only their origin (templates/root.html), so the tab keeps
+    // the URL of its last public page within this visit; a nonpublic page forgets it.
+    function advancePublicPage() {
+        let previous = null;
+        try {
+            const saved = JSON.parse(sessionStorage.getItem('cinemata-public-page') || 'null');
+            const age = Date.now() - saved?.time;
+            const isPublicPageUrl = (url) => typeof url === 'string' &&
+                new URL(url).origin === window.location.origin && publicPageUrl(url, true) === url;
+            if (age >= 0 && age < visitLength && isPublicPageUrl(saved.url)) previous = saved.url;
+        } catch { /* Storage may be unavailable in an embed, or hold a value this tracker did not write. */ }
+        try {
+            if (config.nonpublic) sessionStorage.removeItem('cinemata-public-page');
+            else sessionStorage.setItem('cinemata-public-page', JSON.stringify({
+                url: publicPageUrl(window.location.href, !!config.media_id), time: Date.now(),
+            }));
+        } catch { /* Storage may be unavailable in an embed. */ }
+        return previous;
+    }
+    function sendableReferrer(value, previousPublicPage) {
         let url;
         try { url = new URL(value); } catch { return ''; }
         if (!['http:', 'https:'].includes(url.protocol)) return '';
-        // Cinemata URLs can hold usernames and access tokens; previous_path reports movement within the site.
-        if (siteHost(url.hostname) === siteHost(window.location.hostname)) return `${url.protocol}//${url.hostname}/`;
+        // Cinemata URLs can hold usernames and access tokens, so only a public page's URL leaves the site.
+        if (siteHost(url.hostname) === siteHost(window.location.hostname)) {
+            return previousPublicPage || `${url.protocol}//${url.hostname}/`;
+        }
         return `${url.origin}${url.pathname}${url.search}`;
     }
-    let referrer = config.nonpublic ? '' : sendableReferrer(document.referrer);
+    const landingPublicPage = advancePublicPage();
+    let referrer = config.nonpublic ? '' : sendableReferrer(document.referrer, landingPublicPage);
     const pending = [];
     // The function form lets Umami add the screen, language and distinct ID it collects.
     function emitUmami(payload) {
@@ -188,7 +216,7 @@
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
             title: eventTitle || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
-            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : sendableReferrer(privacy.referrer),
+            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
@@ -266,7 +294,8 @@
         config.revision = media.revision;
         config.measurement_token = media.measurement_token || null;
         audienceGroup = audienceFor(media.audience_group);
-        referrer = config.nonpublic ? '' : `${window.location.protocol}//${window.location.hostname}/`;
+        const previousPublicPage = advancePublicPage();
+        referrer = config.nonpublic ? '' : sendableReferrer(window.location.origin, previousPublicPage);
         rememberMediaPage();
         window.CinemataAnalytics.mediaId = media.id;
         const previousPath = advancePath(config.path);
