@@ -407,6 +407,12 @@ describe('Cinemata Umami privacy boundary', () => {
 			);
 			expect(pageView(visit('/latest', latestPage)).referrer).toBe(`${window.location.origin}/search`);
 		});
+		it('keeps the last m value, the one the server renders, when the URL repeats it', () => {
+			visit('/view?m=Unlisted123&m=Public456', { nonpublic: false });
+			const referrer = pageView(visit('/latest', latestPage)).referrer;
+			expect(referrer).toBe(`${window.location.origin}/view?m=Public456`);
+			expect(referrer).not.toMatch(/Unlisted123/);
+		});
 		it('sends the referring public page with route views and with the next playlist item', () => {
 			visit('/search?q=private+words', searchPage);
 			const track = loadTracker({ ...latestPage, path: '/user/profile/home' });

@@ -40,7 +40,8 @@
     // A public media page needs its m parameter to name the film; other query strings can hold search terms.
     function publicPageUrl(href, keepsMediaToken) {
         const url = new URL(href);
-        const token = keepsMediaToken ? url.searchParams.get('m') : null;
+        // The media views read m with Django's QueryDict.get, which returns the last value, and strip it.
+        const token = keepsMediaToken ? url.searchParams.getAll('m').at(-1)?.trim() : null;
         return `${url.origin}${url.pathname}${token ? `?${new URLSearchParams({ m: token })}` : ''}`;
     }
     // Public pages give the next page only their origin (templates/root.html), so the tab keeps
