@@ -964,8 +964,8 @@ class InstallScriptTests(unittest.TestCase):
             ["True", "cinematacms-deploy-test", "http://127.0.0.1:14318/v1/traces", "0.25"],
         )
 
-    def test_ssl_frontend_host_is_https_for_either_frontend_scheme(self):
-        for frontend_host in ("https://video.example.org", "http://video.example.org"):
+    def test_ssl_frontend_host_is_https_for_any_frontend_scheme(self):
+        for frontend_host in ("https://video.example.org", "http://video.example.org", "video.example.org"):
             with self.subTest(frontend_host=frontend_host):
                 env = os.environ.copy()
                 env.update({"DJANGO_SETTINGS_MODULE": "cms.ci_settings", "FRONTEND_HOST": frontend_host})
