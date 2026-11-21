@@ -1564,7 +1564,9 @@ def view_playlist(request, friendly_token):
     context = {}
     context["playlist"] = playlist
     if playlist:
-        request.analytics_playlist = str(playlist.uid)
+        from cms.analytics import allow_playlist_analytics
+
+        allow_playlist_analytics(request, playlist)
     return render(request, "cms/playlist.html", context)
 
 

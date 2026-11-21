@@ -8,7 +8,7 @@
         "media_view"
       ],
       "trigger": "An eligible page or embed loads after access succeeds; CMS playback measurement does not depend on Umami. Umami page views and media_view events retain separate meanings.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -72,7 +72,7 @@
         "previous"
       ],
       "trigger": "A player state changes; coverage milestones occur once per play. Seeking is not watched coverage.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page, embed or home hero the event carries the media title as media_title and a page or embed view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page, embed or home hero the event carries the media title as media_title and a page or embed view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -104,7 +104,7 @@
         "media_report_retract"
       ],
       "trigger": "A confirmed store action succeeds.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "frontend/src/static/js/pages/MediaPage/store.js",
@@ -128,7 +128,7 @@
         "journal_delete"
       ],
       "trigger": "A successful mutation response, once per action. Private journal events carry no film ID.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "frontend/src/features/video-viewer/comments/hooks/useSubmitComment.js",
@@ -204,11 +204,19 @@
         "outbound_click"
       ],
       "trigger": "Click intent; outbound properties contain destination domain only, native share handoff is not delivery.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title. download_click carries the file version as file: original, or a resolution and codec such as 720-h264. No filename or download URL is sent.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
-          "contains": "send('download_click')"
+          "contains": "send('download_click', { file: link.dataset.analyticsFile })"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/components/actions/VideoMediaDownloadLink.jsx",
+          "contains": "'data-analytics-file': k + '-' + g"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/components/actions/OtherMediaDownloadLink.jsx",
+          "contains": "data-analytics-file=\"original\""
         },
         {
           "path": "templates/cms/edit_subtitle.html",
@@ -221,7 +229,8 @@
       ],
       "tests": [
         "tests/test_analytics.py",
-        "frontend/src/static/js/cinemata-analytics.test.js"
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/features/video-viewer/components/actions/MediaDownloadLinks.test.jsx"
       ]
     },
     {
@@ -242,7 +251,7 @@
         "search_results_all"
       ],
       "trigger": "A real destination link is activated; labels, query strings and destination paths are not transmitted.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "static/js/cinemata-analytics.js",
@@ -273,7 +282,7 @@
         "search_no_results"
       ],
       "trigger": "Submission, committed filter/sort/page changes and a settled empty result. No typing or raw query events.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "frontend/src/features/global-search/GlobalSearchDropdown.jsx",
@@ -496,7 +505,7 @@
         "theme_change"
       ],
       "trigger": "Persisted theme toggle, without the selected preference value.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and other pages send no title.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, identities or access tokens. On a public media page or embed the event carries the media title as media_title and the page view carries the media title; nonpublic media and pages other than playlists and public profiles send no title.",
       "sources": [
         {
           "path": "frontend/src/features/layout/Sidebar/theme/hooks/useThemeSwitcher.js",
@@ -565,6 +574,40 @@
         {
           "path": "templates/admin/analytics_reports.html",
           "contains": "PLATFORM_ANALYTICS_URL"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "page-context",
+      "events": [
+        "page_view"
+      ],
+      "trigger": "A tracked page loads, an in-place route view runs, or a playlist item plays in place. Playlist pages and public profile sections also name themselves on every event of the page.",
+      "privacy": "previous_path is the generic tracker path of the tab's previous tracked page in the last 30 minutes, never a browser URL, sent on page views and page_view only and never on nonpublic pages. A playlist page sends the playlist title as page title and playlist_title. A public profile section sends the display name, or the username when the name is blank, as page title and the username as profile_username. Private actions, media events and in-place route views send neither.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "function advancePath"
+        },
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "data.profile_username = profileUsername"
+        },
+        {
+          "path": "cms/analytics.py",
+          "contains": "def allow_profile_analytics"
+        },
+        {
+          "path": "users/views.py",
+          "contains": "allow_profile_analytics(request, user)"
+        },
+        {
+          "path": "files/views.py",
+          "contains": "allow_playlist_analytics(request, playlist)"
         }
       ],
       "tests": [

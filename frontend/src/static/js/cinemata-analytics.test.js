@@ -12,11 +12,13 @@ afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	vi.useRealTimers();
+	sessionStorage.clear();
 });
 
 function loadTracker(overrides = {}, clearCalls = true) {
 	document.head.querySelectorAll('script[data-website-id]').forEach((script) => script.remove());
 	for (const target of [document, window]) {
+		target.addEventListener.mockRestore?.();
 		const add = target.addEventListener.bind(target);
 		vi.spyOn(target, 'addEventListener').mockImplementation((name, callback, options) => {
 			listeners.push([target, name, callback, options]);
@@ -286,20 +288,67 @@ describe('Cinemata Umami privacy boundary', () => {
 		expect(track).toHaveBeenCalledTimes(1);
 	});
 
-	it('keeps only the public referring domain in a URL Umami can parse', () => {
-		Object.defineProperty(document, 'referrer', {
-			configurable: true,
-			value: 'https://publisher.example/secret/film?token=private',
+	describe('Referring URL on public pages', () => {
+		const referredEvent = () =>
+			window.cinemataAnalyticsBeforeSend('event', {
+				name: 'media_view',
+				tag: `media:${mediaId}`,
+				data: { source_domain: 'publisher.example' },
+			});
+		const referredBy = (value, config = {}) => {
+			Object.defineProperty(document, 'referrer', { configurable: true, value });
+			loadTracker({ nonpublic: false, ...config });
+			return referredEvent();
+		};
+		afterEach(() => {
+			delete document.referrer;
 		});
-		loadTracker({ nonpublic: false });
-		const payload = window.cinemataAnalyticsBeforeSend('event', {
-			name: 'media_view',
-			tag: `media:${mediaId}`,
-			data: { source_domain: 'publisher.example' },
+
+		it('sends an external referrer with its path and query as the browser provided it', () => {
+			const payload = referredBy('https://publisher.example/reviews/film?ref=newsletter#comments');
+			expect(payload.referrer).toBe('https://publisher.example/reviews/film?ref=newsletter');
+			expect(payload.data.source_domain).toBe('publisher.example');
 		});
-		expect(payload.referrer).toBe('https://publisher.example/');
-		expect(payload.data.source_domain).toBe('publisher.example');
-		expect(JSON.stringify(payload)).not.toContain('/secret/film');
+		it('reduces a Cinemata referrer to its origin, since internal URLs can hold usernames and tokens', () => {
+			const payload = referredBy(`${window.location.origin}/user/someone/media?token=private`);
+			expect(payload.referrer).toBe(`${window.location.protocol}//${window.location.hostname}/`);
+			expect(JSON.stringify(payload)).not.toMatch(/someone|private/);
+		});
+		it.each([
+			[
+				'https://cinemata.org/view?m=private',
+				'https://www.cinemata.org/user/someone/?token=private',
+				'https://www.cinemata.org/',
+			],
+			[
+				'https://www.cinemata.org/view?m=private',
+				'https://CINEMATA.org/user/someone/?token=private',
+				'https://cinemata.org/',
+			],
+		])('reduces a referrer from the www alias of the Cinemata host to its origin: on %s', (page, value, origin) => {
+			const pageUrl = window.location.href;
+			globalThis.jsdom.reconfigure({ url: page });
+			try {
+				const payload = referredBy(value);
+				expect(payload.referrer).toBe(origin);
+				expect(JSON.stringify(payload)).not.toMatch(/someone|private/);
+			} finally {
+				globalThis.jsdom.reconfigure({ url: pageUrl });
+			}
+		});
+		it('sends no referrer for nonpublic media', () => {
+			expect(referredBy('https://publisher.example/reviews/film', { nonpublic: true }).referrer).toBe('');
+		});
+		it.each(['javascript:alert(1)', 'data:text/html,<p>film</p>', 'not a url'])(
+			'drops a referrer that is not an http or https URL: %s',
+			(value) => {
+				expect(referredBy(value).referrer).toBe('');
+			}
+		);
+		it('sends a long referrer whole, since Umami cuts its domain, path and query separately', () => {
+			const longReferrer = `https://publisher.example/reviews?q=${'a'.repeat(600)}&page=2`;
+			expect(referredBy(`${longReferrer}#comments`).referrer).toBe(longReferrer);
+		});
 	});
 
 	it.each([
@@ -794,6 +843,296 @@ describe('Public media named in Umami page and event reports', () => {
 			['media_view', '/media/view', 'Second film', 'Second film'],
 			['playback_start', '/media/view', 'Second film', 'Second film'],
 		]);
+	});
+});
+
+describe('Playlists and public profiles named in Umami page and event reports', () => {
+	const playlistPage = {
+		media_id: null,
+		nonpublic: false,
+		path: '/get_playlist',
+		playlist_id: mediaId,
+		page_title: 'Rivers of Java',
+	};
+	const profilePage = {
+		media_id: null,
+		nonpublic: false,
+		path: '/user/profile/about',
+		page_title: 'Ayu Lestari',
+		profile_username: 'ayu.lestari',
+	};
+	const loadedPage = (config) => {
+		const track = loadTracker(config, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		return track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build({}) : build)
+		);
+	};
+	const pageView = (payloads) => payloads.find((payload) => !payload.name);
+
+	it('titles a playlist page view with the playlist title and reports it as playlist_title', () => {
+		expect(pageView(loadedPage(playlistPage))).toMatchObject({
+			url: '/get_playlist',
+			title: 'Rivers of Java',
+			tag: `playlist:${mediaId}`,
+			data: { playlist_id: mediaId, playlist_title: 'Rivers of Java' },
+		});
+		window.CinemataAnalytics.track('playlist_link_copy');
+		expect(window.cinemataAnalyticsBeforeSend('event', window.umami.track.mock.lastCall[0]({}))).toMatchObject({
+			name: 'playlist_link_copy',
+			title: 'Rivers of Java',
+			data: { playlist_title: 'Rivers of Java' },
+		});
+	});
+	it('titles a public profile section with the display name and reports the username', () => {
+		const payload = pageView(loadedPage(profilePage));
+		expect(payload).toMatchObject({
+			url: '/user/profile/about',
+			title: 'Ayu Lestari',
+			data: { profile_username: 'ayu.lestari' },
+		});
+		expect(payload).not.toHaveProperty('data.playlist_title');
+	});
+	it('keeps a username in any script that a profile URL accepts', () => {
+		expect(pageView(loadedPage({ ...profilePage, profile_username: 'đặng_văn-ân@1' })).data.profile_username).toBe(
+			'đặng_văn-ân@1'
+		);
+	});
+	it.each(['ayu/../secret', '<script>', 'a'.repeat(151), '', ['ayu']])(
+		'drops a username that no profile URL could carry: %j',
+		(username) => {
+			expect(pageView(loadedPage({ ...profilePage, profile_username: username }))).not.toHaveProperty(
+				'data.profile_username'
+			);
+		}
+	);
+	it('cuts a page title to the 500 characters Umami stores', () => {
+		const payload = pageView(loadedPage({ ...playlistPage, page_title: 'x'.repeat(600) }));
+		expect(payload.title).toHaveLength(500);
+		expect(payload.data.playlist_title).toHaveLength(500);
+	});
+	it('keeps private actions and media events on a named page generic', () => {
+		loadedPage({ ...profilePage, playlist_id: mediaId });
+		window.CinemataAnalytics.track('contact_user_accepted');
+		window.CinemataAnalytics.track('playlist_remove', {}, { id: mediaId, type: 'video', context: 'playlist' });
+		window.CinemataAnalytics.pageview('future_feature');
+		const [contact, media, virtualView] = window.umami.track.mock.calls
+			.slice(-3)
+			.map(([build]) => window.cinemataAnalyticsBeforeSend('event', build({})));
+		expect(contact).toMatchObject({ url: '/page/contact', title: 'Page' });
+		expect(media).toMatchObject({ url: '/media/playlist', title: 'Media' });
+		expect(virtualView).toMatchObject({ url: '/page/future_feature', title: 'Page' });
+		for (const payload of [contact, media])
+			expect(JSON.stringify(payload)).not.toMatch(/Ayu Lestari|ayu\.lestari|playlist_title|profile_username/);
+	});
+	it.each([
+		['profile', profilePage],
+		['playlist', playlistPage],
+	])('keeps the names and tag of a %s page off its in-place route views', (kind, page) => {
+		loadedPage({ ...page, audience_group: 'regular' });
+		const views = [];
+		const capture = (build) => views.push(window.cinemataAnalyticsBeforeSend('event', build({})));
+		window.umami.track = capture;
+		window.CinemataAnalytics.pageview('future_feature');
+		delete window.umami;
+		window.CinemataAnalytics.pageview('queued_feature');
+		window.umami = { track: capture };
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		const routeViews = views.filter((view) => view.url.startsWith('/page/'));
+		expect(routeViews.map((view) => [view.name, view.url])).toEqual([
+			[undefined, '/page/future_feature'],
+			['page_view', '/page/future_feature'],
+			[undefined, '/page/queued_feature'],
+			['page_view', '/page/queued_feature'],
+		]);
+		for (const view of routeViews) {
+			expect(view).toMatchObject({ title: 'Page', data: { audience_group: 'regular' } });
+			expect(view).not.toHaveProperty('tag');
+			expect(JSON.stringify(view)).not.toMatch(
+				new RegExp(`Ayu Lestari|ayu\\.lestari|Rivers of Java|${mediaId}|playlist_|profile_username`)
+			);
+		}
+	});
+});
+
+describe('Downloaded file version on download clicks', () => {
+	function clickDownload(file) {
+		const track = loadTracker({ nonpublic: false, title: 'Rivers of Java' });
+		const link = document.createElement('a');
+		link.href = '/media/original/user/private-name/Rivers_of_Java.mp4';
+		link.setAttribute('download', 'Rivers of Java.mp4');
+		if (file !== undefined) link.dataset.analyticsFile = file;
+		document.body.append(link);
+		link.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		return track.mock.calls.map(([build]) => window.cinemataAnalyticsBeforeSend('event', build({})));
+	}
+
+	it.each(['original', '720-h264', '1080-vp9', '2160-h265', '240-h264'])(
+		'reports the chosen file version %s with the film title',
+		(file) => {
+			const payloads = clickDownload(file);
+			expect(payloads).toHaveLength(1);
+			expect(payloads[0]).toMatchObject({
+				name: 'download_click',
+				data: { media_id: mediaId, media_title: 'Rivers of Java', file },
+			});
+		}
+	);
+	it.each(['Rivers of Java.mp4', '720-av1', '999-h264', '720-H264', '/media/original/secret.mp4', '', undefined])(
+		'counts the click without a file version it cannot recognise: %j',
+		(file) => {
+			const [payload] = clickDownload(file);
+			expect(payload.name).toBe('download_click');
+			expect(payload.data).not.toHaveProperty('file');
+			expect(JSON.stringify(payload)).not.toMatch(/private-name|Rivers_of_Java|\.mp4|secret/);
+		}
+	);
+	it('keeps the file property to download clicks', () => {
+		loadTracker({ nonpublic: false });
+		expect(
+			window.cinemataAnalyticsBeforeSend('event', {
+				name: 'like',
+				tag: `media:${mediaId}`,
+				data: { file: 'original' },
+			}).data
+		).not.toHaveProperty('file');
+	});
+});
+
+describe('Previous Cinemata page on Umami page views', () => {
+	const storageKey = 'cinemata-previous-path';
+	const now = new Date('2026-11-20T09:00:00Z').getTime();
+	const publicPage = { media_id: null, nonpublic: false, path: '/user/profile/home', audience_group: 'regular' };
+	const remember = (saved) => sessionStorage.setItem(storageKey, JSON.stringify(saved));
+	const recorded = () => JSON.parse(sessionStorage.getItem(storageKey)).path;
+	const sent = (track) =>
+		track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build({}) : build)
+		);
+	const loadedPage = (config) => {
+		const track = loadTracker(config, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		return track;
+	};
+	const pageView = (track) => sent(track).find((payload) => !payload.name);
+
+	afterEach(() => window.history.replaceState(null, '', '/'));
+
+	it('reports the previous page on the page view and its page_view event and records the current page', () => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember({ path: '/latest', time: now - 29 * 60 * 1000 });
+		const payloads = sent(loadedPage({ ...publicPage, profile_username: 'ayu.lestari' }));
+		expect(payloads.find((payload) => !payload.name).data.previous_path).toBe('/latest');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).toMatchObject({
+			previous_path: '/latest',
+			profile_username: 'ayu.lestari',
+		});
+		expect(recorded()).toBe('/user/profile/home');
+	});
+	it('keeps the previous page off the media_view event', () => {
+		remember({ path: '/latest', time: Date.now() });
+		const payloads = sent(loadedPage({ nonpublic: false, audience_group: 'regular' }));
+		expect(payloads.find((payload) => payload.name === 'page_view').data.previous_path).toBe('/latest');
+		expect(payloads.find((payload) => payload.name === 'media_view').data).not.toHaveProperty('previous_path');
+	});
+	it('forgets a previous page from an earlier visit', () => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember({ path: '/latest', time: now - 30 * 60 * 1000 });
+		expect(pageView(loadedPage(publicPage)).data).not.toHaveProperty('previous_path');
+	});
+	it.each([
+		{ path: '/user/ayu.lestari/about', time: now },
+		{ path: '/view?m=secret', time: now },
+		{ path: 'https://elsewhere.example/', time: now },
+		{ path: ['/latest'], time: now },
+		{ path: '/latest', time: now + 1000 },
+		{ path: '/latest' },
+		'/latest',
+	])('drops a malformed previous page: %j', (saved) => {
+		vi.useFakeTimers({ toFake: ['Date'], now });
+		remember(saved);
+		const payload = pageView(loadedPage(publicPage));
+		expect(payload.data).not.toHaveProperty('previous_path');
+		expect(JSON.stringify(payload)).not.toMatch(/ayu|secret|elsewhere/);
+	});
+	it('ignores stored text that is not JSON', () => {
+		sessionStorage.setItem(storageKey, '{not json');
+		expect(pageView(loadedPage(publicPage)).data).not.toHaveProperty('previous_path');
+		expect(recorded()).toBe('/user/profile/home');
+	});
+	it('sends no previous page from a nonpublic page but still records it', () => {
+		remember({ path: '/latest', time: Date.now() });
+		expect(pageView(loadedPage({ nonpublic: true }))).not.toHaveProperty('data.previous_path');
+		expect(recorded()).toBe('/media/view');
+	});
+	it('drops a previous page sent with another named event or a private action', () => {
+		loadTracker(publicPage);
+		for (const name of ['like', 'media_view', 'journal_create'])
+			expect(
+				window.cinemataAnalyticsBeforeSend('event', { name, data: { previous_path: '/latest' } }).data
+			).not.toHaveProperty('previous_path');
+	});
+	it('reports the server-rendered page as the previous page of an in-place route view', () => {
+		const track = loadedPage(publicPage);
+		window.CinemataAnalytics.pageview('future_feature');
+		const views = sent(track).filter((payload) => !payload.name || payload.name === 'page_view');
+		expect(views.map((view) => [view.name, view.url, view.data.previous_path])).toEqual([
+			['page_view', '/user/profile/home', undefined],
+			[undefined, '/user/profile/home', undefined],
+			[undefined, '/page/future_feature', '/user/profile/home'],
+			['page_view', '/page/future_feature', '/user/profile/home'],
+		]);
+		expect(recorded()).toBe('/page/future_feature');
+	});
+	it('reports the previous item as the previous page of a playlist item played in place', () => {
+		const track = loadedPage({ nonpublic: false, audience_group: 'regular', title: 'First film' });
+		window.CinemataAnalytics.switchMedia({
+			id: '87654321-4321-4321-8321-cba987654321',
+			title: 'Second film',
+			type: 'video',
+			state: 'public',
+			revision: '11111111-2222-4333-8444-555555555555',
+			audience_group: 'regular',
+		});
+		const views = sent(track).filter((payload) => !payload.name || payload.name === 'page_view');
+		expect(views.map((view) => [view.name, view.data.previous_path])).toEqual([
+			['page_view', undefined],
+			[undefined, undefined],
+			[undefined, '/media/view'],
+			['page_view', '/media/view'],
+		]);
+	});
+	it('keeps a Do Not Track page out of the tab history', () => {
+		Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: '1' });
+		try {
+			loadedPage({ nonpublic: false, audience_group: 'regular' });
+			window.CinemataAnalytics.switchMedia({
+				id: '87654321-4321-4321-8321-cba987654321',
+				type: 'video',
+				state: 'public',
+				audience_group: 'regular',
+			});
+		} finally {
+			delete navigator.doNotTrack;
+		}
+		const payloads = sent(loadedPage(publicPage));
+		expect(payloads.find((payload) => !payload.name).data).not.toHaveProperty('previous_path');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
+	});
+	it('keeps embeds on another site out of the tab history', () => {
+		const embed = { nonpublic: false, audience_group: 'regular', path: '/media/embed', context: 'embed' };
+		remember({ path: '/latest', time: Date.now() });
+		loadedPage(embed);
+		const payloads = sent(loadedPage(embed));
+		expect(payloads.find((payload) => !payload.name).data).not.toHaveProperty('previous_path');
+		expect(payloads.find((payload) => payload.name === 'page_view').data).not.toHaveProperty('previous_path');
+		expect(recorded()).toBe('/latest');
+	});
+	it('tracks the page when session storage is unavailable', () => {
+		vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+			throw new Error('Storage disabled');
+		});
+		expect(pageView(loadedPage(publicPage))).toMatchObject({ url: '/user/profile/home' });
 	});
 });
 
