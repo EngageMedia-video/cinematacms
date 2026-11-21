@@ -721,9 +721,21 @@ virtualenv, record the old one as `/home/cinemata/venvs/previous`, and run
 `deploy/apply-release-config.sh` to install the units and restart the services.
 A failure before the switch leaves the services on the old virtualenv.
 
+The switch resets the celery beat schedule once. Beat keeps its schedule in
+`/home/cinemata/cinematacms/celerybeat-schedule`, a `shelve` file whose dbm
+format depends on the interpreter build. The Python 3.14 from uv cannot open
+the `dbm.gnu` file that the OS Python writes, and Python 3.10 cannot open the
+`dbm.sqlite3` file that Python 3.14 writes. Before the switch, the script stops
+`celery_beat` and removes the file with its `-shm`, `-wal` and other dbm
+companion files. When beat restarts, it creates a new schedule and forgets when
+each periodic task last ran. Without this step, beat would log
+`Removing corrupted schedule file` and reset the schedule anyway. If the
+restart fails, the script starts `celery_beat` again before it exits.
+
 The script runs no database migration and changes no code. Running it again
 builds nothing new. It installs the requirements of the checkout, checks, and
-restarts. Do not run it while a deploy runs.
+restarts. A run that keeps the same virtualenv keeps the beat schedule. Do not
+run it while a deploy runs.
 
 ### Roll back
 
@@ -740,7 +752,8 @@ Deploys since the migration installed packages only into the virtualenv in use.
 The rollback therefore installs the requirements of the checkout into the
 previous virtualenv and checks it as `www-data` before it switches. A failure
 leaves the services where they were. The Python 3.14 virtualenv stays, so a
-later migration reuses it.
+later migration reuses it. Like the upgrade, the rollback resets the celery beat
+schedule once.
 
 A commit from before versioned virtualenvs knows only `/home/cinemata`. Its
 `restart_script.sh` would install packages there while the units run from the
