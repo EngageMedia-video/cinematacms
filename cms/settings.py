@@ -111,6 +111,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "cms.analytics.AccountPageAnalyticsMiddleware",
     "users.middleware.AdminMFAMiddleware",
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",

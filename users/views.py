@@ -272,6 +272,9 @@ def view_analytics(request):
         if page
         else None,
     }
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "creator_analytics")
     response = render(request, "cms/creator_analytics.html", context)
     response["Cache-Control"] = "private, no-store"
     response["Referrer-Policy"] = "no-referrer"
@@ -647,6 +650,9 @@ def mfa_success_message(request):
     user = get_user(request.user)
     if not user or (user != request.user and not is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "mfa_totp_success")
     return render(request, "mfa/totp/success.html")
 
 

@@ -7,6 +7,7 @@ from datetime import timedelta
 from urllib.parse import urlsplit
 from uuid import UUID
 
+from allauth.account.internal.stagekit import unstash_login
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core import signing
@@ -46,6 +47,33 @@ PUBLIC_PATHS = {
     "/topics",
     "/tos",
     "/creative-commons",
+}
+# allauth URLs can carry password reset and email confirmation keys, so its pages
+# report only the generic /page/<workflow> path.
+ACCOUNT_PAGES = {
+    "account_login": "login",
+    "account_logout": "logout",
+    "account_inactive": "account_inactive",
+    "account_signup": "signup",
+    "account_reauthenticate": "reauthenticate",
+    "account_email": "email_addresses",
+    "account_email_verification_sent": "email_verification_sent",
+    "account_confirm_email": "email_confirm",
+    "account_change_password": "password_change",
+    "account_set_password": "password_set",
+    "account_reset_password": "password_reset",
+    "account_reset_password_done": "password_reset_sent",
+    "account_reset_password_from_key": "password_reset_key",
+    "account_reset_password_from_key_done": "password_reset_complete",
+    "account_request_login_code": "login_code_request",
+    "account_confirm_login_code": "login_code_confirm",
+    "mfa_index": "mfa",
+    "mfa_authenticate": "mfa_authenticate",
+    "mfa_reauthenticate": "mfa_reauthenticate",
+    "mfa_activate_totp": "mfa_totp_activate",
+    "mfa_deactivate_totp": "mfa_totp_deactivate",
+    "mfa_view_recovery_codes": "mfa_recovery_codes",
+    "mfa_generate_recovery_codes": "mfa_recovery_codes_generate",
 }
 
 
@@ -190,6 +218,36 @@ def allow_workflow_analytics(request, name):
     """Admit an authorized owner workflow without a URL or public role grant."""
     if (request.user.is_authenticated or name in {"history", "liked"}) and re.fullmatch(r"[a-z][a-z0-9_]{0,49}", name):
         request.analytics_workflow = name
+
+
+class AccountPageAnalyticsMiddleware:
+    """Admit an allauth page once its view has rendered it successfully.
+
+    allauth renders mail with the request, and error pages render with its route
+    still resolved, so the route name alone would count those renders as pages.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_template_response(self, request, response):
+        match = request.resolver_match
+        workflow = ACCOUNT_PAGES.get(match.url_name) if match else None
+        if workflow and response.status_code == 200 and visitor_segment(_account_page_visitor(request)) is not None:
+            request.analytics_workflow = workflow
+        return response
+
+
+def _account_page_visitor(request):
+    """Return the account of a login waiting on a stage such as MFA, else request.user.
+
+    allauth keeps request.user anonymous until every login stage passes.
+    """
+    login = unstash_login(request, peek=True) if request.user.is_anonymous else None
+    return login.user if login and login.user else request.user
 
 
 def action_events(request, *names, media=None):

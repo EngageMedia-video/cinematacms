@@ -483,6 +483,9 @@ def manage_film_impact(request):
     if not can_manage_film_impact(request.user):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "film_impact")
     context = {}
     return render(request, "cms/manage_film_impact.html", context)
 
@@ -498,6 +501,9 @@ def manage_film_impact_edit(request, uid):
     if not can_manage_film_impact(request.user):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "film_impact_edit")
     context = {}
     return render(request, "cms/manage_film_impact.html", context)
 
