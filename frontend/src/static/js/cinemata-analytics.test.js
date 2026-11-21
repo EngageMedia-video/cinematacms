@@ -365,6 +365,145 @@ describe('Cinemata Umami privacy boundary', () => {
 		});
 	});
 
+	describe('Referring Cinemata page', () => {
+		const now = Date.UTC(2026, 10, 21, 12);
+		const site = () => `${window.location.protocol}//${window.location.hostname}/`;
+		const searchPage = { media_id: null, path: '/search', nonpublic: false };
+		const latestPage = { media_id: null, path: '/latest', nonpublic: false, audience_group: 'regular' };
+		const sent = (track) =>
+			track.mock.calls.map(([value]) =>
+				window.cinemataAnalyticsBeforeSend('event', 'function' === typeof value ? value({}) : value)
+			);
+		const visit = (url, config, referrer = `${window.location.origin}/`) => {
+			window.history.replaceState(null, '', url);
+			Object.defineProperty(document, 'referrer', { configurable: true, value: referrer });
+			const track = loadTracker(config, false);
+			document.querySelector('script[data-website-id="site-id"]').onload();
+			return sent(track);
+		};
+		const pageView = (payloads) => payloads.find((payload) => !payload.name);
+		afterEach(() => {
+			delete document.referrer;
+			window.history.replaceState(null, '', '/');
+		});
+
+		it('sends the full URL of the public page the visitor came from', () => {
+			visit('/latest?page=2&utm_source=newsletter#top', latestPage);
+			const payloads = visit('/view?m=Ab3dE6gH9', { nonpublic: false, audience_group: 'regular' });
+			const from = `${window.location.origin}/latest`;
+			expect(payloads.map((payload) => [payload.name, payload.referrer])).toEqual([
+				['page_view', from],
+				['media_view', from],
+				[undefined, from],
+			]);
+			expect(payloads.find((payload) => payload.name === 'media_view').data.source_domain).toBe(
+				window.location.hostname
+			);
+		});
+		it('keeps the film token of a public media page and drops the search terms of the search page', () => {
+			visit('/view?m=Ab3dE6gH9&pl=Zx9&utm_source=newsletter#comments', { nonpublic: false });
+			expect(pageView(visit('/search?q=private+words', searchPage)).referrer).toBe(
+				`${window.location.origin}/view?m=Ab3dE6gH9`
+			);
+			expect(pageView(visit('/latest', latestPage)).referrer).toBe(`${window.location.origin}/search`);
+		});
+		it('keeps the last m value, the one the server renders, when the URL repeats it', () => {
+			visit('/view?m=Unlisted123&m=Public456', { nonpublic: false });
+			const referrer = pageView(visit('/latest', latestPage)).referrer;
+			expect(referrer).toBe(`${window.location.origin}/view?m=Public456`);
+			expect(referrer).not.toMatch(/Unlisted123/);
+		});
+		it('sends the referring public page with route views and with the next playlist item', () => {
+			visit('/search?q=private+words', searchPage);
+			const track = loadTracker({ ...latestPage, path: '/user/profile/home' });
+			window.CinemataAnalytics.pageview('future_feature');
+			expect(sent(track).map((payload) => payload.referrer)).toEqual([
+				`${window.location.origin}/search`,
+				`${window.location.origin}/search`,
+			]);
+
+			window.history.replaceState(null, '', '/view?m=Ab3dE6gH9');
+			const media = loadTracker({ nonpublic: false });
+			window.history.pushState(null, '', '/view?m=Next12345');
+			window.CinemataAnalytics.switchMedia({ id: '87654321-4321-4321-8321-cba987654321', state: 'public' });
+			const mediaView = sent(media).find((payload) => payload.name === 'media_view');
+			expect(mediaView.referrer).toBe(`${window.location.origin}/view?m=Ab3dE6gH9`);
+			expect(mediaView.data.source_domain).toBe(window.location.hostname);
+		});
+		it('reports the public page before an untracked page, such as the Django Admin', () => {
+			visit('/latest', latestPage);
+			const payload = pageView(
+				visit('/search', searchPage, `${window.location.origin}/admin/files/media/?q=secret`)
+			);
+			expect(payload.referrer).toBe(`${window.location.origin}/latest`);
+			expect(JSON.stringify(payload)).not.toMatch(/admin|secret/);
+		});
+		it.each([
+			['public', () => `${window.location.origin}/view?m=Next12345`],
+			['unlisted', () => `${window.location.protocol}//${window.location.hostname}/`],
+		])('reports the next playlist item, or only the origin after it, when it is %s', (state, expected) => {
+			visit('/latest', latestPage);
+			window.history.replaceState(null, '', '/view?m=Ab3dE6gH9');
+			loadTracker({ nonpublic: false });
+			window.history.pushState(null, '', '/view?m=Next12345');
+			window.CinemataAnalytics.switchMedia({ id: '87654321-4321-4321-8321-cba987654321', state });
+			expect(pageView(visit('/search', searchPage, `${window.location.origin}/`)).referrer).toBe(expected());
+		});
+		it('sends only the origin after a nonpublic page', () => {
+			visit('/latest', latestPage);
+			visit('/view?m=secret', { nonpublic: true });
+			const payload = pageView(visit('/search', searchPage, `${window.location.origin}/view?m=secret`));
+			expect(payload.referrer).toBe(site());
+			expect(JSON.stringify(payload)).not.toMatch(/secret|latest/);
+		});
+		it('forgets the public page from an earlier visit', () => {
+			vi.useFakeTimers({ toFake: ['Date'], now });
+			visit('/latest', latestPage);
+			vi.setSystemTime(now + 30 * 60 * 1000);
+			expect(pageView(visit('/search', searchPage)).referrer).toBe(site());
+		});
+		it('keeps an external referrer as the browser provided it', () => {
+			visit('/latest', latestPage);
+			expect(pageView(visit('/search', searchPage, 'https://publisher.example/reviews?ref=1#top')).referrer).toBe(
+				'https://publisher.example/reviews?ref=1'
+			);
+		});
+		it('sends no referrer from a nonpublic page', () => {
+			visit('/latest', latestPage);
+			expect(pageView(visit('/view?m=secret', { nonpublic: true })).referrer).toBe('');
+		});
+		it('sends only the origin when the tab cannot store pages', () => {
+			visit('/latest', latestPage);
+			vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+				throw new Error('Storage disabled');
+			});
+			vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+				throw new Error('Storage disabled');
+			});
+			expect(pageView(visit('/search', searchPage)).referrer).toBe(site());
+		});
+		it.each([
+			{ url: 'https://elsewhere.example/latest', time: now },
+			{ url: 'LOCAL/user/ayu.lestari/edit?token=secret', time: now },
+			{ url: 'LOCAL/latest#secret', time: now },
+			{ url: ['LOCAL/latest'], time: now },
+			{ url: 'LOCAL/latest', time: now + 1000 },
+			{ url: 'LOCAL/latest' },
+			'LOCAL/latest',
+		])('drops a malformed stored page: %j', (saved) => {
+			vi.useFakeTimers({ toFake: ['Date'], now });
+			const local = (value) =>
+				typeof value === 'string' ? value.replace('LOCAL', window.location.origin) : value;
+			sessionStorage.setItem(
+				'cinemata-public-page',
+				JSON.stringify(typeof saved === 'string' ? local(saved) : { ...saved, url: local(saved.url) })
+			);
+			const payload = pageView(visit('/search', searchPage));
+			expect(payload.referrer).toBe(site());
+			expect(JSON.stringify(payload)).not.toMatch(/elsewhere|ayu|secret|latest/);
+		});
+	});
+
 	it.each([
 		[false, '/media/view?utm_source=newsletter&utm_medium=email&utm_campaign=spring+2026'],
 		[true, '/media/view'],
