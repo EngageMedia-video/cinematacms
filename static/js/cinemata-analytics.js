@@ -213,11 +213,16 @@
         if (isPageContext && profileUsername) data.profile_username = profileUsername;
         if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
+        const eventReferrer = privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer;
+        // Umami's Event data cannot break down its own referrer, so these views also carry it as a property.
+        if (['page_view', 'media_view'].includes(payload.name) && !privacy.nonpublic && /^https?:\/\//.test(eventReferrer)) {
+            data.referrer = eventReferrer.slice(0, 500);
+        }
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
             title: eventTitle || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
-            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
+            referrer: eventReferrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
