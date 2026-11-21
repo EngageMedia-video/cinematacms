@@ -500,7 +500,7 @@ export function CreatorAnalyticsPage({ data }) {
 		);
 	};
 	return (
-		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8">
+		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8" data-analytics-ignore>
 			<div className="mx-auto max-w-7xl">
 				{selectedMedia && (
 					<Breadcrumbs

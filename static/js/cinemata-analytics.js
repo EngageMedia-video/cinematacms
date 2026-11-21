@@ -560,6 +560,7 @@
     }
 
     document.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('[data-analytics-ignore]')) return;
         const action = event.target instanceof Element ? event.target.closest('[data-analytics-action]') : null;
         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
         if (action && !link && action.matches('button, [role="button"]')) send(action.dataset.analyticsAction);

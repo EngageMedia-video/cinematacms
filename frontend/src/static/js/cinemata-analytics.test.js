@@ -168,6 +168,20 @@ describe('Cinemata Umami privacy boundary', () => {
 		section.firstChild.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 		expect(track).not.toHaveBeenCalled();
 	});
+	it('sends no click event from inside an element marked data-analytics-ignore', () => {
+		const track = loadTracker({ path: '/page/creator_analytics', media_id: null, nonpublic: true });
+		const report = document.createElement('div');
+		report.dataset.analyticsIgnore = '';
+		report.innerHTML = '<a href="/analytics/export?days=30&dataset=portfolio"><span>Export CSV</span></a>';
+		document.body.append(report);
+		report.querySelector('span').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(track).not.toHaveBeenCalled();
+		const menu = document.createElement('a');
+		menu.href = '/latest';
+		document.body.append(menu);
+		menu.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0]({})).name).toBe('navigation_click');
+	});
 	it('ignores inherited object keys when sanitizing events', () => {
 		loadTracker();
 		expect(window.cinemataAnalyticsBeforeSend('event', { name: 'constructor' }).url).toBe('/media/view');
