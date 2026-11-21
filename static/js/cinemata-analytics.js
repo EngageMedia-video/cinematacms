@@ -565,7 +565,9 @@
     function recorderUrlIsSafe() {
         // Profile URLs carry the username, which page views replace with /user/profile.
         const isProfileUrl = /^\/user\//.test(window.location.pathname);
-        if (config.nonpublic || window.location.hash || isProfileUrl) return false;
+        // The page renders the last m, so an earlier m can name an unlisted film.
+        const repeatsMediaToken = new URLSearchParams(window.location.search).getAll('m').length > 1;
+        if (config.nonpublic || window.location.hash || isProfileUrl || repeatsMediaToken) return false;
         return [...new URLSearchParams(window.location.search)].every(([key, value]) =>
             key === 'm' || (/^utm_(source|medium|campaign|content|term)$/.test(key) && campaignValue.test(value)));
     }
