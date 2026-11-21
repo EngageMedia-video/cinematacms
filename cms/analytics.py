@@ -7,6 +7,7 @@ from datetime import timedelta
 from urllib.parse import urlsplit
 from uuid import UUID
 
+from allauth.account.internal.stagekit import unstash_login
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core import signing
@@ -235,9 +236,18 @@ class AccountPageAnalyticsMiddleware:
     def process_template_response(self, request, response):
         match = request.resolver_match
         workflow = ACCOUNT_PAGES.get(match.url_name) if match else None
-        if workflow and response.status_code == 200:
+        if workflow and response.status_code == 200 and visitor_segment(_account_page_visitor(request)) is not None:
             request.analytics_workflow = workflow
         return response
+
+
+def _account_page_visitor(request):
+    """Return the account of a login waiting on a stage such as MFA, else request.user.
+
+    allauth keeps request.user anonymous until every login stage passes.
+    """
+    login = unstash_login(request, peek=True) if request.user.is_anonymous else None
+    return login.user if login and login.user else request.user
 
 
 def action_events(request, *names, media=None):

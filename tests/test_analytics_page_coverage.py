@@ -260,6 +260,17 @@ class PageTrackingCoverageTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, TRACKER_CONFIG)
 
+    def test_mfa_challenge_of_an_excluded_account_loads_no_tracker(self):
+        for role in ("is_staff", "is_superuser", "disable_activity_logging"):
+            with self.subTest(role=role):
+                setattr(self.mfa_member, role, True)
+                self.mfa_member.save(update_fields=[role])
+                response = self._open_as("mfa_login", "/accounts/2fa/authenticate/")
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, TRACKER_CONFIG)
+                setattr(self.mfa_member, role, False)
+                self.mfa_member.save(update_fields=[role])
+
     def test_staff_only_pages_turn_away_every_tracked_role(self):
         staff_only = {
             "manage_users": "/manage/users",
