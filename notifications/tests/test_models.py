@@ -23,7 +23,7 @@ def _create_user(username, email=None):
 class NotificationTypeEnumTest(TestCase):
     """Test NotificationType enum has all 9 types."""
 
-    def test_enum_has_all_nine_types(self):
+    def test_enum_has_all_seven_types(self):
         expected = {
             "comment",
             "reply",
@@ -32,14 +32,12 @@ class NotificationTypeEnumTest(TestCase):
             "mention",
             "new_media",
             "added_to_playlist",
-            "media_report",
-            "system_announcement",
         }
         actual = {choice.value for choice in NotificationType}
         self.assertEqual(actual, expected)
 
     def test_enum_count(self):
-        self.assertEqual(len(NotificationType.choices), 9)
+        self.assertEqual(len(NotificationType.choices), 7)
 
 
 class NotificationModelTest(TestCase):
@@ -113,15 +111,14 @@ class NotificationModelTest(TestCase):
         notification.mark_as_read()
         self.assertEqual(notification.read_at, first_read_at)
 
-    def test_create_without_actor_system_notification(self):
+    def test_create_without_actor(self):
         notification = Notification.objects.create(
             recipient=self.recipient,
             actor=None,
-            notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
-            message="System maintenance scheduled",
+            notification_type=NotificationType.LIKE,
+            message="Someone liked your media",
         )
         self.assertIsNone(notification.actor)
-        self.assertEqual(notification.notification_type, "system_announcement")
 
     def test_str_format(self):
         notification = Notification.objects.create(
@@ -198,14 +195,6 @@ class NotificationPreferenceModelTest(TestCase):
         self.assertEqual(pref.on_new_media_from_following, NotificationChannel.IN_APP)
         self.assertEqual(pref.on_added_to_playlist, NotificationChannel.IN_APP)
 
-    def test_default_filter_topics_empty(self):
-        pref = NotificationPreference.objects.create(user=self.user)
-        self.assertEqual(pref.filter_topics, [])
-
-    def test_default_filter_categories_empty(self):
-        pref = NotificationPreference.objects.create(user=self.user)
-        self.assertEqual(pref.filter_categories, [])
-
     def test_get_channel_for_comment(self):
         pref = NotificationPreference.objects.create(user=self.user)
         self.assertEqual(
@@ -252,39 +241,6 @@ class NotificationPreferenceModelTest(TestCase):
         pref = NotificationPreference.objects.create(user=self.user)
         self.assertEqual(
             pref.get_channel_for_type(NotificationType.ADDED_TO_PLAYLIST),
-            NotificationChannel.IN_APP,
-        )
-
-    def test_system_announcement_always_in_app(self):
-        """system_announcement is non-disableable — always returns in_app."""
-        pref = NotificationPreference.objects.create(user=self.user)
-        self.assertEqual(
-            pref.get_channel_for_type(NotificationType.SYSTEM_ANNOUNCEMENT),
-            NotificationChannel.IN_APP,
-        )
-
-    def test_media_report_always_in_app(self):
-        """media_report is admin-facing — always returns in_app, non-configurable."""
-        pref = NotificationPreference.objects.create(user=self.user)
-        self.assertEqual(
-            pref.get_channel_for_type(NotificationType.MEDIA_REPORT),
-            NotificationChannel.IN_APP,
-        )
-
-    def test_system_announcement_ignores_custom_preferences(self):
-        """Even if somehow all prefs are set to none, system_announcement still returns in_app."""
-        pref = NotificationPreference.objects.create(
-            user=self.user,
-            on_comment=NotificationChannel.NONE,
-            on_reply=NotificationChannel.NONE,
-            on_like=NotificationChannel.NONE,
-            on_follow=NotificationChannel.NONE,
-            on_mention=NotificationChannel.NONE,
-            on_new_media_from_following=NotificationChannel.NONE,
-            on_added_to_playlist=NotificationChannel.NONE,
-        )
-        self.assertEqual(
-            pref.get_channel_for_type(NotificationType.SYSTEM_ANNOUNCEMENT),
             NotificationChannel.IN_APP,
         )
 

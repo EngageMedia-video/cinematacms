@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from .models import (
@@ -12,7 +11,6 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
-User = get_user_model()
 
 
 class NotificationService:
@@ -20,7 +18,7 @@ class NotificationService:
 
     Every notification passes through _create_notification() which applies:
     self-notification guard → duplicate check → preference check →
-    content filter → create record → route to delivery channel.
+    create record → route to delivery channel.
     """
 
     # ------------------------------------------------------------------
@@ -58,34 +56,7 @@ class NotificationService:
         ).exists()
 
     @classmethod
-    def _passes_content_filter(cls, recipient, media, media_topic_slugs=None, media_category_slugs=None, prefs=None):
-        """For new_media only. Returns True if media matches user's filters."""
-        if prefs is None:
-            prefs = cls.get_or_create_preferences(recipient)
-
-        if not prefs.filter_topics and not prefs.filter_categories:
-            return True
-
-        if prefs.filter_topics:
-            topics = (
-                media_topic_slugs if media_topic_slugs is not None else set(media.topics.values_list("slug", flat=True))
-            )
-            if not topics.intersection(set(prefs.filter_topics)):
-                return False
-
-        if prefs.filter_categories:
-            categories = (
-                media_category_slugs
-                if media_category_slugs is not None
-                else set(media.category.values_list("slug", flat=True))
-            )
-            if not categories.intersection(set(prefs.filter_categories)):
-                return False
-
-        return True
-
-    @classmethod
-    def _create_notification(cls, recipient, actor, notification_type, message, action_url, metadata, media=None):
+    def _create_notification(cls, recipient, actor, notification_type, message, action_url, metadata):
         # 1. Self-notification guard
         if actor and recipient == actor:
             return None
@@ -105,18 +76,12 @@ class NotificationService:
         ):
             return None
 
-        # 4. Channel preference check — fetch prefs once, reuse for content filter
-        prefs = cls.get_or_create_preferences(recipient)
-        channel = prefs.get_channel_for_type(notification_type)
+        # 4. Channel preference check
+        channel = cls._get_channel(recipient, notification_type)
         if channel == NotificationChannel.NONE:
             return None
 
-        # 5. Content filter (new_media only)
-        if notification_type == NotificationType.NEW_MEDIA and media:
-            if not cls._passes_content_filter(recipient, media, prefs=prefs):
-                return None
-
-        # 6. Create notification record
+        # 5. Create notification record
         notification = Notification.objects.create(
             recipient=recipient,
             actor=actor,
@@ -126,7 +91,7 @@ class NotificationService:
             metadata=metadata,
         )
 
-        # 7. Route to email. The delivery module publishes only after commit.
+        # 6. Route to email. The delivery module publishes only after commit.
         if channel == NotificationChannel.EMAIL:
             from django.db import transaction as db_transaction
 
@@ -198,17 +163,6 @@ class NotificationService:
             },
         )
 
-    @classmethod
-    def on_follow(cls, actor, followed_user):
-        return cls._create_notification(
-            recipient=followed_user,
-            actor=actor,
-            notification_type=NotificationType.FOLLOW,
-            message=f"{actor.username} started following you",
-            action_url=f"/user/{actor.username}",
-            metadata={},
-        )
-
     @staticmethod
     def _unique_users(users):
         """The given users without repeats, in first-seen order.
@@ -277,77 +231,6 @@ class NotificationService:
         return notified
 
     @classmethod
-    def on_new_media(cls, actor, media):
-        """Notify all followers of actor about new media.
-
-        Uses bulk_create for efficiency. Followers are users who subscribe
-        to any of the actor's channels.
-        """
-        from users.models import Channel
-
-        follower_ids = Channel.objects.filter(user=actor).values_list("subscribers", flat=True).distinct()
-        followers = list(User.objects.filter(id__in=follower_ids, is_active=True).exclude(id=actor.id))
-
-        # Prefetch all preferences in one query to avoid 2 DB hits per follower
-        prefs_map = {p.user_id: p for p in NotificationPreference.objects.filter(user_id__in=[f.id for f in followers])}
-
-        # Precompute media slugs once to avoid N queries in the loop
-        topic_slugs = set(media.topics.values_list("slug", flat=True))
-        category_slugs = set(media.category.values_list("slug", flat=True))
-
-        # Dedupe: skip followers already notified within the 5-minute window
-        action_url = f"/view?m={media.friendly_token}"
-        cutoff = timezone.now() - timedelta(minutes=5)
-        recent_recipient_ids = set(
-            Notification.objects.filter(
-                notification_type=NotificationType.NEW_MEDIA,
-                actor=actor,
-                action_url=action_url,
-                created_at__gte=cutoff,
-            ).values_list("recipient_id", flat=True)
-        )
-
-        notifications = []
-        email_indices = []
-        for follower in followers:
-            if follower.id in recent_recipient_ids:
-                continue
-            prefs = prefs_map.get(follower.id) or cls.get_or_create_preferences(follower)
-            channel = prefs.get_channel_for_type(NotificationType.NEW_MEDIA)
-            if channel == NotificationChannel.NONE:
-                continue
-            if not cls._passes_content_filter(follower, media, topic_slugs, category_slugs, prefs=prefs):
-                continue
-
-            notifications.append(
-                Notification(
-                    recipient=follower,
-                    actor=actor,
-                    notification_type=NotificationType.NEW_MEDIA,
-                    message=f"{actor.username} uploaded '{media.title}'",
-                    action_url=action_url,
-                    metadata={
-                        "media_id": media.id,
-                        "friendly_token": media.friendly_token,
-                    },
-                )
-            )
-            if channel == NotificationChannel.EMAIL:
-                email_indices.append(len(notifications) - 1)
-
-        created = Notification.objects.bulk_create(notifications, batch_size=100)
-
-        from django.db import transaction as db_transaction
-
-        from .tasks import send_notification_email
-
-        for idx in email_indices:
-            notification_id = created[idx].id
-            db_transaction.on_commit(lambda nid=notification_id: send_notification_email.delay(nid))
-
-        return created
-
-    @classmethod
     def on_added_to_playlist(cls, actor, media, playlist):
         return cls._create_notification(
             recipient=media.user,
@@ -362,30 +245,3 @@ class NotificationService:
                 "playlist_title": playlist.title,
             },
         )
-
-    @classmethod
-    def broadcast(cls, message, action_url="", metadata=None):
-        """System announcement to all active users. Non-disableable.
-
-        Note: this is synchronous and may take a while on large user bases.
-        Call from a management command or Celery task — never from a request/response cycle.
-        """
-        created = []
-        chunk = []
-        for user in User.objects.filter(is_active=True).iterator(chunk_size=500):
-            chunk.append(
-                Notification(
-                    recipient=user,
-                    actor=None,
-                    notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
-                    message=message,
-                    action_url=action_url,
-                    metadata=metadata or {},
-                )
-            )
-            if len(chunk) >= 500:
-                created.extend(Notification.objects.bulk_create(chunk, batch_size=100))
-                chunk = []
-        if chunk:
-            created.extend(Notification.objects.bulk_create(chunk, batch_size=100))
-        return created

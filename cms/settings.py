@@ -628,8 +628,6 @@ CURATOR_CONTACT_EMAIL = "curators@cinemata.org"
 # NOTIFICATIONS
 USERS_NOTIFICATIONS = {
     "MEDIA_ADDED": True,
-    "MEDIA_ENCODED": False,
-    "MEDIA_REPORTED": False,
     "MEDIA_PUBLISHED": True,
     "MEDIA_VISIBILITY_ENDED": True,
 }
@@ -637,7 +635,6 @@ USERS_NOTIFICATIONS = {
 ADMINS_NOTIFICATIONS = {
     "NEW_USER": True,
     "MEDIA_ADDED": True,
-    "MEDIA_ENCODED": False,
     "MEDIA_REPORTED": True,
 }
 

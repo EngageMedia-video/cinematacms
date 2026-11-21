@@ -125,13 +125,13 @@ class NotificationListTest(TestCase):
         self.assertEqual(item["metadata"]["media_id"], 42)
         self.assertIsNone(item["read_at"])
 
-    def test_list_actor_null_for_system_announcement(self):
-        """AC #13: System announcement has actor: null."""
+    def test_list_actor_null_without_actor(self):
+        """AC #13: A notification without an actor has actor: null."""
         _create_notification(
             self.user,
             actor=None,
-            notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
-            message="System maintenance",
+            notification_type=NotificationType.LIKE,
+            message="Someone liked your media",
         )
         resp = self.client.get("/api/v1/notifications/")
         item = resp.json()["results"][0]
@@ -429,11 +429,9 @@ class NotificationPreferenceDetailTest(TestCase):
         other_prefs = NotificationPreference.objects.get(user=self.other)
         self.assertEqual(other_prefs.on_like, NotificationChannel.EMAIL)
 
-    def test_get_does_not_leak_filter_or_timestamp_fields(self):
+    def test_get_does_not_leak_owner_or_timestamp_fields(self):
         resp = self.client.get("/api/v1/notifications/preferences/")
         data = resp.json()
-        self.assertNotIn("filter_topics", data)
-        self.assertNotIn("filter_categories", data)
         self.assertNotIn("user", data)
         self.assertNotIn("created_at", data)
         self.assertNotIn("updated_at", data)

@@ -350,7 +350,6 @@ TASK_FAMILY_BY_NAME = {
     "deliver_email": "email_delivery",
     "recover_stale_email_deliveries": "email_delivery",
     "cleanup_email_delivery_receipts": "email_delivery",
-    "notify_followers_new_media": "user_activity",
     "record_beat_freshness": "platform_maintenance",
     "cms.celery.debug_task": "diagnostic",
 }

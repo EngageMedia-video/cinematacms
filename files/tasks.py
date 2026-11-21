@@ -1986,17 +1986,12 @@ def _apply_visibility_schedules_inner():
 
     transition_count = 0
     failure_count = 0
-    # Collect tokens that transition to public so we can notify after all row
-    # locks are released — notify_users() sends email synchronously and must
-    # not run while a DB row lock and transaction are still open.
-    tokens_to_notify = []
     # Windows that closed this run: (token, expires_at, new state). The expiry is
     # captured here because the settled branch below clears it.
     ended_windows = []
 
     for media in scheduled_media.iterator():
         try:
-            went_public = False
             window_ended = None
             with transaction.atomic():
                 # Re-fetch under a row lock so a concurrent user edit that arrived
@@ -2028,7 +2023,6 @@ def _apply_visibility_schedules_inner():
                         media.state,
                         expected,
                     )
-                    went_public = expected == "public"
                     media.state = expected
                     update_fields.append("state")
                 # Keep Media.save() from interpreting this state-only transition as a
@@ -2048,26 +2042,15 @@ def _apply_visibility_schedules_inner():
                         "visibility_window_state",
                     ]
 
+                # A move to public sends the "published" email from Media.save().
                 media.save(update_fields=update_fields)
 
             transition_count += 1
-            if went_public:
-                tokens_to_notify.append(media.friendly_token)
             if window_ended:
                 ended_windows.append(window_ended)
         except Exception as error:
             failure_count += 1
             logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
-            capture_unexpected_exception(error)
-
-    # Send publish notifications after all row locks are released so SMTP
-    # round-trips don't hold the DB transaction open.
-    for token in tokens_to_notify:
-        try:
-            notify_users(friendly_token=token, action="media_published")
-        except Exception as error:
-            failure_count += 1
-            logger.exception("Failed to send publish notification for media %s", token)
             capture_unexpected_exception(error)
 
     for token, expires_at, state in ended_windows:
