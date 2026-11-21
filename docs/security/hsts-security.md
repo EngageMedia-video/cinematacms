@@ -53,11 +53,18 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # HTTPS Redirection
 SECURE_SSL_REDIRECT = True
 # Automatically redirects all HTTP requests to HTTPS.
-
-# Proxy Header Handling (needed behind reverse proxy)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-# Tells Django to trust the X-Forwarded-Proto header to determine whether a request is secure.
 ```
+
+Set the redirect with `SECURE_SSL_REDIRECT=true` in `/etc/cinematacms/app.env`.
+
+Do not set `SECURE_PROXY_SSL_HEADER`; the application does not read it. Gunicorn
+takes the request scheme from the `X-Forwarded-Proto` header that nginx writes
+(`secure_scheme_headers` in `deploy/gunicorn.conf.py`).
+
+`SECURE_SSL_REDIRECT` leaves `metrics`, `internal/observability/references` and
+`internal/observability/error-probe` alone. nginx forwards those requests from
+loopback over plain HTTP. `SECURE_REDIRECT_EXEMPT` adds further path patterns to
+that list, separated by commas.
 
 ---
 
