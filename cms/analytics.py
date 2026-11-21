@@ -7,6 +7,7 @@ from datetime import timedelta
 from urllib.parse import urlsplit
 from uuid import UUID
 
+from allauth.account.internal.stagekit import unstash_login
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core import signing
@@ -46,6 +47,33 @@ PUBLIC_PATHS = {
     "/topics",
     "/tos",
     "/creative-commons",
+}
+# allauth URLs can carry password reset and email confirmation keys, so its pages
+# report only the generic /page/<workflow> path.
+ACCOUNT_PAGES = {
+    "account_login": "login",
+    "account_logout": "logout",
+    "account_inactive": "account_inactive",
+    "account_signup": "signup",
+    "account_reauthenticate": "reauthenticate",
+    "account_email": "email_addresses",
+    "account_email_verification_sent": "email_verification_sent",
+    "account_confirm_email": "email_confirm",
+    "account_change_password": "password_change",
+    "account_set_password": "password_set",
+    "account_reset_password": "password_reset",
+    "account_reset_password_done": "password_reset_sent",
+    "account_reset_password_from_key": "password_reset_key",
+    "account_reset_password_from_key_done": "password_reset_complete",
+    "account_request_login_code": "login_code_request",
+    "account_confirm_login_code": "login_code_confirm",
+    "mfa_index": "mfa",
+    "mfa_authenticate": "mfa_authenticate",
+    "mfa_reauthenticate": "mfa_reauthenticate",
+    "mfa_activate_totp": "mfa_totp_activate",
+    "mfa_deactivate_totp": "mfa_totp_deactivate",
+    "mfa_view_recovery_codes": "mfa_recovery_codes",
+    "mfa_generate_recovery_codes": "mfa_recovery_codes_generate",
 }
 
 
@@ -88,6 +116,11 @@ def umami_distinct_id(username):
     return f"{username[: UMAMI_DISTINCT_ID_LENGTH - len(digest) - 1]}~{digest}"
 
 
+def _may_name_media(state):
+    """Only a public film's title may reach Umami: anyone can open its page."""
+    return state == "public"
+
+
 def _tracked_page_context(request, audience_group):
     url = getattr(settings, "ANALYTICS_URL", "")
     website_id = getattr(settings, "ANALYTICS_WEBSITE_ID", "")
@@ -111,7 +144,7 @@ def _tracked_page_context(request, audience_group):
     if media:
         from cms.playback_analytics import measurement_token
 
-        is_public = media["state"] == "public"
+        is_public = _may_name_media(media["state"])
         config = {
             "url": url,
             "website_id": website_id,
@@ -142,6 +175,8 @@ def _tracked_page_context(request, audience_group):
     if name not in PUBLIC_ROUTES and request.path not in PUBLIC_PATHS and not opted_in:
         return {}
 
+    playlist = getattr(request, "analytics_playlist", None)
+    profile = None
     if opted_in:
         if not name or not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", name):
             return {}
@@ -154,24 +189,29 @@ def _tracked_page_context(request, audience_group):
             "get_user_impact": "impact",
         }.get(name, "home")
         path = f"/user/profile/{section}"
+        profile = getattr(request, "analytics_profile", None)
     elif name in {"view_channel", "get_playlist"}:
         path = f"/{name}"
     else:
         path = request.path[2:] if name == "get_page" and request.path.startswith("/p/") else request.path
 
     scope = f"page:{request.analytics_text_page}" if name == "get_page" else "home" if path == "/" else "other"
-    return {
-        "ANALYTICS": {
-            "url": url,
-            "website_id": website_id,
-            "path": path,
-            "text_page": name == "get_page",
-            "playlist_id": getattr(request, "analytics_playlist", None),
-            "audience_group": audience_group,
-            "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
-            "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
-        }
+    config = {
+        "url": url,
+        "website_id": website_id,
+        "path": path,
+        "text_page": name == "get_page",
+        "playlist_id": playlist["id"] if playlist else None,
+        "audience_group": audience_group,
+        "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
+        "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
     }
+    if playlist:
+        config["page_title"] = playlist["title"]
+    if profile:
+        config["page_title"] = profile["title"]
+        config["profile_username"] = profile["username"]
+    return {"ANALYTICS": config}
 
 
 def allow_page_analytics(request):
@@ -185,6 +225,36 @@ def allow_workflow_analytics(request, name):
         request.analytics_workflow = name
 
 
+class AccountPageAnalyticsMiddleware:
+    """Admit an allauth page once its view has rendered it successfully.
+
+    allauth renders mail with the request, and error pages render with its route
+    still resolved, so the route name alone would count those renders as pages.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_template_response(self, request, response):
+        match = request.resolver_match
+        workflow = ACCOUNT_PAGES.get(match.url_name) if match else None
+        if workflow and response.status_code == 200 and visitor_segment(_account_page_visitor(request)) is not None:
+            request.analytics_workflow = workflow
+        return response
+
+
+def _account_page_visitor(request):
+    """Return the account of a login waiting on a stage such as MFA, else request.user.
+
+    allauth keeps request.user anonymous until every login stage passes.
+    """
+    login = unstash_login(request, peek=True) if request.user.is_anonymous else None
+    return login.user if login and login.user else request.user
+
+
 def action_events(request, *names, media=None):
     """Build count-only browser events after a successful server operation."""
     if not settings.ANALYTICS_ENABLED or visitor_segment(request.user) is None or request.headers.get("DNT") == "1":
@@ -195,6 +265,8 @@ def action_events(request, *names, media=None):
             "type": media.media_type,
             "revision": str(media.analytics_revision),
             "context": "workflow",
+            "state": media.state,
+            **({"title": media.title} if _may_name_media(media.state) else {}),
         }
         if media
         else None
@@ -211,6 +283,16 @@ def queue_action(request, name, media=None):
     events = action_events(request, name, media=media)
     if events:
         request.session["analytics_events"] = (request.session.get("analytics_events", []) + events)[-20:]
+
+
+def allow_playlist_analytics(request, playlist):
+    """Every playlist is public, so its page may report the playlist title."""
+    request.analytics_playlist = {"id": str(playlist.uid), "title": playlist.title}
+
+
+def allow_profile_analytics(request, user):
+    """Called only from a public profile section, which any visitor can open."""
+    request.analytics_profile = {"username": user.username, "title": user.name or user.username}
 
 
 def allow_media_analytics(request, media, context):

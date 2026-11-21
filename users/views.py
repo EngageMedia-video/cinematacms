@@ -107,6 +107,9 @@ def _profile_context(request, user, active_tab):
 
 
 def _render_profile(request, user, active_tab):
+    from cms.analytics import allow_profile_analytics
+
+    allow_profile_analytics(request, user)
     template = resolve_template(request, "profile")
     return render(request, template, _profile_context(request, user, active_tab))
 
@@ -269,6 +272,9 @@ def view_analytics(request):
         if page
         else None,
     }
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "creator_analytics")
     response = render(request, "cms/creator_analytics.html", context)
     response["Cache-Control"] = "private, no-store"
     response["Referrer-Policy"] = "no-referrer"
@@ -581,8 +587,7 @@ def view_user_impact(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    template = resolve_template(request, "profile")
-    return render(request, template, _profile_context(request, user, "impact"))
+    return _render_profile(request, user, "impact")
 
 
 def view_user_contact(request, username):
@@ -645,6 +650,9 @@ def mfa_success_message(request):
     user = get_user(request.user)
     if not user or (user != request.user and not is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "mfa_totp_success")
     return render(request, "mfa/totp/success.html")
 
 

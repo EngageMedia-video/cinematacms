@@ -12,7 +12,9 @@ it.each([200, 403])('counts playlist removal only after confirmed success (%s)',
 	const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 	const id = '12345678-1234-4234-8234-123456789abc';
 	client.setQueryData(['playlist', 'list-token'], {
-		playlist_media: [{ friendly_token: 'film-token', uid: id, media_type: 'video' }],
+		playlist_media: [
+			{ friendly_token: 'film-token', uid: id, media_type: 'video', state: 'public', title: 'Rivers of Java' },
+		],
 	});
 	const track = vi.fn();
 	window.CinemataAnalytics = { track };
@@ -31,7 +33,7 @@ it.each([200, 403])('counts playlist removal only after confirmed success (%s)',
 		expect(track).toHaveBeenCalledExactlyOnceWith(
 			'playlist_remove',
 			{},
-			{ id, type: 'video', context: 'playlist', revision: undefined }
+			{ id, type: 'video', context: 'playlist', revision: undefined, state: 'public', title: 'Rivers of Java' }
 		);
 	} else {
 		expect(track).not.toHaveBeenCalled();

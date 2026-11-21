@@ -137,6 +137,8 @@ export function useRemovePlaylistMediaMutation(token, config) {
 							type: item.media_type,
 							context: 'playlist',
 							revision: item.analytics_revision,
+							state: item.state,
+							title: item.title,
 						}
 					: null
 			);
