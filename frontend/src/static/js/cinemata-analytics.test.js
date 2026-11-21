@@ -363,6 +363,62 @@ describe('Cinemata Umami privacy boundary', () => {
 			const longReferrer = `https://publisher.example/reviews?q=${'a'.repeat(600)}&page=2`;
 			expect(referredBy(`${longReferrer}#comments`).referrer).toBe(longReferrer);
 		});
+
+		describe('as an Event data property', () => {
+			const external = 'https://publisher.example/reviews/film?ref=newsletter';
+			const pageViewBy = (value, config = {}) => {
+				referredBy(value, config);
+				return window.cinemataAnalyticsBeforeSend('event', {
+					name: 'page_view',
+					data: { referrer: 'https://forged.example/landing' },
+				});
+			};
+
+			it('gives page_view the full external referrer to break down by', () => {
+				expect(pageViewBy(`${external}#comments`).data.referrer).toBe(external);
+			});
+			it('keeps source_domain on media_view and adds the full referrer', () => {
+				const payload = referredBy(`${external}#comments`);
+				expect(payload.data.source_domain).toBe('publisher.example');
+				expect(payload.data.referrer).toBe(external);
+			});
+			it('ignores a referrer property in the event payload', () => {
+				Object.defineProperty(document, 'referrer', { configurable: true, value: '' });
+				loadTracker({ nonpublic: false, media_id: null });
+				for (const forged of ['https://forged.example/landing', 'javascript:alert(1)']) {
+					const payload = window.cinemataAnalyticsBeforeSend('event', {
+						name: 'page_view',
+						data: { referrer: forged },
+					});
+					expect(payload.data).not.toHaveProperty('referrer');
+				}
+			});
+			it('sends no referrer property for nonpublic pages', () => {
+				expect(pageViewBy(external, { nonpublic: true }).data).not.toHaveProperty('referrer');
+			});
+			it('sends no referrer property for a playlist or workflow action', () => {
+				referredBy(external);
+				for (const context of ['playlist', 'workflow']) {
+					const payload = window.cinemataAnalyticsBeforeSend('event', {
+						name: 'media_view',
+						tag: `media:${mediaId}`,
+						data: { context },
+					});
+					expect(payload.data).not.toHaveProperty('referrer');
+				}
+			});
+			it.each(['javascript:alert(1)', 'data:text/html,<p>film</p>', 'not a url'])(
+				'drops a referrer property that is not an http or https URL: %s',
+				(value) => {
+					expect(pageViewBy(value).data).not.toHaveProperty('referrer');
+					expect(referredBy(value).data).not.toHaveProperty('referrer');
+				}
+			);
+			it('cuts a long referrer to the 500 characters Umami stores for an event data string', () => {
+				const longReferrer = `https://publisher.example/reviews?q=${'a'.repeat(600)}&page=2`;
+				expect(pageViewBy(longReferrer).data.referrer).toBe(longReferrer.slice(0, 500));
+			});
+		});
 	});
 
 	describe('Referring Cinemata page', () => {
@@ -399,6 +455,20 @@ describe('Cinemata Umami privacy boundary', () => {
 			expect(payloads.find((payload) => payload.name === 'media_view').data.source_domain).toBe(
 				window.location.hostname
 			);
+			for (const name of ['page_view', 'media_view'])
+				expect(payloads.find((payload) => payload.name === name).data.referrer).toBe(from);
+		});
+		it('gives page_view the referring public page with only its film token as a property', () => {
+			visit('/view?m=Ab3dE6gH9&pl=Zx9&utm_source=newsletter#comments', { nonpublic: false });
+			const payloads = visit('/latest', latestPage);
+			const from = `${window.location.origin}/view?m=Ab3dE6gH9`;
+			expect(payloads.find((payload) => payload.name === 'page_view').data.referrer).toBe(from);
+			expect(pageView(payloads).data).not.toHaveProperty('referrer');
+		});
+		it('gives page_view only the origin as a property after a nonpublic page', () => {
+			visit('/view?m=secret', { nonpublic: true });
+			const payloads = visit('/latest', latestPage, `${window.location.origin}/view?m=secret`);
+			expect(payloads.find((payload) => payload.name === 'page_view').data.referrer).toBe(site());
 		});
 		it('keeps the film token of a public media page and drops the search terms of the search page', () => {
 			visit('/view?m=Ab3dE6gH9&pl=Zx9&utm_source=newsletter#comments', { nonpublic: false });
@@ -428,6 +498,7 @@ describe('Cinemata Umami privacy boundary', () => {
 			window.CinemataAnalytics.switchMedia({ id: '87654321-4321-4321-8321-cba987654321', state: 'public' });
 			const mediaView = sent(media).find((payload) => payload.name === 'media_view');
 			expect(mediaView.referrer).toBe(`${window.location.origin}/view?m=Ab3dE6gH9`);
+			expect(mediaView.data.referrer).toBe(`${window.location.origin}/view?m=Ab3dE6gH9`);
 			expect(mediaView.data.source_domain).toBe(window.location.hostname);
 		});
 		it('reports the public page before an untracked page, such as the Django Admin', () => {
