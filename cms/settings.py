@@ -869,7 +869,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
 SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0)
-SECURE_REDIRECT_EXEMPT = env_csv("SECURE_REDIRECT_EXEMPT", [])
+# nginx forwards these from loopback over plain HTTP (deploy/nginx/cinematacms-metrics.conf,
+# deploy/observability/templates/nginx-app-metrics.conf), so an https redirect would break them.
+LOOPBACK_HTTP_PATHS = [
+    r"^metrics$",
+    r"^internal/observability/references$",
+    r"^internal/observability/error-probe$",
+]
+SECURE_REDIRECT_EXEMPT = [*LOOPBACK_HTTP_PATHS, *env_csv("SECURE_REDIRECT_EXEMPT", [])]
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 
 CRISPY_TEMPLATE_PACK = "bootstrap"
