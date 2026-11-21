@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from urllib.parse import urlsplit, urlunsplit
 
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
@@ -49,7 +50,7 @@ INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
 FRONTEND_HOST = os.getenv("FRONTEND_HOST", "http://cinemata.org")
 if "://" not in FRONTEND_HOST:
     FRONTEND_HOST = f"http://{FRONTEND_HOST}"
-SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
+SSL_FRONTEND_HOST = urlunsplit(urlsplit(FRONTEND_HOST)._replace(scheme="https"))
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 LOCAL_INSTALL = env_bool("LOCAL_INSTALL", False)
 if not SECRET_KEY and os.getenv("DJANGO_SETTINGS_MODULE") != "cms.ci_settings":
