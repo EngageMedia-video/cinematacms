@@ -194,11 +194,12 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			title="Media Upload"
 			description="Upload a replacement media file only when you want to change the original video. The new file is saved after you click Update Media."
 		>
-			<div className="rounded-ds-4 border border-border-subtle bg-bg-surface-muted p-4">
+			{/* min-w-0 and wrap-anywhere keep a long unbroken file name inside the card. */}
+			<div className="min-w-0 rounded-ds-4 border border-border-subtle bg-bg-surface-muted p-4">
 				<Text variant="body-14-bold" className="m-0 text-text-strong">
 					Current file
 				</Text>
-				<Text variant="body-14" className="m-0 mt-1 text-text-muted">
+				<Text variant="body-14" className="m-0 mt-1 wrap-anywhere text-text-muted">
 					<CurrentFileLink file={config.media?.currentMediaFile} />
 				</Text>
 			</div>
