@@ -244,9 +244,23 @@ does not select or deploy an event store. A deployment owns the DSN, projects,
 retention, storage, backups, alerts, and access controls.
 
 Error tracking is off when `SENTRY_DSN` is empty. `SENTRY_ENVIRONMENT` separates
-deployment environments, and `SENTRY_RELEASE` identifies the deployed build.
-`SENTRY_SAMPLE_RATE` controls error-event sampling. The integration does not
-send logs, traces, profiles, sessions, or default personal data.
+deployment environments. `SENTRY_SAMPLE_RATE` controls error-event sampling. The
+integration does not send logs, traces, profiles, sessions, or default personal
+data.
+
+Each web and Celery process names its release after the checkout it started
+from, so a deploy or a rollback changes the release when it restarts the
+services. The release is `cinematacms@<tag>` when a tag points at `HEAD`
+(`git describe --tags --exact-match`), and `cinematacms@<commit>` with the first
+12 characters of the commit otherwise. A checkout that holds a release commit
+without its tag, such as one deployed with `restart_script.sh --revision`, which
+fetches only the commit, reports the commit. Git runs as the user of the
+process, so that user must be able to read the checkout. When git fails, the
+process logs a warning from `cms.error_tracking`, and the Sentry SDK takes the
+`SENTRY_RELEASE` environment variable, or else the commit of its working
+directory. `deploy/apply-release-config.sh` removes `SENTRY_RELEASE` from
+`/etc/cinematacms/app.env`, so that fallback does not find a value that an
+operator set for an older release.
 
 The sanitizer removes request and transaction data, headers, cookies, query
 strings, user data, breadcrumbs, performance spans, custom fingerprints, frame

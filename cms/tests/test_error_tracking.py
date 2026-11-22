@@ -2,9 +2,12 @@ import ast
 import importlib
 import json
 import logging
+import os
+import subprocess
 import sys
 from io import StringIO
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
@@ -18,11 +21,40 @@ from django.test import RequestFactory, SimpleTestCase, override_settings
 from cms.error_tracking import (
     ErrorTrackingDiagnosticError,
     capture_unexpected_exception,
+    checkout_release,
     configure_error_tracking,
     sanitize_event,
 )
 from cms.observability import OpenTelemetryLogFilter, sanitize_django_request_span
 from cms.urls import _error_tracking_diagnostic_rate_limited, error_tracking_diagnostic
+
+GIT_TEST_ENVIRONMENT = {
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_AUTHOR_NAME": "Release Test",
+    "GIT_AUTHOR_EMAIL": "release-test@example.invalid",
+    "GIT_COMMITTER_NAME": "Release Test",
+    "GIT_COMMITTER_EMAIL": "release-test@example.invalid",
+}
+
+
+def commit_checkout(directory, tag=None):
+    """Commit to the repository in directory, creating it when needed, and return the new commit."""
+
+    def git(*arguments):
+        return subprocess.run(
+            ["git", "-C", directory, *arguments],
+            env={**os.environ, **GIT_TEST_ENVIRONMENT},
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    git("init", "--quiet")
+    git("commit", "--quiet", "--allow-empty", "--message", "release")
+    if tag:
+        git("tag", tag)
+    return git("rev-parse", "HEAD")
 
 
 class LoggingPrivacyConfigurationTests(SimpleTestCase):
@@ -155,28 +187,32 @@ class ErrorTrackingConfigurationTests(SimpleTestCase):
         with (
             patch("cms.error_tracking._configured", False),
             patch("sentry_sdk.init") as initialize,
+            patch("cms.error_tracking.subprocess.run") as run,
         ):
             self.assertFalse(configure_error_tracking())
 
         initialize.assert_not_called()
+        run.assert_not_called()
 
     @override_settings(
         SENTRY_DSN="https://public@example.invalid/1",
         SENTRY_ENVIRONMENT="staging",
-        SENTRY_RELEASE="cinematacms@abc123",
         SENTRY_SAMPLE_RATE=1.0,
     )
     def test_enabled_configuration_captures_errors_without_logs_traces_profiles_or_pii(self):
-        with (
-            patch("cms.error_tracking._configured", False),
-            patch("sentry_sdk.init") as initialize,
-        ):
-            self.assertTrue(configure_error_tracking())
+        with TemporaryDirectory() as checkout:
+            commit_checkout(checkout, tag="v9.9.0")
+            with (
+                override_settings(BASE_DIR=checkout),
+                patch("cms.error_tracking._configured", False),
+                patch("sentry_sdk.init") as initialize,
+            ):
+                self.assertTrue(configure_error_tracking())
 
         options = initialize.call_args.kwargs
         self.assertEqual(options["dsn"], "https://public@example.invalid/1")
         self.assertEqual(options["environment"], "staging")
-        self.assertEqual(options["release"], "cinematacms@abc123")
+        self.assertEqual(options["release"], "cinematacms@v9.9.0")
         self.assertEqual(options["sample_rate"], 1.0)
         self.assertEqual(options["traces_sample_rate"], 0.0)
         self.assertEqual(options["profiles_sample_rate"], 0.0)
@@ -242,6 +278,35 @@ class ErrorTrackingConfigurationTests(SimpleTestCase):
         with patch("sentry_sdk.capture_exception", side_effect=RuntimeError("transport failed")) as capture:
             self.assertIsNone(capture_unexpected_exception(error))
         capture.assert_called_once_with(error)
+
+
+class CheckoutReleaseTests(SimpleTestCase):
+    def setUp(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.checkout = temporary.name
+
+    def test_release_names_the_tag_of_the_checked_out_commit(self):
+        commit_checkout(self.checkout, tag="v9.9.0")
+
+        self.assertEqual(checkout_release(self.checkout), "cinematacms@v9.9.0")
+
+    def test_release_names_the_commit_when_no_tag_points_at_it(self):
+        commit_checkout(self.checkout, tag="v9.9.0")
+        commit = commit_checkout(self.checkout)
+
+        self.assertEqual(checkout_release(self.checkout), f"cinematacms@{commit[:12]}")
+
+    def test_release_is_unset_with_a_warning_outside_a_checkout(self):
+        with self.assertLogs("cms.error_tracking", logging.WARNING):
+            self.assertIsNone(checkout_release(self.checkout))
+
+    def test_release_is_unset_with_a_warning_without_git(self):
+        with (
+            patch("cms.error_tracking.subprocess.run", side_effect=FileNotFoundError("git")),
+            self.assertLogs("cms.error_tracking", logging.WARNING),
+        ):
+            self.assertIsNone(checkout_release(self.checkout))
 
 
 class ErrorTrackingLogPrivacyTests(SimpleTestCase):
