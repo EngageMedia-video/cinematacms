@@ -37,6 +37,8 @@ pids/celery_short.service.pid
 pids/
 
 celerybeat-schedule.db
+celerybeat-schedule-shm
+celerybeat-schedule-wal
 celerybeat.pid
 
 # Maintenance mode files

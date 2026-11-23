@@ -2547,6 +2547,12 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
     RUNTIME_VENV = "/home/cinemata/venvs/py3.14"
     LEGACY_VENV = "/home/cinemata"
     REQUIREMENTS = "/home/cinemata/cinematacms/requirements.txt"
+    # The files of each dbm backend: gnu writes one, ndbm adds .db, dumb .dat,
+    # .dir and .bak, and sqlite3 (Python 3.13+) adds -shm and -wal.
+    BEAT_SCHEDULE_FILES = tuple(
+        f"home/cinemata/cinematacms/celerybeat-schedule{suffix}"
+        for suffix in ("", ".db", ".dat", ".dir", ".bak", "-shm", "-wal")
+    )
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -2584,10 +2590,18 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
             self.fake_bin / "runuser",
             'log "runuser $* with $CINEMATA_SERVICE_SETTING in $PWD"\nshift 3\n"$@" || exit\nexit "$FAKE_CHECK_EXIT"',
         )
-        self.write_command(self.fake_bin / "chown", 'log "chown $*"')
+        self.write_command(self.fake_bin / "chown", 'log "chown $*"\nexit "$FAKE_CHOWN_EXIT"')
+        beat_schedule_state = '[ -e "$FAKE_BEAT_SCHEDULE" ] && schedule=present || schedule=absent\n'
+        self.write_command(
+            self.fake_bin / "systemctl",
+            f'{beat_schedule_state}log "systemctl $* with the beat schedule $schedule"',
+        )
         self.write_command(
             self.deploy_root / "home/cinemata/cinematacms/deploy/apply-release-config.sh",
-            'log "apply-release-config $* while venv -> $(readlink "$FAKE_VENV_LINK")"',
+            f"{beat_schedule_state}"
+            'log "apply-release-config $* while venv -> $(readlink "$FAKE_VENV_LINK") '
+            'with the beat schedule $schedule"\n'
+            'exit "$FAKE_APPLY_EXIT"',
         )
 
     def write_command(self, path, body):
@@ -2602,7 +2616,7 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         )
         self.write_command(venv / "bin/pip", 'log "$0 $*"')
 
-    def environment(self, check_exit="0"):
+    def environment(self, check_exit="0", apply_exit="0", chown_exit="0"):
         env = os.environ.copy()
         env.update(
             {
@@ -2611,17 +2625,20 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
                 "FAKE_COMMAND_LOG": str(self.command_log),
                 "FAKE_RUNTIME_VENV": str(self.runtime_template),
                 "FAKE_VENV_LINK": str(self.venv_link),
+                "FAKE_BEAT_SCHEDULE": str(self.deploy_root / self.BEAT_SCHEDULE_FILES[0]),
                 "FAKE_CHECK_EXIT": check_exit,
+                "FAKE_APPLY_EXIT": apply_exit,
+                "FAKE_CHOWN_EXIT": chown_exit,
                 "PATH": f"{self.fake_bin}:{env['PATH']}",
             }
         )
         return env
 
-    def migrate(self, *arguments, check_exit="0"):
+    def migrate(self, *arguments, check_exit="0", apply_exit="0", chown_exit="0"):
         self.command_log.write_text("")
         result = subprocess.run(
             ["bash", str(MIGRATOR), *arguments],
-            env=self.environment(check_exit),
+            env=self.environment(check_exit, apply_exit, chown_exit),
             capture_output=True,
             text=True,
             check=False,
@@ -2636,16 +2653,25 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
     def link_target(self, link):
         return os.readlink(link).replace(str(self.deploy_root), "")
 
-    def checks_and_restarts_on(self, venv):
+    def write_beat_schedule(self):
+        write_tree(self.deploy_root, dict.fromkeys(self.BEAT_SCHEDULE_FILES, "schedule\n"))
+
+    def remaining_beat_schedule_files(self):
+        return [name for name in self.BEAT_SCHEDULE_FILES if (self.deploy_root / name).exists()]
+
+    def checks_and_restarts_on(self, venv, switches_virtualenv=True):
+        schedule_at_restart = "absent" if switches_virtualenv else "present"
         return [
             f"runuser -u www-data -- {venv}/bin/python manage.py check with from-app-env in /home/cinemata/cinematacms",
             f"{venv}/bin/python manage.py check",
+            *(["systemctl stop celery_beat with the beat schedule present"] if switches_virtualenv else []),
             "chown -R www-data: /home/cinemata/venvs",
             "chown -h www-data: /home/cinemata/venv",
-            f"apply-release-config  while venv -> {venv}",
+            f"apply-release-config  while venv -> {venv} with the beat schedule {schedule_at_restart}",
         ]
 
     def test_migration_builds_and_checks_the_new_virtualenv_before_the_services_use_it(self):
+        self.write_beat_schedule()
         result, commands = self.migrate()
 
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -2661,19 +2687,54 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
         self.assertEqual(self.link_target(self.deploy_root / "home/cinemata/venvs/previous"), self.LEGACY_VENV)
         self.assertIn("now runs on Python 3.14.0", result.stdout)
+        self.assertEqual(self.remaining_beat_schedule_files(), [])
+        self.assertIn("Removed the celery beat schedule", result.stdout)
 
     def test_failed_check_leaves_the_services_on_the_virtualenv_they_use(self):
+        self.write_beat_schedule()
         result, commands = self.migrate(check_exit="1")
 
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
         self.assertFalse((self.deploy_root / "home/cinemata/venvs/previous").is_symlink())
-        self.assertFalse([command for command in commands if command.startswith(("chown", "apply-release-config"))])
+        self.assertFalse(
+            [command for command in commands if command.startswith(("chown", "systemctl", "apply-release-config"))]
+        )
+        self.assertEqual(self.remaining_beat_schedule_files(), list(self.BEAT_SCHEDULE_FILES))
+
+    def test_failed_restart_starts_the_stopped_beat_again(self):
+        self.write_beat_schedule()
+        result, commands = self.migrate(apply_exit="1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            commands[-3:],
+            [
+                "chown -h www-data: /home/cinemata/venv",
+                f"apply-release-config  while venv -> {self.RUNTIME_VENV} with the beat schedule absent",
+                "systemctl start celery_beat with the beat schedule absent",
+            ],
+        )
+
+    def test_failed_switch_after_beat_stops_starts_beat_again_and_stops_there(self):
+        self.write_beat_schedule()
+        result, commands = self.migrate(chown_exit="1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            commands[-3:],
+            [
+                "systemctl stop celery_beat with the beat schedule present",
+                "chown -R www-data: /home/cinemata/venvs",
+                "systemctl start celery_beat with the beat schedule absent",
+            ],
+        )
 
     def test_second_migration_builds_nothing_and_keeps_the_previous_virtualenv(self):
         first, _ = self.migrate()
         self.assertEqual(first.returncode, 0, first.stderr)
 
+        self.write_beat_schedule()
         second, commands = self.migrate()
 
         self.assertEqual(second.returncode, 0, second.stderr)
@@ -2682,9 +2743,10 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
             [
                 "uv python install --no-config --no-bin 3.14",
                 f"{self.RUNTIME_VENV}/bin/pip install --disable-pip-version-check -r {self.REQUIREMENTS}",
-                *self.checks_and_restarts_on(self.RUNTIME_VENV),
+                *self.checks_and_restarts_on(self.RUNTIME_VENV, switches_virtualenv=False),
             ],
         )
+        self.assertEqual(self.remaining_beat_schedule_files(), list(self.BEAT_SCHEDULE_FILES))
         self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
         self.assertEqual(self.link_target(self.deploy_root / "home/cinemata/venvs/previous"), self.LEGACY_VENV)
 
@@ -2692,8 +2754,9 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         migration, _ = self.migrate()
         self.assertEqual(migration.returncode, 0, migration.stderr)
 
-        for attempt in ("first", "second"):
+        for attempt, switches_virtualenv in (("first", True), ("second", False)):
             with self.subTest(attempt=attempt):
+                self.write_beat_schedule()
                 rollback, commands = self.migrate("--rollback")
 
                 self.assertEqual(rollback.returncode, 0, rollback.stderr)
@@ -2701,21 +2764,25 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
                     commands,
                     [
                         f"{self.LEGACY_VENV}/bin/pip install --disable-pip-version-check -r {self.REQUIREMENTS}",
-                        *self.checks_and_restarts_on(self.LEGACY_VENV),
+                        *self.checks_and_restarts_on(self.LEGACY_VENV, switches_virtualenv),
                     ],
                 )
                 self.assertEqual(self.link_target(self.venv_link), self.LEGACY_VENV)
                 self.assertIn("now runs on Python 3.10.12", rollback.stdout)
+                kept = [] if switches_virtualenv else list(self.BEAT_SCHEDULE_FILES)
+                self.assertEqual(self.remaining_beat_schedule_files(), kept)
 
     def test_failed_rollback_check_leaves_the_services_on_the_new_virtualenv(self):
         migration, _ = self.migrate()
         self.assertEqual(migration.returncode, 0, migration.stderr)
 
+        self.write_beat_schedule()
         rollback, commands = self.migrate("--rollback", check_exit="1")
 
         self.assertNotEqual(rollback.returncode, 0)
         self.assertEqual(self.link_target(self.venv_link), self.RUNTIME_VENV)
-        self.assertFalse([command for command in commands if command.startswith("apply-release-config")])
+        self.assertFalse([command for command in commands if command.startswith(("systemctl", "apply-release-config"))])
+        self.assertEqual(self.remaining_beat_schedule_files(), list(self.BEAT_SCHEDULE_FILES))
 
     def test_rollback_without_a_previous_virtualenv_changes_nothing(self):
         result, commands = self.migrate("--rollback")
