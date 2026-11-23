@@ -729,8 +729,13 @@ the `dbm.gnu` file that the OS Python writes, and Python 3.10 cannot open the
 `celery_beat` and removes the file with its `-shm`, `-wal` and other dbm
 companion files. When beat restarts, it creates a new schedule and forgets when
 each periodic task last ran. Without this step, beat would log
-`Removing corrupted schedule file` and reset the schedule anyway. If the
-restart fails, the script starts `celery_beat` again before it exits.
+`Removing corrupted schedule file` and reset the schedule anyway. If a step
+after the stop fails, the script starts `celery_beat` again before it exits.
+
+The script of commit `52e0ac01` predates this reset. When it switches, beat
+logs `Removing corrupted schedule file` once and creates a new schedule itself.
+Nothing needs to be done. A later checkout runs its own script, which resets
+the schedule as described above.
 
 The script runs no database migration and changes no code. Running it again
 builds nothing new. It installs the requirements of the checkout, checks, and

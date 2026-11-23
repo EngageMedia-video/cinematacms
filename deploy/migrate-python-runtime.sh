@@ -96,9 +96,9 @@ check_python_venv() {
 # rename(2) puts the new link in place of the old one in one step.
 point_python_venv_link() {
     local link=$1 venv=$2
-    rm -f "$link.new"
-    ln -s "$venv" "$link.new"
-    python3 -c 'import os, sys; os.replace(sys.argv[1], sys.argv[2])' "$link.new" "$link"
+    rm -f "$link.new" &&
+        ln -s "$venv" "$link.new" &&
+        python3 -c 'import os, sys; os.replace(sys.argv[1], sys.argv[2])' "$link.new" "$link"
 }
 
 adopt_legacy_python_venv() {
@@ -127,23 +127,29 @@ restart_on_python_venv() {
 # logs an error and starts a new schedule anyway. Beat is stopped first so that
 # it cannot write the old format back while it shuts down.
 reset_beat_schedule() {
-    systemctl stop celery_beat
+    systemctl stop celery_beat || return
     # The suffixes cover every dbm backend: .db (ndbm), .dat/.dir/.bak (dumb), -shm/-wal (sqlite3).
-    rm -f -- "$BEAT_SCHEDULE" "$BEAT_SCHEDULE".* "$BEAT_SCHEDULE"-shm "$BEAT_SCHEDULE"-wal
+    rm -f -- "$BEAT_SCHEDULE" "$BEAT_SCHEDULE".* "$BEAT_SCHEDULE"-shm "$BEAT_SCHEDULE"-wal || return
     echo "Removed the celery beat schedule $BEAT_SCHEDULE. Beat starts a new one and forgets when each periodic task last ran."
+}
+
+# switch_python_venv calls this in an if, where set -e does not apply, so each step returns its own failure.
+activate_python_venv() {
+    local venv=$1
+    if [ ! "$PYTHON_VENV_LINK" -ef "$venv" ]; then
+        reset_beat_schedule || return
+    fi
+    point_python_venv_link "$PYTHON_VENV_LINK" "$venv" || return
+    # Deploys reset the ownership of /home/cinemata to www-data. The interpreter itself stays root's.
+    chown -R www-data: "$PYTHON_VENVS" || return
+    chown -h www-data: "$PYTHON_VENV_LINK" || return
+    restart_on_python_venv
 }
 
 switch_python_venv() {
     local venv=$1
-    if [ ! "$PYTHON_VENV_LINK" -ef "$venv" ]; then
-        reset_beat_schedule
-    fi
-    point_python_venv_link "$PYTHON_VENV_LINK" "$venv"
-    # Deploys reset the ownership of /home/cinemata to www-data. The interpreter itself stays root's.
-    chown -R www-data: "$PYTHON_VENVS"
-    chown -h www-data: "$PYTHON_VENV_LINK"
     # Restart=always does not start a unit that was stopped on purpose.
-    if ! restart_on_python_venv; then
+    if ! activate_python_venv "$venv"; then
         systemctl start celery_beat
         return 1
     fi

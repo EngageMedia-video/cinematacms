@@ -2590,7 +2590,7 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
             self.fake_bin / "runuser",
             'log "runuser $* with $CINEMATA_SERVICE_SETTING in $PWD"\nshift 3\n"$@" || exit\nexit "$FAKE_CHECK_EXIT"',
         )
-        self.write_command(self.fake_bin / "chown", 'log "chown $*"')
+        self.write_command(self.fake_bin / "chown", 'log "chown $*"\nexit "$FAKE_CHOWN_EXIT"')
         beat_schedule_state = '[ -e "$FAKE_BEAT_SCHEDULE" ] && schedule=present || schedule=absent\n'
         self.write_command(
             self.fake_bin / "systemctl",
@@ -2616,7 +2616,7 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
         )
         self.write_command(venv / "bin/pip", 'log "$0 $*"')
 
-    def environment(self, check_exit="0", apply_exit="0"):
+    def environment(self, check_exit="0", apply_exit="0", chown_exit="0"):
         env = os.environ.copy()
         env.update(
             {
@@ -2628,16 +2628,17 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
                 "FAKE_BEAT_SCHEDULE": str(self.deploy_root / self.BEAT_SCHEDULE_FILES[0]),
                 "FAKE_CHECK_EXIT": check_exit,
                 "FAKE_APPLY_EXIT": apply_exit,
+                "FAKE_CHOWN_EXIT": chown_exit,
                 "PATH": f"{self.fake_bin}:{env['PATH']}",
             }
         )
         return env
 
-    def migrate(self, *arguments, check_exit="0", apply_exit="0"):
+    def migrate(self, *arguments, check_exit="0", apply_exit="0", chown_exit="0"):
         self.command_log.write_text("")
         result = subprocess.run(
             ["bash", str(MIGRATOR), *arguments],
-            env=self.environment(check_exit, apply_exit),
+            env=self.environment(check_exit, apply_exit, chown_exit),
             capture_output=True,
             text=True,
             check=False,
@@ -2711,6 +2712,20 @@ class PythonRuntimeMigrationTests(unittest.TestCase):
             [
                 "chown -h www-data: /home/cinemata/venv",
                 f"apply-release-config  while venv -> {self.RUNTIME_VENV} with the beat schedule absent",
+                "systemctl start celery_beat with the beat schedule absent",
+            ],
+        )
+
+    def test_failed_switch_after_beat_stops_starts_beat_again_and_stops_there(self):
+        self.write_beat_schedule()
+        result, commands = self.migrate(chown_exit="1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            commands[-3:],
+            [
+                "systemctl stop celery_beat with the beat schedule present",
+                "chown -R www-data: /home/cinemata/venvs",
                 "systemctl start celery_beat with the beat schedule absent",
             ],
         )
