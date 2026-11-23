@@ -1701,6 +1701,15 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         )
         return result, output.read_text()
 
+    def test_app_env_drops_a_hand_set_sentry_release(self):
+        result, app_env = self.render_app_env(
+            "SENTRY_DSN=http://public@127.0.0.1:8001/1\nSENTRY_RELEASE=cinematacms@v0.0.1\n"
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("SENTRY_DSN=http://public@127.0.0.1:8001/1", app_env)
+        self.assertNotIn("SENTRY_RELEASE", app_env)
+
     def test_celery_pools_keep_their_sizes_and_options_without_an_override(self):
         released = {
             "long": ("4", ["-Ofair", "--prefetch-multiplier=1"]),
@@ -2381,7 +2390,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("RECAPTCHA_PRIVATE_KEY=private-placeholder", migrated)
         self.assertIn("SENTRY_DSN=http://public@127.0.0.1:8001/1", migrated)
         self.assertIn("SENTRY_ENVIRONMENT=staging", migrated)
-        self.assertIn("SENTRY_RELEASE=cinematacms@test", migrated)
+        self.assertNotIn("SENTRY_RELEASE", migrated)
         self.assertIn("SENTRY_SAMPLE_RATE=1.0", migrated)
         self.assertIn("ERROR_TRACKING_DIAGNOSTICS_ENABLED=false", migrated)
         self.assertIn("ERROR_TRACKING_DIAGNOSTICS_TOKEN=diagnostic-placeholder", migrated)

@@ -59,7 +59,6 @@ DIRECT_SETTINGS = (
     "RECAPTCHA_PUBLIC_KEY",
     "SENTRY_DSN",
     "SENTRY_ENVIRONMENT",
-    "SENTRY_RELEASE",
     "SENTRY_SAMPLE_RATE",
     "ERROR_TRACKING_DIAGNOSTICS_ENABLED",
     "ERROR_TRACKING_DIAGNOSTICS_TOKEN",
@@ -105,6 +104,7 @@ IGNORED_LEGACY_SETTINGS = {
     "SILKY_META",
     "SILKY_PYTHON_PROFILER",
     "SILKY_PYTHON_PROFILER_BINARY",  # django-silk is not installed.
+    "SENTRY_RELEASE",  # Derived from the checkout when the application starts.
     "SSL_FRONTEND_HOST",  # Derived from FRONTEND_HOST.
     "UI_VARIANT_ALLOWED",  # Migrated pages always use the revamp UI.
     "UI_VARIANT_DEFAULT",
@@ -222,6 +222,8 @@ def main():
     if args.legacy_local_settings:
         for key, value in migrate_local_settings(args.legacy_local_settings).items():
             values.setdefault(key, value)
+    # The application takes the release from its checkout. A value kept in this file would name older code.
+    values.pop("SENTRY_RELEASE", None)
 
     for key in DIRECT_SETTINGS:
         if key in os.environ:
