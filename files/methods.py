@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, F, OuterRef, Q
 from django.utils import dateformat, timezone
 
 from cms import celery_app
@@ -746,10 +746,18 @@ def get_current_featured_media():
     """
     Returns the single Media object that should be featured right now.
 
+    A schedule row counts only when its media can be shown: featured, public,
+    reviewed and encoded. A row whose media is hidden or unfeatured is skipped,
+    so the hero goes back to the previous valid row.
+
     Priority:
-    1. FeaturedVideo with active schedule (newest start_date wins if overlapping)
-    2. FeaturedVideo most recently scheduled (fallback)
-    3. Media with featured=True, ordered by -add_date (legacy fallback)
+    1. Newest started, active, not-ended FeaturedVideo row with a valid media
+    2. Newest started, active FeaturedVideo row with a valid media, even if
+       it has ended
+    3. Media with featured=True and no future schedule, ordered by
+       featured_date (newest first, nulls last), then -add_date
+
+    Rows with the same start_date are ordered newest row first.
 
     Returns None if no featured media exists.
     """
@@ -757,37 +765,33 @@ def get_current_featured_media():
 
     now = timezone.now()
 
-    # Priority 1: Active scheduled entry
-    active = (
+    valid_schedules = (
         FeaturedVideo.objects.filter(
             is_active=True,
             start_date__lte=now,
+            media__featured=True,
+            media__state="public",
+            media__is_reviewed=True,
+            media__encoding_status="success",
         )
-        .filter(Q(end_date__isnull=True) | Q(end_date__gte=now))
         .select_related("media")
-        .first()
+        .order_by("-start_date", "-pk")
     )
 
-    if (
-        active
-        and active.media.state == "public"
-        and active.media.is_reviewed
-        and active.media.encoding_status == "success"
-    ):
+    # Priority 1: Active scheduled entry
+    active = valid_schedules.filter(Q(end_date__isnull=True) | Q(end_date__gte=now)).first()
+    if active:
         return active.media
 
     # Priority 2: Most recent scheduled entry (even if expired, but must have started)
-    recent = FeaturedVideo.objects.filter(is_active=True, start_date__lte=now).select_related("media").first()
-
-    if (
-        recent
-        and recent.media.state == "public"
-        and recent.media.is_reviewed
-        and recent.media.encoding_status == "success"
-    ):
+    recent = valid_schedules.first()
+    if recent:
         return recent.media
 
-    # Priority 3: Legacy boolean field
+    # Priority 3: Featured media, in the same order as the featured listing.
+    # Skip media scheduled for later: the schedule signal sets featured_date to
+    # the future start date, which would otherwise sort first.
+    has_future_schedule = FeaturedVideo.objects.filter(media=OuterRef("pk"), is_active=True, start_date__gt=now)
     return (
         Media.objects.filter(
             featured=True,
@@ -795,6 +799,7 @@ def get_current_featured_media():
             is_reviewed=True,
             encoding_status="success",
         )
-        .order_by("-add_date")
+        .exclude(Exists(has_future_schedule))
+        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
         .first()
     )
