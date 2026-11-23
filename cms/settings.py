@@ -47,9 +47,9 @@ CORS_EXPOSE_HEADERS = [
 
 
 INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
-FRONTEND_HOST = os.getenv("FRONTEND_HOST", "http://cinemata.org")
+FRONTEND_HOST = os.getenv("FRONTEND_HOST", "https://cinemata.org")
 if "://" not in FRONTEND_HOST:
-    FRONTEND_HOST = f"http://{FRONTEND_HOST}"
+    FRONTEND_HOST = f"https://{FRONTEND_HOST}"
 SSL_FRONTEND_HOST = urlunsplit(urlsplit(FRONTEND_HOST)._replace(scheme="https"))
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 LOCAL_INSTALL = env_bool("LOCAL_INSTALL", False)
@@ -464,6 +464,8 @@ MAX_ANONYMOUS_VIEWS_PER_5SEC = 30
 
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
+# allauth gives this scheme to links it builds without a request, and forces it on every link when it is https.
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = urlsplit(FRONTEND_HOST).scheme
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 ACCOUNT_EMAIL_VERIFICATION = os.getenv("ACCOUNT_EMAIL_VERIFICATION", "mandatory")

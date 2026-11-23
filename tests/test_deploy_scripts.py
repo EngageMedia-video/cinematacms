@@ -981,6 +981,38 @@ class InstallScriptTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout.strip(), "https://video.example.org")
 
+    def test_frontend_host_defaults_to_https_and_sets_the_allauth_link_scheme(self):
+        for frontend_host, expected in (
+            (None, ["https://cinemata.org", "https"]),
+            ("video.example.org", ["https://video.example.org", "https"]),
+            ("http://localhost:8000", ["http://localhost:8000", "http"]),
+        ):
+            with self.subTest(frontend_host=frontend_host):
+                env = os.environ.copy()
+                env.pop("FRONTEND_HOST", None)
+                env["DJANGO_SETTINGS_MODULE"] = "cms.ci_settings"
+                if frontend_host is not None:
+                    env["FRONTEND_HOST"] = frontend_host
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        (
+                            "from django.conf import settings; "
+                            "print(settings.FRONTEND_HOST); "
+                            "print(settings.ACCOUNT_DEFAULT_HTTP_PROTOCOL)"
+                        ),
+                    ],
+                    cwd=PROJECT_ROOT,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.splitlines(), expected)
+
     def test_runtime_settings_fall_back_for_invalid_sampler_value(self):
         env = os.environ.copy()
         env.update(
