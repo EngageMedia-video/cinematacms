@@ -255,12 +255,12 @@ services. The release is `cinematacms@<tag>` when a tag points at `HEAD`
 12 characters of the commit otherwise. A checkout that holds a release commit
 without its tag, such as one deployed with `restart_script.sh --revision`, which
 fetches only the commit, reports the commit. Git runs as the user of the
-process, so that user must be able to read the checkout. When git fails, the
-process logs a warning from `cms.error_tracking`, and the Sentry SDK takes the
-`SENTRY_RELEASE` environment variable, or else the commit of its working
-directory. `deploy/apply-release-config.sh` removes `SENTRY_RELEASE` from
-`/etc/cinematacms/app.env`, so that fallback does not find a value that an
-operator set for an older release.
+process, so that user must be able to read the checkout. When git fails or
+takes longer than five seconds, the process logs a warning from
+`cms.error_tracking` and reports `cinematacms@unknown`. The process always gives
+the SDK a release, so the SDK never falls back to the `SENTRY_RELEASE`
+environment variable or to a git call of its own. `deploy/apply-release-config.sh`
+removes `SENTRY_RELEASE` from `/etc/cinematacms/app.env`.
 
 The sanitizer removes request and transaction data, headers, cookies, query
 strings, user data, breadcrumbs, performance spans, custom fingerprints, frame

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _configured = False
 GIT_TIMEOUT_SECONDS = 5
+UNKNOWN_RELEASE = "cinematacms@unknown"
 
 EMAIL_PATTERN = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?![\w.-])")
 URL_PATTERN = re.compile(
@@ -160,18 +161,24 @@ def _git_output(checkout: str, *arguments: str) -> str | None:
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
-def checkout_release(checkout: str) -> str | None:
-    """Name the release after the tag at HEAD of the checkout, or after its commit when no tag points there."""
+def checkout_release(checkout: str) -> str:
+    """Name the release after the tag at HEAD of the checkout, or after its commit when no tag points there.
+
+    The result is never None: given None, the Sentry SDK guesses a release from a stale SENTRY_RELEASE
+    or from a git call without a timeout.
+    """
     try:
         version = _git_output(checkout, "describe", "--tags", "--exact-match", "HEAD") or _git_output(
             checkout, "rev-parse", "--short=12", "HEAD"
         )
     except (OSError, subprocess.TimeoutExpired) as error:
-        logger.warning("Error tracking has no release: git failed in %s: %s", checkout, error)
-        return None
+        logger.warning("Error tracking reports release %s: git failed in %s: %s", UNKNOWN_RELEASE, checkout, error)
+        return UNKNOWN_RELEASE
     if not version:
-        logger.warning("Error tracking has no release: %s is not a git checkout that git can read.", checkout)
-        return None
+        logger.warning(
+            "Error tracking reports release %s: %s is not a git checkout that git can read.", UNKNOWN_RELEASE, checkout
+        )
+        return UNKNOWN_RELEASE
     return f"cinematacms@{version}"
 
 

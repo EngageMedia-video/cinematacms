@@ -297,16 +297,30 @@ class CheckoutReleaseTests(SimpleTestCase):
 
         self.assertEqual(checkout_release(self.checkout), f"cinematacms@{commit[:12]}")
 
-    def test_release_is_unset_with_a_warning_outside_a_checkout(self):
+    def test_release_is_unknown_with_a_warning_outside_a_checkout(self):
         with self.assertLogs("cms.error_tracking", logging.WARNING):
-            self.assertIsNone(checkout_release(self.checkout))
+            self.assertEqual(checkout_release(self.checkout), "cinematacms@unknown")
 
-    def test_release_is_unset_with_a_warning_without_git(self):
+    def test_release_is_unknown_with_a_warning_when_git_fails_to_run(self):
+        for failure in (FileNotFoundError("git"), subprocess.TimeoutExpired("git", 5)):
+            with (
+                self.subTest(failure=type(failure).__name__),
+                patch("cms.error_tracking.subprocess.run", side_effect=failure),
+                self.assertLogs("cms.error_tracking", logging.WARNING),
+            ):
+                self.assertEqual(checkout_release(self.checkout), "cinematacms@unknown")
+
+    @override_settings(SENTRY_DSN="https://public@example.invalid/1")
+    def test_sdk_gets_the_unknown_release_instead_of_guessing_one(self):
         with (
-            patch("cms.error_tracking.subprocess.run", side_effect=FileNotFoundError("git")),
+            override_settings(BASE_DIR=self.checkout),
+            patch("cms.error_tracking._configured", False),
+            patch("sentry_sdk.init") as initialize,
             self.assertLogs("cms.error_tracking", logging.WARNING),
         ):
-            self.assertIsNone(checkout_release(self.checkout))
+            configure_error_tracking()
+
+        self.assertEqual(initialize.call_args.kwargs["release"], "cinematacms@unknown")
 
 
 class ErrorTrackingLogPrivacyTests(SimpleTestCase):
