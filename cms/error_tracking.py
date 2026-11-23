@@ -1,13 +1,18 @@
 import copy
 import logging
 import re
+import subprocess
 import traceback
 from ipaddress import ip_address
 from typing import Any
 
 from django.conf import settings
 
+logger = logging.getLogger(__name__)
+
 _configured = False
+GIT_TIMEOUT_SECONDS = 5
+UNKNOWN_RELEASE = "cinematacms@unknown"
 
 EMAIL_PATTERN = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?![\w.-])")
 URL_PATTERN = re.compile(
@@ -145,6 +150,38 @@ def sanitize_log_record(record: logging.LogRecord) -> None:
         record.exc_info = None
 
 
+def _git_output(checkout: str, *arguments: str) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", checkout, *arguments],
+        capture_output=True,
+        text=True,
+        timeout=GIT_TIMEOUT_SECONDS,
+        check=False,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
+
+
+def checkout_release(checkout: str) -> str:
+    """Name the release after the tag at HEAD of the checkout, or after its commit when no tag points there.
+
+    The result is never None: given None, the Sentry SDK guesses a release from a stale SENTRY_RELEASE
+    or from a git call without a timeout.
+    """
+    try:
+        version = _git_output(checkout, "describe", "--tags", "--exact-match", "HEAD") or _git_output(
+            checkout, "rev-parse", "--short=12", "HEAD"
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        logger.warning("Error tracking reports release %s: git failed in %s: %s", UNKNOWN_RELEASE, checkout, error)
+        return UNKNOWN_RELEASE
+    if not version:
+        logger.warning(
+            "Error tracking reports release %s: %s is not a git checkout that git can read.", UNKNOWN_RELEASE, checkout
+        )
+        return UNKNOWN_RELEASE
+    return f"cinematacms@{version}"
+
+
 def configure_error_tracking() -> bool:
     global _configured
 
@@ -160,7 +197,7 @@ def configure_error_tracking() -> bool:
     sentry_sdk.init(
         dsn=dsn,
         environment=getattr(settings, "SENTRY_ENVIRONMENT", "development"),
-        release=getattr(settings, "SENTRY_RELEASE", "") or None,
+        release=checkout_release(str(settings.BASE_DIR)),
         sample_rate=float(getattr(settings, "SENTRY_SAMPLE_RATE", 1.0)),
         traces_sample_rate=0.0,
         profiles_sample_rate=0.0,

@@ -3596,10 +3596,14 @@ class FeaturedVideo(models.Model):
     """
     Tracks featured video scheduling and history.
 
-    Priority logic (highest to lowest):
-    1. Active scheduled entry (start_date <= now, end_date null or >= now)
+    Priority logic (highest to lowest), see get_current_featured_media():
+    1. Newest active scheduled entry (start_date <= now, end_date null or >= now)
     2. Most recent expired scheduled entry (fallback)
-    3. Media.featured=True (legacy fallback)
+    3. Media.featured=True without a future schedule, newest featured_date first
+
+    Steps 1 and 2 skip a row unless its media is featured, public, reviewed and
+    encoded, so hiding or unfeaturing a scheduled media hands the hero back to
+    the previous valid row.
     """
 
     media = models.ForeignKey(
