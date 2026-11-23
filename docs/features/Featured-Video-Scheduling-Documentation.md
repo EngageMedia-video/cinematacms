@@ -143,6 +143,24 @@ Featured videos are ordered by:
 4. Video D (featured_date: NULL) ← Oldest
 ```
 
+### Hero Selection
+
+**Location:** `files/methods.py` (`get_current_featured_media`)
+
+The homepage hero is a single film chosen in this order:
+
+1. The newest started, active schedule row that has not ended.
+2. If no such row is valid, the most recent started, active row, even if its end date has passed.
+3. If no schedule row is valid, the featured film with the newest `featured_date` (NULLs last, then newest `add_date`). Films with a future schedule are skipped, as in the featured listing.
+
+A schedule row is valid only when its film is featured, public, reviewed and encoded. The hero skips any row whose film is Unlisted, Private, not reviewed, not encoded or has "Featured" unchecked, and uses the next most recent row instead. Rows with the same start date are ordered newest row first.
+
+**Behavior:**
+
+- Hiding a scheduled film, or unchecking "Featured", hands the hero back to the previous valid schedule row. Nobody has to uncheck "Is Active" on the schedule.
+- Making the film public and featured again restores it as the hero if its row is still the newest valid one.
+- The change shows up after the next home page cache refresh.
+
 ### Scheduling Filter
 
 **Location:** `files/views.py` (lines 1001-1005)
@@ -222,6 +240,15 @@ The `featured_date` field is exposed in the Media API serializer as a read-only 
 - ⏸️ Schedule is disabled
 - ⚠️ Video remains in featured listings (`Media.featured` is still `True`)
 - ℹ️ To remove from listings, must also uncheck "Featured" on Media page
+
+### Scenario 5: Hide the Scheduled Hero Film
+
+**Action:** A curator makes the film on the current schedule row Unlisted or Private, or unchecks "Featured" on it
+
+**System Response:**
+- ✅ The hero falls back to the previous schedule row whose film can be shown
+- ✅ If no schedule row is valid, the hero is the featured film with the newest `featured_date`
+- ℹ️ The schedule row stays active, so the film returns as the hero once it is public and featured again
 
 ---
 
