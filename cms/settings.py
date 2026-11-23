@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from urllib.parse import urlsplit, urlunsplit
 
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
@@ -46,10 +47,10 @@ CORS_EXPOSE_HEADERS = [
 
 
 INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
-FRONTEND_HOST = os.getenv("FRONTEND_HOST", "http://cinemata.org")
+FRONTEND_HOST = os.getenv("FRONTEND_HOST", "https://cinemata.org")
 if "://" not in FRONTEND_HOST:
-    FRONTEND_HOST = f"http://{FRONTEND_HOST}"
-SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
+    FRONTEND_HOST = f"https://{FRONTEND_HOST}"
+SSL_FRONTEND_HOST = urlunsplit(urlsplit(FRONTEND_HOST)._replace(scheme="https"))
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 LOCAL_INSTALL = env_bool("LOCAL_INSTALL", False)
 if not SECRET_KEY and os.getenv("DJANGO_SETTINGS_MODULE") != "cms.ci_settings":
@@ -462,6 +463,8 @@ MAX_ANONYMOUS_VIEWS_PER_5SEC = 30
 
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
+# allauth gives this scheme to links it builds without a request, and forces it on every link when it is https.
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = urlsplit(FRONTEND_HOST).scheme
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 ACCOUNT_EMAIL_VERIFICATION = os.getenv("ACCOUNT_EMAIL_VERIFICATION", "mandatory")
@@ -868,7 +871,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
 SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0)
-SECURE_REDIRECT_EXEMPT = env_csv("SECURE_REDIRECT_EXEMPT", [])
+# nginx forwards these from loopback over plain HTTP (deploy/nginx/cinematacms-metrics.conf,
+# deploy/observability/templates/nginx-app-metrics.conf), so an https redirect would break them.
+LOOPBACK_HTTP_PATHS = [
+    r"^metrics$",
+    r"^internal/observability/references$",
+    r"^internal/observability/error-probe$",
+]
+SECURE_REDIRECT_EXEMPT = [*LOOPBACK_HTTP_PATHS, *env_csv("SECURE_REDIRECT_EXEMPT", [])]
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 
 CRISPY_TEMPLATE_PACK = "bootstrap"
