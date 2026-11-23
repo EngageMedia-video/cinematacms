@@ -964,6 +964,23 @@ class InstallScriptTests(unittest.TestCase):
             ["True", "cinematacms-deploy-test", "http://127.0.0.1:14318/v1/traces", "0.25"],
         )
 
+    def test_ssl_frontend_host_is_https_for_any_frontend_scheme(self):
+        for frontend_host in ("https://video.example.org", "http://video.example.org", "video.example.org"):
+            with self.subTest(frontend_host=frontend_host):
+                env = os.environ.copy()
+                env.update({"DJANGO_SETTINGS_MODULE": "cms.ci_settings", "FRONTEND_HOST": frontend_host})
+                result = subprocess.run(
+                    [sys.executable, "-c", "from django.conf import settings; print(settings.SSL_FRONTEND_HOST)"],
+                    cwd=PROJECT_ROOT,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), "https://video.example.org")
+
     def test_runtime_settings_fall_back_for_invalid_sampler_value(self):
         env = os.environ.copy()
         env.update(
