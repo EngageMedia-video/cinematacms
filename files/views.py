@@ -483,6 +483,9 @@ def manage_film_impact(request):
     if not can_manage_film_impact(request.user):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "film_impact")
     context = {}
     return render(request, "cms/manage_film_impact.html", context)
 
@@ -498,6 +501,9 @@ def manage_film_impact_edit(request, uid):
     if not can_manage_film_impact(request.user):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "film_impact_edit")
     context = {}
     return render(request, "cms/manage_film_impact.html", context)
 
@@ -1564,7 +1570,9 @@ def view_playlist(request, friendly_token):
     context = {}
     context["playlist"] = playlist
     if playlist:
-        request.analytics_playlist = str(playlist.uid)
+        from cms.analytics import allow_playlist_analytics
+
+        allow_playlist_analytics(request, playlist)
     return render(request, "cms/playlist.html", context)
 
 

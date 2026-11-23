@@ -10,13 +10,71 @@
     const isUmamiPreview = window.top !== window.self &&
         Array.from(window.location.ancestorOrigins || []).includes(analyticsOrigin);
     if (isUmamiPreview) return;
-    const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
-    let referrer = config.nonpublic || !document.referrer ? '' : (() => {
+    // Matches every generic path the server and pageview() give a tracked page.
+    const trackerPath = /^\/(?:media\/(?:view|embed)|user\/profile\/(?:home|media|playlists|about|impact)|page\/[a-zA-Z0-9_-]{1,64}|[a-zA-Z0-9_-]{1,200})?$/;
+    const isTrackerPath = (path) => typeof path === 'string' && trackerPath.test(path);
+    // Umami starts a new visit after 30 minutes without activity.
+    const visitLength = 30 * 60 * 1000;
+    function hasDoNotTrack() {
+        return [navigator.doNotTrack, window.doNotTrack, navigator.msDoNotTrack]
+            .some((value) => value === 1 || value === '1' || value === 'yes');
+    }
+    // An embed sits on another site's page, so loading one is not movement within Cinemata.
+    const isEmbed = config.context === 'embed';
+    // Returns the tab's previously tracked page within this visit and records the current one.
+    function advancePath(path) {
+        if (hasDoNotTrack() || isEmbed) return null;
+        let previous = null;
         try {
-            const url = new URL(document.referrer);
-            return ['http:', 'https:'].includes(url.protocol) ? `${url.protocol}//${url.hostname}/` : '';
-        } catch { return ''; }
-    })();
+            const saved = JSON.parse(sessionStorage.getItem('cinemata-previous-path') || 'null');
+            const age = Date.now() - saved?.time;
+            if (age >= 0 && age < visitLength && isTrackerPath(saved.path)) previous = saved.path;
+        } catch { /* Storage may be unavailable in an embed, or hold a value this tracker did not write. */ }
+        try { sessionStorage.setItem('cinemata-previous-path', JSON.stringify({ path, time: Date.now() })); }
+        catch { /* Storage may be unavailable in an embed. */ }
+        return previous;
+    }
+    const landingPreviousPath = advancePath(config.path);
+    const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
+    const siteHost = (hostname) => hostname.toLowerCase().replace(/^www\./, '');
+    // A public media page needs its m parameter to name the film; other query strings can hold search terms.
+    function publicPageUrl(href, keepsMediaToken) {
+        const url = new URL(href);
+        // The media views read m with Django's QueryDict.get, which returns the last value, and strip it.
+        const token = keepsMediaToken ? url.searchParams.getAll('m').at(-1)?.trim() : null;
+        return `${url.origin}${url.pathname}${token ? `?${new URLSearchParams({ m: token })}` : ''}`;
+    }
+    // Public pages give the next page only their origin (templates/root.html), so the tab keeps
+    // the URL of its last public page within this visit; a nonpublic page forgets it.
+    function advancePublicPage() {
+        let previous = null;
+        try {
+            const saved = JSON.parse(sessionStorage.getItem('cinemata-public-page') || 'null');
+            const age = Date.now() - saved?.time;
+            const isPublicPageUrl = (url) => typeof url === 'string' &&
+                new URL(url).origin === window.location.origin && publicPageUrl(url, true) === url;
+            if (age >= 0 && age < visitLength && isPublicPageUrl(saved.url)) previous = saved.url;
+        } catch { /* Storage may be unavailable in an embed, or hold a value this tracker did not write. */ }
+        try {
+            if (config.nonpublic) sessionStorage.removeItem('cinemata-public-page');
+            else sessionStorage.setItem('cinemata-public-page', JSON.stringify({
+                url: publicPageUrl(window.location.href, !!config.media_id), time: Date.now(),
+            }));
+        } catch { /* Storage may be unavailable in an embed. */ }
+        return previous;
+    }
+    function sendableReferrer(value, previousPublicPage) {
+        let url;
+        try { url = new URL(value); } catch { return ''; }
+        if (!['http:', 'https:'].includes(url.protocol)) return '';
+        // Cinemata URLs can hold usernames and access tokens, so only a public page's URL leaves the site.
+        if (siteHost(url.hostname) === siteHost(window.location.hostname)) {
+            return previousPublicPage || `${url.protocol}//${url.hostname}/`;
+        }
+        return `${url.origin}${url.pathname}${url.search}`;
+    }
+    const landingPublicPage = advancePublicPage();
+    let referrer = config.nonpublic ? '' : sendableReferrer(document.referrer, landingPublicPage);
     const pending = [];
     // The function form lets Umami add the screen, language and distinct ID it collects.
     function emitUmami(payload) {
@@ -45,6 +103,8 @@
     const screenSize = /^\d{1,5}x\d{1,5}$/;
     const languageTag = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8}){0,2}$/;
     const webVitals = ['lcp', 'inp', 'cls', 'fcp', 'ttfb'];
+    // ENCODE_RESOLUTIONS and CODECS in files/models.py.
+    const downloadFile = /^(original|(2160|1440|1080|720|480|360|240)-(h264|h265|vp9))$/;
     const shareNetworks = ['email', 'fb', 'tw', 'reddit', 'tumblr', 'pinterest', 'vk', 'linkedin', 'mix', 'whatsapp', 'telegram'];
     function browserFields(payload) {
         return {
@@ -56,6 +116,11 @@
     let audienceGroup = audienceFor(config.audience_group);
     // Umami stores at most 500 characters of a page title or an event data string.
     const mediaTitle = (title) => typeof title === 'string' && title ? Array.from(title).slice(0, 500).join('') : null;
+    const isPublicMedia = (media) => media?.state === 'public';
+    const namedPageTitle = !config.media_id && !config.nonpublic ? mediaTitle(config.page_title) : null;
+    // USERNAME_RE in users/urls.py uses Python's Unicode \w; usernames are at most 150 characters.
+    const profileUsername = typeof config.profile_username === 'string' &&
+        /^[\p{L}\p{N}_@.-]{1,150}$/u.test(config.profile_username) ? config.profile_username : null;
     // Each media item keeps the page context it was viewed with, for events
     // that wait for Umami to load while a playlist moves on in place.
     const mediaPages = new Map();
@@ -68,7 +133,10 @@
         });
     }
     rememberMediaPage();
-    const heroTitles = new Map();
+    const interactionPaths = { hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' };
+    // Titles of public media acting away from its own page, keyed by path and media ID.
+    // beforeSend reads titles only from here, so a title in an event payload is never trusted.
+    const interactionTitles = new Map();
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -82,7 +150,7 @@
             website: config.website_id,
             hostname: window.location.hostname,
             url: config.path,
-            title: mediaPages.get(config.media_id)?.title || (config.media_id ? 'Media' : 'Page'),
+            title: mediaPages.get(config.media_id)?.title || (config.media_id ? 'Media' : namedPageTitle || 'Page'),
             ...browserFields(payload),
         };
         if (type === 'identify') return identity ? { ...page, data: { audience_group: identity.audience_group } } : false;
@@ -100,10 +168,12 @@
             context: ['page', 'embed', 'hero', 'playlist', 'workflow'].includes(payload.data?.context) ? payload.data.context : 'page',
         } : {};
         if (mediaId && /^[0-9a-f-]{36}$/.test(payload.data?.revision || '')) data.revision = payload.data.revision;
-        const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
+        const interactionPath = mediaId && Object.values(interactionPaths).includes(payload.url) ? payload.url : null;
         const viewedPage = !interactionPath && ['page', 'embed'].includes(data.context) ? mediaPage : null;
-        const heroTitle = interactionPath === '/media/hero' && data.context === 'hero' ? heroTitles.get(mediaId) : null;
-        if (viewedPage?.title || heroTitle) data.media_title = viewedPage?.title || heroTitle;
+        const interactionTitle = interactionPath && interactionPath === interactionPaths[data.context]
+            ? interactionTitles.get(`${interactionPath}:${mediaId}`) : null;
+        if (viewedPage?.title || interactionTitle) data.media_title = viewedPage?.title || interactionTitle;
+        const eventTitle = viewedPage?.title || (interactionPath === interactionPaths.playlist ? interactionTitle : null);
         if (payload.name === 'playback_start' && ['deliberate', 'autoplay', 'unknown'].includes(payload.data?.initiation)) {
             data.initiation = payload.data.initiation;
         }
@@ -116,9 +186,17 @@
         if (payload.name === 'media_share_click' && shareNetworks.includes(payload.data?.network)) {
             data.network = payload.data.network;
         }
+        if (payload.name === 'download_click' && typeof payload.data?.file === 'string' && downloadFile.test(payload.data.file)) {
+            data.file = payload.data.file;
+        }
         if (payload.name === 'media_view' && !privacy.nonpublic &&
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
             data.source_domain = payload.data.source_domain;
+        }
+        // Umami's Event data breaks down properties of named events only, so page_view carries it too.
+        const isPageView = !payload.name || payload.name === 'page_view';
+        if (isPageView && !privacy.nonpublic && isTrackerPath(payload.data?.previous_path)) {
+            data.previous_path = payload.data.previous_path;
         }
         if (!privatePath) {
             for (const key of ['target', 'result_type']) {
@@ -126,26 +204,30 @@
             }
             if (['hero', 'featured', 'recommended', 'recent', 'playlist', 'sidebar', 'topbar', 'search', 'profile'].includes(payload.data?.placement)) data.placement = payload.data.placement;
         }
-        const playlistId = !privatePath && !mediaId && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
-        if (playlistId) data.playlist_id = playlistId;
-        if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
+        // An in-place route view is a different screen, so the server page's names and tag do not apply.
+        const isPageContext = !privatePath && !mediaId && !virtualPath;
+        const playlistId = isPageContext && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
+        if (playlistId) data.playlist_id = playlistId;
+        if (playlistId && namedPageTitle) data.playlist_title = namedPageTitle;
+        if (isPageContext && profileUsername) data.profile_username = profileUsername;
+        if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
+        const eventReferrer = privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer;
+        // Umami's Event data cannot break down its own referrer, so these views also carry it as a property.
+        if (['page_view', 'media_view'].includes(payload.name) && !privacy.nonpublic && /^https?:\/\//.test(eventReferrer)) {
+            data.referrer = eventReferrer.slice(0, 500);
+        }
         return {
             ...page,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
-            title: viewedPage?.title || (mediaId ? 'Media' : 'Page'),
-            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
+            title: eventTitle || (mediaId ? 'Media' : isPageContext && namedPageTitle || 'Page'),
+            referrer: eventReferrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
         };
     };
-
-    function hasDoNotTrack() {
-        return [navigator.doNotTrack, window.doNotTrack, navigator.msDoNotTrack]
-            .some((value) => value === 1 || value === '1' || value === 'yes');
-    }
 
     function send(name, data = {}, media = null) {
         if (!eventName.test(name) || hasDoNotTrack()) return;
@@ -153,12 +235,16 @@
         // Fixed now: events wait for Umami to load, and a playlist can move to
         // its next item in place before then.
         const mediaId = media?.id || config.media_id;
-        const heroTitle = media?.context === 'hero' && media.state === 'public' ? mediaTitle(media.title) : null;
-        if (heroTitle) heroTitles.set(media.id, heroTitle);
+        const interactionPath = media ? interactionPaths[media.context] : null;
+        if (interactionPath) {
+            const title = isPublicMedia(media) ? mediaTitle(media.title) : null;
+            if (title) interactionTitles.set(`${interactionPath}:${media.id}`, title);
+            else interactionTitles.delete(`${interactionPath}:${media.id}`);
+        }
         const event = {
             name,
             tag: mediaId ? `media:${mediaId}` : tag,
-            url: media ? ({ hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' }[media.context] || config.path) : config.path,
+            url: interactionPath || config.path,
             title: mediaId ? 'Media' : 'Page',
             referrer,
             data: {
@@ -177,8 +263,12 @@
     function pageview(name) {
         if (config.media_id || !routeName.test(name) || hasDoNotTrack()) return;
         if (!config.url || !config.website_id) return;
+        const previousPath = advancePath(`/page/${name}`);
         const track = () => {
-            const payload = { website: config.website_id, url: `/page/${name}`, title: 'Page', referrer };
+            const payload = {
+                website: config.website_id, url: `/page/${name}`, title: 'Page', referrer,
+                data: previousPath ? { previous_path: previousPath } : {},
+            };
             emitUmami(payload);
             if (audienceGroup) emitUmami({ ...payload, name: 'page_view' });
         };
@@ -189,8 +279,15 @@
         track();
     }
 
-    function currentPageview() {
-        return { website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag: config.media_id ? `media:${config.media_id}` : tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined };
+    function currentPageview(previousPath) {
+        return {
+            website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer,
+            tag: config.media_id ? `media:${config.media_id}` : tag,
+            data: {
+                ...(config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : {}),
+                ...(previousPath ? { previous_path: previousPath } : {}),
+            },
+        };
     }
 
     // A playlist item played in place counts like a navigation to its page.
@@ -198,20 +295,22 @@
         if (!config.media_id || !media?.id) return;
         config.media_id = media.id;
         config.media_type = media.type;
-        config.nonpublic = media.state !== 'public';
+        config.nonpublic = !isPublicMedia(media);
         config.title = media.title;
         config.revision = media.revision;
         config.measurement_token = media.measurement_token || null;
         audienceGroup = audienceFor(media.audience_group);
-        referrer = config.nonpublic ? '' : `${window.location.protocol}//${window.location.hostname}/`;
+        const previousPublicPage = advancePublicPage();
+        referrer = config.nonpublic ? '' : sendableReferrer(window.location.origin, previousPublicPage);
         rememberMediaPage();
         window.CinemataAnalytics.mediaId = media.id;
+        const previousPath = advancePath(config.path);
         if (config.url && config.website_id && !hasDoNotTrack()) {
-            const view = currentPageview();
+            const view = currentPageview(previousPath);
             if (window.umami) emitUmami(view);
             else pending.push(() => emitUmami(view));
         }
-        if (audienceGroup) send('page_view');
+        if (audienceGroup) send('page_view', { previous_path: previousPath });
         send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     }
 
@@ -460,18 +559,20 @@
         },
     };
 
-    if (audienceGroup) send('page_view');
+    if (audienceGroup) send('page_view', { previous_path: landingPreviousPath });
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
 
-    const firstPageview = { ...currentPageview(), url: config.path + campaignQuery };
+    const firstPageview = { ...currentPageview(landingPreviousPath), url: config.path + campaignQuery };
 
     // Umami's recorder sends location.href with heatmap and replay data and has no
     // beforeSend hook, so it runs only where the browser URL holds nothing private.
     function recorderUrlIsSafe() {
         // Profile URLs carry the username, which page views replace with /user/profile.
         const isProfileUrl = /^\/user\//.test(window.location.pathname);
-        if (config.nonpublic || window.location.hash || isProfileUrl) return false;
+        // The page renders the last m, so an earlier m can name an unlisted film.
+        const repeatsMediaToken = new URLSearchParams(window.location.search).getAll('m').length > 1;
+        if (config.nonpublic || window.location.hash || isProfileUrl || repeatsMediaToken) return false;
         return [...new URLSearchParams(window.location.search)].every(([key, value]) =>
             key === 'm' || (/^utm_(source|medium|campaign|content|term)$/.test(key) && campaignValue.test(value)));
     }
@@ -506,6 +607,7 @@
     }
 
     document.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('[data-analytics-ignore]')) return;
         const action = event.target instanceof Element ? event.target.closest('[data-analytics-action]') : null;
         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
         if (action && !link && action.matches('button, [role="button"]')) send(action.dataset.analyticsAction);
@@ -515,7 +617,7 @@
         let destination;
         try { destination = new URL(link.href, window.location.href); } catch { return; }
         const actionData = action?.dataset.analyticsNetwork ? { network: action.dataset.analyticsNetwork } : {};
-        if (link.hasAttribute('download')) send('download_click');
+        if (link.hasAttribute('download')) send('download_click', { file: link.dataset.analyticsFile });
         if (action && !destination.protocol.startsWith('http')) send(action.dataset.analyticsAction, actionData);
         if (destination.origin === window.location.origin) {
             const path = destination.pathname;

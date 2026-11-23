@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from django.apps import apps
 from django.contrib.auth.models import AnonymousUser
-from django.core import signing
+from django.core import mail, signing
 from django.core.management import call_command
 from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
@@ -22,7 +22,7 @@ from cms.analytics import action_events, allow_page_analytics, analytics_context
 from cms.creator_analytics import AnalyticsUnavailable, creator_analytics
 from cms.playback_analytics import measurement_token, playback_figures
 from files.management.commands.purge_playback_summaries import twelve_month_cutoff
-from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary
+from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary, Playlist
 from files.tests.helpers import create_test_media, create_test_user
 from files.views import _attach_hero_playback_to_first_featured_item
 
@@ -82,6 +82,33 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         request.META.pop("HTTP_DNT")
         with override_settings(ANALYTICS_ENABLED=False):
             self.assertEqual(action_events(request, "media_update"), [])
+
+    def test_workflow_events_name_public_media_only(self):
+        request = RequestFactory().post("/edit?m=secret")
+        request.user = AnonymousUser()
+        request.session = {}
+        request.resolver_match = SimpleNamespace(url_name="home")
+        request.path = "/"
+        uid, revision = uuid.uuid4(), uuid.uuid4()
+        media = SimpleNamespace(uid=uid, media_type="video", analytics_revision=revision, title="Rivers of Java")
+        for state in ("public", "private", "restricted", "unlisted"):
+            with self.subTest(state=state):
+                media.state = state
+                expected = {
+                    "id": str(uid),
+                    "type": "video",
+                    "revision": str(revision),
+                    "context": "workflow",
+                    "state": state,
+                    **({"title": "Rivers of Java"} if state == "public" else {}),
+                }
+                self.assertEqual(
+                    action_events(request, "media_update", media=media), [{"name": "media_update", "media": expected}]
+                )
+                queue_action(request, "subtitle_add", media=media)
+                self.assertEqual(
+                    analytics_context(request)["ANALYTICS"]["events"], [{"name": "subtitle_add", "media": expected}]
+                )
 
     def test_authentication_signal_counts_only_completed_eligible_authentication(self):
         from allauth.account.signals import user_logged_in, user_signed_up
@@ -276,6 +303,163 @@ class AnalyticsTemplateTests(TestCase):
         self.assertEqual(grant, {"scope": f"page:{Page.objects.get(slug='a-story').pk}"})
         missing = self.client.get("/missing-story")
         self.assertNotContains(missing, "cinemata-analytics-config")
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_playlist_page_names_the_playlist_by_its_title(self):
+        playlist = Playlist.objects.create(title="Rivers of Java", user=create_test_user())
+
+        config = self.client.get(f"/playlist/{playlist.friendly_token}").context["ANALYTICS"]
+
+        self.assertEqual(config["path"], "/get_playlist")
+        self.assertEqual(config["playlist_id"], str(playlist.uid))
+        self.assertEqual(config["page_title"], "Rivers of Java")
+        self.assertNotIn("profile_username", config)
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_public_profile_sections_name_the_viewed_profile(self):
+        owner = create_test_user(name="Ayu Lestari")
+        for suffix, section in (
+            ("", "home"),
+            ("/", "home"),
+            ("/media", "media"),
+            ("/playlists", "playlists"),
+            ("/about", "about"),
+            ("/impact", "impact"),
+        ):
+            with self.subTest(section=suffix):
+                config = self.client.get(f"/user/{owner.username}{suffix}").context["ANALYTICS"]
+                self.assertEqual(config["path"], f"/user/profile/{section}")
+                self.assertEqual(config["profile_username"], owner.username)
+                self.assertEqual(config["page_title"], "Ayu Lestari")
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_profile_without_a_display_name_is_titled_by_its_username(self):
+        owner = create_test_user(name="")
+
+        config = self.client.get(f"/user/{owner.username}/about").context["ANALYTICS"]
+
+        self.assertEqual(config["page_title"], owner.username)
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_pages_other_than_public_profiles_and_playlists_send_no_page_name(self):
+        owner = create_test_user(name="Ayu Lestari")
+        media = create_test_media(owner, state="public")
+        self.client.force_login(owner)
+        configs = {
+            "home": self.client.get("/").context["ANALYTICS"],
+            "media": self.client.get(media.get_absolute_url()).context["ANALYTICS"],
+            "owner tab": self.client.get(f"/user/{owner.username}/history").context["ANALYTICS"],
+        }
+        for page, config in configs.items():
+            with self.subTest(page=page):
+                self.assertNotIn("page_title", config)
+                self.assertNotIn("profile_username", config)
+                self.assertNotIn("Ayu Lestari", json.dumps(config))
+
+        missing = self.client.get("/user/no-such-member/about")
+        self.assertEqual(missing.status_code, 302)
+        self.assertNotIn("ANALYTICS", missing.context or {})
+
+
+@override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", MFA_REQUIRED_ROLES=[])
+class AccountAndOwnerPageAnalyticsTests(TestCase):
+    def assertGenericWorkflowPage(self, response, workflow, *private_values):
+        config = response.context["ANALYTICS"]
+        self.assertEqual(config["path"], f"/page/{workflow}")
+        self.assertTrue(config["nonpublic"])
+        self.assertNotIn("audience_group", config)
+        self.assertNotIn("segment_grant", config)
+        self.assertContains(response, '<meta name="referrer" content="same-origin">')
+        tracker_config = response.content.decode().split('id="cinemata-analytics-config"', 1)[1].split("</script>")[0]
+        for value in private_values:
+            self.assertNotIn(value, json.dumps(config))
+            self.assertNotIn(value, tracker_config)
+
+    def test_creator_analytics_is_a_generic_page_for_its_owner(self):
+        owner = create_test_user()
+        media = create_test_media(owner, state="private")
+        self.client.force_login(owner)
+
+        response = self.client.get("/analytics", {"media": str(media.uid), "tz": "Asia/Jakarta"})
+
+        self.assertGenericWorkflowPage(response, "creator_analytics", str(media.uid), owner.username)
+
+    def test_creator_analytics_emits_nothing_when_access_is_denied(self):
+        media = create_test_media(create_test_user(), state="private")
+        self.assertNotIn("ANALYTICS", self.client.get("/analytics").context or {})
+        self.client.force_login(create_test_user())
+
+        response = self.client.get("/analytics", {"media": str(media.uid)})
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, "cinemata-analytics-config", status_code=404)
+
+    def test_password_reset_key_page_sends_a_generic_path_without_the_key(self):
+        from allauth.account.forms import default_token_generator
+        from allauth.account.utils import user_pk_to_url_str
+
+        member = create_test_user(email="member@example.org")
+        uid, key = user_pk_to_url_str(member), default_token_generator.make_token(member)
+
+        stored = self.client.get(f"/accounts/password/reset/key/{uid}-{key}/")
+        response = self.client.get(stored["Location"])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGenericWorkflowPage(response, "password_reset_key", key, f"{uid}-")
+
+    def test_sign_in_page_is_counted_for_anonymous_visitors_without_form_values(self):
+        response = self.client.post("/accounts/login/", {"login": "nobody@example.org", "password": "wrong-secret"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGenericWorkflowPage(response, "login", "nobody@example.org", "wrong-secret")
+
+    def test_denied_and_missing_account_pages_emit_nothing(self):
+        self.assertNotContains(self.client.get("/accounts/email/"), "cinemata-analytics-config", status_code=302)
+        self.client.force_login(create_test_user())
+
+        missing = self.client.get("/accounts/2fa/recovery-codes/")
+
+        self.assertEqual(missing.status_code, 404)
+        self.assertNotContains(missing, "cinemata-analytics-config", status_code=404)
+        self.assertNotContains(self.client.get("/manage/film-impact"), "cinemata-analytics-config", status_code=302)
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="mandatory")
+    def test_signup_confirmation_mail_leaves_the_signup_event_for_the_next_page(self):
+        from files.lists import video_countries
+
+        response = self.client.post(
+            "/accounts/signup/",
+            {
+                "email": "new-member@example.org",
+                "username": "new_member",
+                "password1": "a-long-unusual-passphrase-42",
+                "name": "New Member",
+                "location_country": video_countries[0][0],
+            },
+            follow=True,
+        )
+
+        self.assertEqual([message.to for message in mail.outbox].count(["new-member@example.org"]), 1)
+        self.assertGenericWorkflowPage(response, "email_verification_sent", "new-member@example.org")
+        self.assertEqual([event["name"] for event in response.context["ANALYTICS"]["events"]], ["signup_success"])
+
+    def test_staff_and_opted_out_members_stay_untracked_on_account_and_owner_pages(self):
+        opted_out = create_test_user(disable_activity_logging=True)
+        for user in (create_test_user(is_staff=True), create_test_user(is_editor=True), opted_out):
+            self.client.force_login(user)
+            for url in ("/analytics", "/accounts/email/", "/accounts/2fa/"):
+                with self.subTest(user=user.username, url=url):
+                    self.assertNotContains(self.client.get(url), "cinemata-analytics-config")
+
+    def test_curator_film_impact_pages_are_generic_workflow_pages(self):
+        self.client.force_login(create_test_user(is_curator=True))
+
+        for url, workflow in (
+            ("/manage/film-impact", "film_impact"),
+            ("/manage/film-impact/00000000-0000-4000-8000-000000000001/edit", "film_impact_edit"),
+        ):
+            with self.subTest(url=url):
+                self.assertGenericWorkflowPage(self.client.get(url), workflow, "00000000-0000-4000-8000-000000000001")
 
 
 @override_settings(
@@ -1123,7 +1307,8 @@ class CreatorAnalyticsTests(TestCase):
         self.assertIn(("Comments posted", 2), data["engagement"])
         self.assertIn(("Download clicks", 1), data["engagement"])
         self.assertEqual(data["rows"], [])
-        self.assertNotContains(response, "cinemata-analytics-config")
+        self.assertEqual(response.context["ANALYTICS"]["path"], "/page/creator_analytics")
+        self.assertNotIn(str(selected.uid), json.dumps(response.context["ANALYTICS"]))
 
     @override_settings(ANALYTICS_ENABLED=False)
     def test_media_detail_rejects_unowned_missing_and_invalid_ids_before_querying(self):

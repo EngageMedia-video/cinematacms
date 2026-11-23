@@ -74,6 +74,12 @@ describe('CreatorAnalyticsPage', () => {
 	beforeEach(() => window.history.replaceState(null, '', '/analytics'));
 	afterEach(() => vi.useRealTimers());
 
+	it('keeps report filters, exports and navigation out of click tracking', () => {
+		render(<CreatorAnalyticsPage data={{ ...data, pagination: { number: 1, count: 2, next: 2 } }} />);
+		for (const name of ['7 days', 'Export CSV'])
+			expect(screen.getByRole('link', { name }).closest('[data-analytics-ignore]')).not.toBeNull();
+	});
+
 	it('keeps the local calendar dates and timezone in filters, exports and pagination', async () => {
 		const user = userEvent.setup();
 		render(

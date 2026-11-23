@@ -71,6 +71,29 @@ source_psql() {
     as_postgres psql -X -p "$SOURCE_PORT" -d postgres -Atqc "$1"
 }
 
+# Prints "database schema.table rows" for every user table in every database
+# on the cluster at SOURCE_PORT, which is the new cluster once the upgrade ran.
+count_table_rows() {
+    local databases database quoted_name counts
+    databases=$(source_psql "SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate ORDER BY 1") || return 1
+    while IFS= read -r database; do
+        # psql reads a -d value containing "=" as a connection string, so pass
+        # the name as a quoted dbname value.
+        quoted_name=${database//\\/\\\\}
+        quoted_name=${quoted_name//\'/\\\'}
+        # A materialized view created WITH NO DATA cannot be scanned.
+        counts=$(as_postgres psql -X -p "$SOURCE_PORT" -d "dbname='$quoted_name'" -Atq -v ON_ERROR_STOP=1 <<'SQL'
+SELECT format('SELECT %L || '' '' || count(*) FROM %I.%I', s.schemaname || '.' || s.relname, s.schemaname, s.relname)
+FROM pg_stat_user_tables s JOIN pg_class c ON c.oid = s.relid
+WHERE c.relispopulated
+ORDER BY s.schemaname, s.relname
+\gexec
+SQL
+        ) || return 1
+        [ -z "$counts" ] || awk -v database="$database" '{ print database, $0 }' <<<"$counts"
+    done <<<"$databases"
+}
+
 start_conf() {
     printf '%s\n' "/etc/postgresql/$1/$2/start.conf"
 }
@@ -197,8 +220,10 @@ prepare() {
 }
 
 upgrade() {
-    local original_start
+    local original_start rows_before rows_after
     read_source_cluster
+    rows_before="$UPGRADE_RECORD.rows-before"
+    rows_after="$UPGRADE_RECORD.rows-after"
     ! target_cluster_exists "$SOURCE_NAME" || \
         fail "cluster $TARGET_VERSION/$SOURCE_NAME already exists; the upgrade has already run. After a rollback, drop it with pg_dropcluster $TARGET_VERSION $SOURCE_NAME to upgrade again"
     [ "$SOURCE_STATUS" = "online" ] || fail "cluster $SOURCE_VERSION/$SOURCE_NAME must be running so its clients can be checked"
@@ -210,11 +235,18 @@ upgrade() {
     # port and startup policy even if this run is interrupted.
     printf 'original_port=%s\noriginal_start=%s\n' "$SOURCE_PORT" "${original_start:-auto}" >"$UPGRADE_RECORD"
     rm -f "$UPGRADE_RECORD.rolled-back"
+    echo "Counting the rows in every table of $SOURCE_VERSION/$SOURCE_NAME"
+    count_table_rows >"$rows_before" || fail "could not count the rows in $SOURCE_VERSION/$SOURCE_NAME"
     pg_upgradecluster -v "$TARGET_VERSION" -m upgrade "$SOURCE_VERSION" "$SOURCE_NAME"
     # The old cluster stays as the rollback copy; keep it from starting at boot.
     echo manual >"$(start_conf "$SOURCE_VERSION" "$SOURCE_NAME")"
     move_unit_enablement "$SOURCE_VERSION" "$TARGET_VERSION" "$SOURCE_NAME"
     reload_cluster_startup
+    echo "Counting the rows in every table of $TARGET_VERSION/$SOURCE_NAME"
+    count_table_rows >"$rows_after" || fail "could not count the rows in $TARGET_VERSION/$SOURCE_NAME; keep the clients stopped and run rollback"
+    diff "$rows_before" "$rows_after" || \
+        fail "row counts differ between $SOURCE_VERSION/$SOURCE_NAME and $TARGET_VERSION/$SOURCE_NAME (shown above); keep the clients stopped and run rollback"
+    echo "Row counts match in all $(wc -l <"$rows_after") tables ($rows_after)."
     echo "Cluster $SOURCE_VERSION/$SOURCE_NAME now runs as $TARGET_VERSION/$SOURCE_NAME on port $SOURCE_PORT."
     echo "The old cluster is stopped and kept for rollback. Drop it once you no longer need it:"
     echo "  pg_dropcluster $SOURCE_VERSION $SOURCE_NAME"
