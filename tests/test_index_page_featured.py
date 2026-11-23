@@ -1,6 +1,12 @@
+from datetime import timedelta
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.utils import timezone
 
+from files.methods import get_current_featured_media
+from files.models import FeaturedVideo, Media
+from files.tests.helpers import create_test_media, create_test_user
 from users.validators import validate_internal_html
 
 
@@ -207,3 +213,167 @@ class TestIndexPageFeaturedValidation(TestCase):
         content = '<a href="/test">Link &amp; Text</a>'
         result = validate_internal_html(content)
         self.assertIn("Link", result)
+
+
+class GetCurrentFeaturedMediaTest(TestCase):
+    """Hero selection skips schedule rows whose film cannot be shown (#1176)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_test_user()
+
+    def setUp(self):
+        super().setUp()
+        self.now = timezone.now()
+
+    def _media(self, title, **kwargs):
+        media = create_test_media(self.user, **kwargs)
+        # The helper fixes the title, so name each film for readable failures.
+        # Backdate the upload so a test can make one film the newest upload.
+        Media.objects.filter(pk=media.pk).update(title=title, add_date=self.now - timedelta(days=30))
+        media.refresh_from_db()
+        return media
+
+    def _schedule(self, media, start_days_ago, end_days_ago=None, **kwargs):
+        """Create a schedule row. The post_save signal marks the media featured."""
+        end_date = None if end_days_ago is None else self.now - timedelta(days=end_days_ago)
+        return FeaturedVideo.objects.create(
+            media=media,
+            start_date=self.now - timedelta(days=start_days_ago),
+            end_date=end_date,
+            **kwargs,
+        )
+
+    def _decoy(self):
+        """A featured film with no schedule row that wins either fallback ordering.
+
+        Its upload date and featured_date are the newest, so a test only passes
+        when the hero really comes from a schedule row.
+        """
+        decoy = self._media("unscheduled decoy")
+        Media.objects.filter(pk=decoy.pk).update(
+            featured=True,
+            featured_date=self.now - timedelta(hours=1),
+            add_date=self.now,
+        )
+        return decoy
+
+    def _hide(self, media, **fields):
+        # update() bypasses Media.save() and the featured signals, like a
+        # curator change that lands after the schedule row was created.
+        Media.objects.filter(pk=media.pk).update(**fields)
+
+    def test_newest_row_with_hidden_film_hands_hero_to_previous_row(self):
+        cases = [
+            ("unlisted", {"state": "unlisted"}),
+            ("private", {"state": "private"}),
+            ("not reviewed", {"is_reviewed": False}),
+            ("not encoded", {"encoding_status": "fail"}),
+            ("featured unticked", {"featured": False}),
+        ]
+        for label, hidden_fields in cases:
+            with self.subTest(label):
+                decoy = self._decoy()
+                previous = self._media(f"previous {label}")
+                newest = self._media(f"newest {label}")
+                self._schedule(previous, start_days_ago=3)
+                self._schedule(newest, start_days_ago=1)
+                self._hide(newest, **hidden_fields)
+
+                self.assertEqual(get_current_featured_media(), previous)
+
+                FeaturedVideo.objects.all().delete()
+                Media.objects.filter(pk__in=[decoy.pk, previous.pk, newest.pk]).delete()
+
+    def test_several_hidden_rows_in_a_row_skip_to_first_valid_row(self):
+        self._decoy()
+        valid = self._media("valid")
+        self._schedule(valid, start_days_ago=10)
+        for days_ago, fields in [(3, {"state": "private"}), (2, {"is_reviewed": False}), (1, {"featured": False})]:
+            hidden = self._media(f"hidden {days_ago}")
+            self._schedule(hidden, start_days_ago=days_ago)
+            self._hide(hidden, **fields)
+
+        self.assertEqual(get_current_featured_media(), valid)
+
+    def test_ended_newest_row_hands_hero_to_previous_open_row(self):
+        self._decoy()
+        open_film = self._media("open")
+        ended_film = self._media("ended")
+        self._schedule(open_film, start_days_ago=5)
+        self._schedule(ended_film, start_days_ago=2, end_days_ago=1)
+
+        self.assertEqual(get_current_featured_media(), open_film)
+
+    def test_only_ended_rows_valid_uses_most_recent_valid_ended_row(self):
+        self._decoy()
+        older_ended = self._media("older ended")
+        newer_ended = self._media("newer ended")
+        hidden_ended = self._media("hidden ended")
+        hidden_open = self._media("hidden open")
+        self._schedule(older_ended, start_days_ago=10, end_days_ago=8)
+        self._schedule(newer_ended, start_days_ago=7, end_days_ago=5)
+        self._schedule(hidden_ended, start_days_ago=4, end_days_ago=3)
+        self._schedule(hidden_open, start_days_ago=2)
+        self._hide(hidden_ended, state="unlisted")
+        self._hide(hidden_open, state="private")
+
+        self.assertEqual(get_current_featured_media(), newer_ended)
+
+    def test_no_valid_rows_falls_back_to_featured_date_order(self):
+        # Uploaded first, featured most recently: featured_date must decide.
+        recently_featured = self._media("recently featured")
+        recently_uploaded = self._media("recently uploaded")
+        never_dated = self._media("never dated")
+        Media.objects.filter(pk=recently_featured.pk).update(
+            featured=True,
+            featured_date=self.now - timedelta(days=1),
+            add_date=self.now - timedelta(days=30),
+        )
+        Media.objects.filter(pk=recently_uploaded.pk).update(
+            featured=True,
+            featured_date=self.now - timedelta(days=5),
+            add_date=self.now - timedelta(days=1),
+        )
+        Media.objects.filter(pk=never_dated.pk).update(
+            featured=True,
+            featured_date=None,
+            add_date=self.now,
+        )
+        hidden = self._media("hidden scheduled")
+        self._schedule(hidden, start_days_ago=0)
+        self._hide(hidden, state="unlisted")
+
+        self.assertEqual(get_current_featured_media(), recently_featured)
+
+    def test_fallback_skips_film_scheduled_for_the_future(self):
+        # The schedule signal sets featured_date to the future start date,
+        # which would sort first if the fallback did not skip it.
+        current = self._media("current")
+        upcoming = self._media("upcoming")
+        Media.objects.filter(pk=current.pk).update(featured=True, featured_date=self.now - timedelta(days=1))
+        FeaturedVideo.objects.create(media=upcoming, start_date=self.now + timedelta(days=2))
+
+        self.assertEqual(get_current_featured_media(), current)
+
+    def test_rows_with_same_start_date_pick_the_newest_row(self):
+        first = self._media("first")
+        second = self._media("second")
+        self._schedule(first, start_days_ago=1)
+        self._schedule(second, start_days_ago=1)
+
+        self.assertEqual(get_current_featured_media(), second)
+
+    def test_inactive_rows_are_ignored(self):
+        self._decoy()
+        active = self._media("active")
+        inactive = self._media("inactive")
+        self._schedule(active, start_days_ago=3)
+        self._schedule(inactive, start_days_ago=1, is_active=False)
+
+        self.assertEqual(get_current_featured_media(), active)
+
+    def test_returns_none_without_any_featured_media(self):
+        self._media("not featured")
+
+        self.assertIsNone(get_current_featured_media())
