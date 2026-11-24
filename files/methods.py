@@ -671,6 +671,10 @@ def community_impact_search_filter(values):
     """
     entry_categories = {
         models.CommunityImpact.SCREENING,
+        models.CommunityImpact.ARTICLE,
+        models.CommunityImpact.REFERENCED,
+        models.CommunityImpact.AWARD,
+        models.CommunityImpact.TEACHING,
         models.CommunityImpact.FEATURED,
         models.CommunityImpact.ACADEMIC,
     }.intersection(values)
