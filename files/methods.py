@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import Exists, F, OuterRef, Q
+from django.urls import reverse
 from django.utils import dateformat, timezone
 
 from cms import celery_app
@@ -660,6 +661,31 @@ def community_impact_auto_approves(user, media):
     except AttributeError:
         pass
     return False
+
+
+def community_impact_viewer_flags(user, impact, media_owner_id):
+    """What ``user`` may see and do with ``impact`` on the film page.
+
+    The entry's author, the film's owner, and film impact managers see the
+    review status. Each of them may delete the entry. The owner may edit any
+    entry, a manager may edit an approved one (a waiting entry goes through
+    review instead), and the author may edit it while it waits for review.
+    """
+    authenticated = bool(user is not None and getattr(user, "is_authenticated", False))
+    is_manager = authenticated and can_manage_film_impact(user)
+    is_owner = authenticated and media_owner_id == user.id
+    is_author = authenticated and impact.user_id == user.id
+    approved = impact.status == models.CommunityImpact.APPROVED
+    waiting = impact.status == models.CommunityImpact.WAITING_APPROVAL
+
+    return {
+        "viewer_sees_status": bool(is_manager or is_owner or is_author),
+        "viewer_can_delete": bool(is_manager or is_owner or is_author),
+        "viewer_can_edit": bool(is_owner or (is_manager and approved) or (is_author and waiting)),
+        "viewer_review_url": (
+            reverse("manage_film_impact_review", args=[impact.uid]) if is_manager and waiting else ""
+        ),
+    }
 
 
 def community_impact_search_filter(values):

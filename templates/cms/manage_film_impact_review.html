@@ -1,0 +1,25 @@
+{% extends "base_modern.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Review film impact - {{ block.super }}{% endblock headtitle %}
+
+{% block headermeta %}{% endblock headermeta %}
+
+{% block modernpageimports %}
+{% vite_asset 'src/entries/film-impact-review.js' %}
+{% endblock modernpageimports %}
+
+{% block content %}
+<script nonce="{{ request.csp_nonce }}">
+	window.MediaCMS = window.MediaCMS || {};
+	window.MediaCMS.filmImpactReviewPage = {
+		impactUid: "{{ impact_uid|escapejs }}",
+		apiUrl: "{{ impact_api_url|escapejs }}",
+		manageUrl: "{% url 'manage_film_impact' %}",
+		csrfToken: "{{ csrf_token|escapejs }}",
+	};
+</script>
+
+<div id="app-root"></div>
+{% endblock content %}

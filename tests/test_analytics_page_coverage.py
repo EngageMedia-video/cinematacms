@@ -184,6 +184,10 @@ class PageTrackingCoverageTests(TestCase):
             "manage_uploads": ("trusted", "/manage/uploads"),
             "manage_film_impact": ("curator", "/manage/film-impact"),
             "manage_film_impact_edit": ("curator", "/manage/film-impact/00000000-0000-4000-8000-000000000001/edit"),
+            "manage_film_impact_review": (
+                "curator",
+                "/manage/film-impact/00000000-0000-4000-8000-000000000001/review",
+            ),
             "creator_analytics": ("owner", "/analytics"),
             "get_user": ("anonymous", f"/user/{owner}"),
             "get_user_media": ("anonymous", f"/user/{owner}/media"),

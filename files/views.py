@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -72,6 +73,7 @@ from .methods import (
     can_upload_media,
     community_impact_auto_approves,
     community_impact_search_filter,
+    community_impact_viewer_flags,
     get_current_featured_media,
     get_user_or_session,
     is_curator,
@@ -125,6 +127,7 @@ from .secure_media_views import check_media_access_permission
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
+    CommunityImpactEditSerializer,
     CommunityImpactSerializer,
     ContentSensitivitySerializer,
     EncodeProfileSerializer,
@@ -506,6 +509,28 @@ def manage_film_impact_edit(request, uid):
     allow_workflow_analytics(request, "film_impact_edit")
     context = {}
     return render(request, "cms/manage_film_impact.html", context)
+
+
+@ensure_csrf_cookie
+def manage_film_impact_review(request, uid):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_film_impact(request.user):
+        return HttpResponseRedirect("/")
+
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "film_impact_edit")
+    context = {
+        "impact_uid": str(uid),
+        # The moderation API the page reads the entry from and approves it through.
+        "impact_api_url": f"/api/v1/manage_film_impact/{uid}",
+    }
+    return render(request, "cms/manage_film_impact_review.html", context)
 
 
 def manage_uploads(request):
@@ -3022,10 +3047,68 @@ class CommunityImpactList(APIView):
                 if community_impact_auto_approves(request.user, media)
                 else CommunityImpact.WAITING_APPROVAL
             )
-            serializer.save(user=request.user, media=media, status=new_status)
+            impact = serializer.save(user=request.user, media=media, status=new_status)
             invalidate_media_cache(media.friendly_token)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = dict(serializer.data)
+            data.update(community_impact_viewer_flags(request.user, impact, media.user_id))
+            return Response(data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CommunityImpactDetail(APIView):
+    """Edit or delete one community-impact entry from the film page.
+
+    The entry's author, the film's owner, and film impact managers may act on it;
+    ``community_impact_viewer_flags`` decides which of them may edit or delete.
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (JSONParser,)
+
+    def get_object(self, friendly_token, uid):
+        media = get_object_or_404(
+            Media.objects.select_related("user"), friendly_token=clean_friendly_token(friendly_token)
+        )
+        if not check_media_access_permission(self.request, media):
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            impact_uid = uuid.UUID(str(uid))
+        except ValueError:
+            raise Http404
+        impact = get_object_or_404(CommunityImpact.objects.select_related("user"), uid=impact_uid, media=media)
+        return media, impact
+
+    def patch(self, request, friendly_token, uid):
+        found = self.get_object(friendly_token, uid)
+        if isinstance(found, Response):
+            return found
+        media, impact = found
+        if not community_impact_viewer_flags(request.user, impact, media.user_id)["viewer_can_edit"]:
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = CommunityImpactEditSerializer(
+            impact, data=request.data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # An edit by someone whose own entries would wait for review sends the entry back to review.
+        keeps_status = can_manage_film_impact(request.user) or community_impact_auto_approves(request.user, media)
+        new_status = impact.status if keeps_status else CommunityImpact.WAITING_APPROVAL
+        impact = serializer.save(status=new_status)
+        data = dict(CommunityImpactSerializer(impact, context={"request": request}).data)
+        data.update(community_impact_viewer_flags(request.user, impact, media.user_id))
+        return Response(data)
+
+    def delete(self, request, friendly_token, uid):
+        found = self.get_object(friendly_token, uid)
+        if isinstance(found, Response):
+            return found
+        media, impact = found
+        if not community_impact_viewer_flags(request.user, impact, media.user_id)["viewer_can_delete"]:
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
+        impact.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserActions(APIView):
