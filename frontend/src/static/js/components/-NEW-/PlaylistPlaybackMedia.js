@@ -19,7 +19,7 @@ export function PlaylistPlaybackMedia(props) {
 			hidePlaylistOrderNumber={false}
 			horizontalItemsOrientation={true}
 			inPlaylistView={true}
-			singleLinkContent={true}
+			singleLinkContent={false}
 			playlistActiveItem={props.playlistActiveItem}
 		/>
 	);
