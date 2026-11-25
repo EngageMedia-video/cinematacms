@@ -132,7 +132,7 @@ export const Empty = {
 		const canvas = within(canvasElement);
 
 		await expect(canvas.getByText('Where has this film made an impact?')).toBeVisible();
-		await expect(canvas.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(2);
+		await expect(canvas.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(1);
 	},
 };
 

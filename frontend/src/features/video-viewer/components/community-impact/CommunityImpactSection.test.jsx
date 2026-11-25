@@ -68,10 +68,26 @@ describe('CommunityImpactSection', () => {
 		expect(screen.getByText('Submitted for review.')).toBeVisible();
 	});
 
-	it('keeps the header ADD IMPACT button visible in the empty state', () => {
+	it('shows only the empty state ADD IMPACT button when there are no entries', () => {
 		render(<CommunityImpactSection entries={{}} />);
 
-		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(2);
+		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(1);
+	});
+
+	it('shows the header ADD IMPACT button once impacts are listed', () => {
+		render(<CommunityImpactSection entries={entries} />);
+
+		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(1);
+	});
+
+	it('hides every ADD IMPACT button when adding is not allowed', () => {
+		const { rerender } = render(<CommunityImpactSection canAdd={false} entries={{}} />);
+
+		expect(screen.queryByRole('button', { name: 'ADD IMPACT' })).not.toBeInTheDocument();
+
+		rerender(<CommunityImpactSection canAdd={false} entries={entries} />);
+
+		expect(screen.queryByRole('button', { name: 'ADD IMPACT' })).not.toBeInTheDocument();
 	});
 
 	it('opens the add dialog and forwards submitted values', async () => {
@@ -80,7 +96,7 @@ describe('CommunityImpactSection', () => {
 
 		render(<CommunityImpactSection entries={{}} onAddImpact={onAddImpact} />);
 
-		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 		await user.click(screen.getByRole('radio', { name: /^Article or Review/ }));
 		await user.type(screen.getByLabelText('Title'), 'Films that changed the conversation');
 		await user.type(screen.getByLabelText('Year'), '2023');
@@ -146,7 +162,7 @@ describe('CommunityImpactSection', () => {
 			/>
 		);
 
-		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 		await user.click(screen.getByRole('button', { name: 'CANCEL' }));
 
 		expect(onSubmitErrorClear).toHaveBeenCalledTimes(1);
@@ -166,7 +182,7 @@ describe('CommunityImpactSection', () => {
 			/>
 		);
 
-		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
 		expect(screen.getByText('Link is not trustworthy. Please use a secure HTTPS link.')).toBeVisible();
 	});

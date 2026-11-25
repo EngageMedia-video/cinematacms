@@ -62,7 +62,8 @@ export function CommunityImpactSection({
 			<div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
 				<p className="body-body-14-regular m-0 max-w-[461px] text-text-description">{description}</p>
 
-				{canAdd ? (
+				{/* The empty state carries its own ADD IMPACT button, so the header shows one only once impacts are listed. */}
+				{canAdd && cards.length ? (
 					<Button
 						className="h-10 w-full shrink-0 justify-center bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus @lg:w-fit"
 						onClick={handleAddClick}
