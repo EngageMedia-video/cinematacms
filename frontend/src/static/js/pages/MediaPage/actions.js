@@ -68,6 +68,21 @@ export function submitCommunityImpact(communityImpactData) {
 	});
 }
 
+export function updateCommunityImpact(uid, communityImpactData) {
+	Dispatcher.dispatch({
+		type: 'UPDATE_COMMUNITY_IMPACT',
+		uid,
+		communityImpactData,
+	});
+}
+
+export function deleteCommunityImpact(uid) {
+	Dispatcher.dispatch({
+		type: 'DELETE_COMMUNITY_IMPACT',
+		uid,
+	});
+}
+
 export function createPlaylist(playlist_data) {
 	Dispatcher.dispatch({
 		type: 'CREATE_PLAYLIST',

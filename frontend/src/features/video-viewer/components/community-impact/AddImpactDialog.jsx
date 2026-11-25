@@ -8,9 +8,11 @@ import rippleDecoration from './assets/impact-ripple.svg';
 import {
 	IMPACT_DETAILS_MAX_WORDS,
 	IMPACT_FORM_CATEGORIES,
+	IMPACT_FORM_FIELDS,
 	MIN_IMPACT_YEAR,
 	getVisibleImpactFields,
 } from './impactFormFields';
+import { getImpactIconConfig } from './impactIcons';
 import './AddImpactDialog.css';
 
 const REQUIRED_MESSAGE = 'This field is required.';
@@ -124,12 +126,15 @@ function revealInvalidControl(container) {
 	container.querySelector(FOCUSABLE_CONTROL)?.focus({ preventScroll: true });
 }
 
-function CategoryOption({ category, checked, name, onSelect }) {
+function CategoryOption({ category, checked, disabled = false, name, onSelect }) {
+	const icon = getImpactIconConfig(category.value);
+
 	return (
 		<label
 			className={cn(
-				'box-border flex min-h-[92px] cursor-pointer items-start gap-4 rounded-ds-8 p-4 outline-none transition-colors duration-200 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring-focus',
-				checked ? 'bg-bg-primary text-text-on-primary' : 'bg-bg-surface-raised text-text-strong'
+				'box-border flex min-h-[92px] items-start gap-4 rounded-ds-8 p-4 outline-none transition-colors duration-200 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring-focus',
+				checked ? 'bg-bg-primary text-text-on-primary' : 'bg-bg-surface-raised text-text-strong',
+				disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
 			)}
 		>
 			<input
@@ -138,16 +143,17 @@ function CategoryOption({ category, checked, name, onSelect }) {
 				name={name}
 				value={category.value}
 				checked={checked}
+				disabled={disabled}
 				onChange={() => onSelect(category.value)}
 			/>
 			<span
 				aria-hidden="true"
 				className={cn(
 					'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
-					category.iconShellClassName
+					icon.iconShellClassName
 				)}
 			>
-				<Icon name={category.iconName} size={18} decorative />
+				<Icon name={icon.iconName} size={18} decorative />
 			</span>
 			<span className="flex min-w-0 flex-col gap-2">
 				<span className="body-body-14-bold">{category.label}</span>
@@ -160,12 +166,11 @@ function CategoryOption({ category, checked, name, onSelect }) {
 CategoryOption.propTypes = {
 	category: PropTypes.shape({
 		description: PropTypes.string.isRequired,
-		iconName: PropTypes.string.isRequired,
-		iconShellClassName: PropTypes.string.isRequired,
 		label: PropTypes.string.isRequired,
 		value: PropTypes.string.isRequired,
 	}).isRequired,
 	checked: PropTypes.bool.isRequired,
+	disabled: PropTypes.bool,
 	name: PropTypes.string.isRequired,
 	onSelect: PropTypes.func.isRequired,
 };
@@ -265,9 +270,52 @@ ImpactField.propTypes = {
 };
 
 // Lives inside DialogContent, which unmounts on close, so every open starts blank.
-function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, submitting }) {
-	const [category, setCategory] = useState('');
-	const [values, setValues] = useState({});
+// Form values for an existing entry, so the edit form opens filled in.
+function valuesFromImpact(impact) {
+	const values = {};
+
+	for (const field of IMPACT_FORM_FIELDS[impact?.category] ?? []) {
+		const value = impact[field.name];
+
+		if (field.type === 'checkbox') {
+			values[field.name] = value === true;
+		} else {
+			values[field.name] = value === null || value === undefined ? '' : String(value);
+		}
+	}
+
+	return values;
+}
+
+const SUBMIT_BUTTON_CLASSES =
+	'h-10 bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus';
+const SECONDARY_BUTTON_CLASSES = 'h-10 px-4 py-0 focus-visible:ring-2 focus-visible:ring-ring-focus';
+
+/**
+ * The impact form: category options, the chosen category's fields, and its actions.
+ * The add-impact dialog uses it with its intro; the film impact review page uses it
+ * on a page with its own actions. Each action submits the form with its intent.
+ */
+export function ImpactForm({
+	actions,
+	className = '',
+	impact = null,
+	intro = true,
+	onCancel,
+	onSubmit,
+	onSubmitErrorClear,
+	submitError,
+	submitting = false,
+}) {
+	const editing = Boolean(impact);
+	const formActions = actions ?? [
+		editing
+			? { intent: 'save', label: 'SAVE CHANGES', busyLabel: 'SAVING...' }
+			: { intent: 'add', label: 'ADD IMPACT', busyLabel: 'SUBMITTING...' },
+	];
+	const [pendingIntent, setPendingIntent] = useState(formActions[formActions.length - 1].intent);
+	const [category, setCategory] = useState(impact?.category ?? '');
+	const [values, setValues] = useState(() => valuesFromImpact(impact));
 	const [errors, setErrors] = useState({});
 	const categoryLabelId = useId();
 	const categoryGroupName = useId();
@@ -319,12 +367,14 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 		clearSubmitError();
 	}
 
-	function handleSubmit(event) {
+	function handleSubmit(event, intent = formActions[formActions.length - 1].intent) {
 		event.preventDefault();
 
 		if (submitting || !category) {
 			return;
 		}
+
+		setPendingIntent(intent);
 
 		const submission = buildSubmission(category, values);
 		setErrors(submission.errors);
@@ -335,25 +385,31 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 			return;
 		}
 
-		onSubmit?.(submission.payload);
+		onSubmit?.(submission.payload, intent);
 	}
 
 	return (
 		<form
 			ref={formRef}
-			onSubmit={handleSubmit}
+			onSubmit={(event) => handleSubmit(event)}
 			noValidate
-			className="impact-add-form relative flex max-h-[calc(100vh-var(--size-64))] flex-col items-center gap-8 overflow-y-auto p-6"
+			className={cn('impact-add-form relative flex flex-col items-center gap-8', className)}
 		>
-			<img src={heartIcon} alt="" aria-hidden="true" width={58} height={54} className="relative shrink-0" />
+			{intro ? (
+				<img src={heartIcon} alt="" aria-hidden="true" width={58} height={54} className="relative shrink-0" />
+			) : null}
 
 			<div className="relative flex w-full flex-col items-center gap-6">
-				<div className="flex w-full flex-col items-center gap-5 text-center">
-					<h2 className="heading-h4-32-medium m-0 text-text-strong">Where has this film made an impact?</h2>
-					<p className="body-body-14-regular m-0 text-text-description">
-						Tell us where this film has been screened, written about, taught, or recognised.
-					</p>
-				</div>
+				{intro ? (
+					<div className="flex w-full flex-col items-center gap-5 text-center">
+						<h2 className="heading-h4-32-medium m-0 text-text-strong">
+							{editing ? 'Edit this impact' : 'Where has this film made an impact?'}
+						</h2>
+						<p className="body-body-14-regular m-0 text-text-description">
+							Tell us where this film has been screened, written about, taught, or recognised.
+						</p>
+					</div>
+				) : null}
 
 				{/* The options keep the default frame's full width when a category is chosen, so they do not jump. */}
 				<div className="flex w-full flex-col gap-4">
@@ -375,6 +431,7 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 									key={option.value}
 									category={option}
 									checked={category === option.value}
+									disabled={editing && category !== option.value}
 									name={categoryGroupName}
 									onSelect={handleCategorySelect}
 								/>
@@ -412,20 +469,28 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 				) : null}
 
 				<div className="flex w-full flex-wrap items-center justify-end gap-2">
-					<Button
-						variant="secondary"
-						className="h-10 px-4 py-0 focus-visible:ring-2 focus-visible:ring-ring-focus"
-						onClick={onClose}
-					>
-						CANCEL
-					</Button>
-					<Button
-						type="submit"
-						className="h-10 bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
-						disabled={submitting || !category}
-					>
-						{submitting ? 'SUBMITTING...' : 'ADD IMPACT'}
-					</Button>
+					{onCancel ? (
+						<Button variant="secondary" className={SECONDARY_BUTTON_CLASSES} onClick={onCancel}>
+							CANCEL
+						</Button>
+					) : null}
+					{formActions.map((action, index) => {
+						// The last action is the form's main one; Enter in a field submits with it.
+						const primary = index === formActions.length - 1;
+
+						return (
+							<Button
+								key={action.intent}
+								type={primary ? 'submit' : 'button'}
+								variant={primary ? 'primary' : 'secondary'}
+								className={primary ? SUBMIT_BUTTON_CLASSES : SECONDARY_BUTTON_CLASSES}
+								disabled={submitting || !category}
+								onClick={primary ? undefined : (event) => handleSubmit(event, action.intent)}
+							>
+								{submitting && pendingIntent === action.intent ? action.busyLabel : action.label}
+							</Button>
+						);
+					})}
 				</div>
 			</div>
 		</form>
@@ -437,8 +502,23 @@ const submitErrorShape = PropTypes.shape({
 	message: PropTypes.string.isRequired,
 });
 
-AddImpactForm.propTypes = {
-	onClose: PropTypes.func,
+const impactShape = PropTypes.shape({
+	category: PropTypes.string.isRequired,
+	uid: PropTypes.string,
+});
+
+ImpactForm.propTypes = {
+	actions: PropTypes.arrayOf(
+		PropTypes.shape({
+			busyLabel: PropTypes.string.isRequired,
+			intent: PropTypes.string.isRequired,
+			label: PropTypes.string.isRequired,
+		})
+	),
+	className: PropTypes.string,
+	impact: impactShape,
+	intro: PropTypes.bool,
+	onCancel: PropTypes.func,
 	onSubmit: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,
 	submitError: submitErrorShape,
@@ -446,6 +526,7 @@ AddImpactForm.propTypes = {
 };
 
 export function AddImpactDialog({
+	impact = null,
 	onClose,
 	onSubmit,
 	onSubmitErrorClear,
@@ -463,7 +544,7 @@ export function AddImpactDialog({
 			}}
 		>
 			<DialogContent
-				aria-label="Add community impact"
+				aria-label={impact ? 'Edit community impact' : 'Add community impact'}
 				className="impact-add-dialog w-full max-w-[640px] overflow-hidden rounded-[16px] bg-linear-to-br from-bg-surface from-35% to-bg-page p-0 shadow-lg"
 			>
 				{/* Outside the scrolling form so the overhanging art cannot widen its scroll area. */}
@@ -475,9 +556,12 @@ export function AddImpactDialog({
 					height={295}
 					className="pointer-events-none absolute right-[-130px] bottom-[-120px] h-[295px] w-[298px] invert dark:invert-0"
 				/>
-				<AddImpactForm
-					onClose={onClose}
-					onSubmit={onSubmit}
+				<ImpactForm
+					key={impact?.uid ?? 'new'}
+					className="max-h-[calc(100vh-var(--size-64))] overflow-y-auto p-6"
+					impact={impact}
+					onCancel={onClose}
+					onSubmit={(payload) => onSubmit?.(payload)}
 					onSubmitErrorClear={onSubmitErrorClear}
 					submitError={submitError}
 					submitting={submitting}
@@ -488,6 +572,7 @@ export function AddImpactDialog({
 }
 
 AddImpactDialog.propTypes = {
+	impact: impactShape,
 	onClose: PropTypes.func,
 	onSubmit: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,

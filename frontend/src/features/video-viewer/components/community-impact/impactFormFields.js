@@ -1,42 +1,32 @@
 export const IMPACT_DETAILS_MAX_WORDS = 80;
 export const MIN_IMPACT_YEAR = 1900;
 
-// Order, copy, and emblem colors follow the Figma "Impact Form" category options.
+// Order and copy follow the Figma "Impact Form" category options; emblems come from impactIcons.
 export const IMPACT_FORM_CATEGORIES = [
 	{
 		value: 'award',
 		label: 'Recognition',
 		description: 'Won an award, nomination, or special mention.',
-		iconName: 'impactCertificate',
-		iconShellClassName: 'bg-bg-emblem-amber text-text-on-emblem-amber-light',
 	},
 	{
 		value: 'screening',
 		label: 'Screening',
 		description: 'Shown to an audience at a festival, community screening, or online.',
-		iconName: 'impactFilmReel',
-		iconShellClassName: 'bg-bg-emblem-pacific text-text-on-emblem-blue-deep',
 	},
 	{
 		value: 'teaching',
 		label: 'Teaching or Research',
 		description: 'Used in a class, course, workshop, or research.',
-		iconName: 'impactBookOpen',
-		iconShellClassName: 'bg-bg-emblem-orange text-text-on-emblem-orange',
 	},
 	{
 		value: 'referenced',
 		label: 'Referenced in Another Work',
 		description: 'Mentioned or used in a film, artwork, song, or performance.',
-		iconName: 'impactGraph',
-		iconShellClassName: 'bg-bg-emblem-forest text-text-on-emblem-forest',
 	},
 	{
 		value: 'article',
 		label: 'Article or Review',
 		description: 'Written about in an article, review, book, or newsletter.',
-		iconName: 'impactNewspaper',
-		iconShellClassName: 'bg-bg-emblem-red text-text-on-emblem-red',
 	},
 ];
 

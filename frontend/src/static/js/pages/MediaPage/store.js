@@ -1332,6 +1332,12 @@ class MediaPageStore extends EventEmitter {
 
 				this.submitCommunityImpact(action.communityImpactData);
 				break;
+			case 'UPDATE_COMMUNITY_IMPACT':
+				this.updateCommunityImpact(action.uid, action.communityImpactData);
+				break;
+			case 'DELETE_COMMUNITY_IMPACT':
+				this.deleteCommunityImpact(action.uid);
+				break;
 			case 'CREATE_PLAYLIST':
 				postRequest(
 					this.mediacms_config.api.playlists,
@@ -1407,7 +1413,7 @@ class MediaPageStore extends EventEmitter {
 		);
 	}
 
-	submitCommunityImpact(communityImpactData) {
+	buildCommunityImpactPayload(communityImpactData) {
 		const payload = {
 			category: communityImpactData.category,
 			details: communityImpactData.details || '',
@@ -1423,9 +1429,13 @@ class MediaPageStore extends EventEmitter {
 			}
 		});
 
+		return payload;
+	}
+
+	submitCommunityImpact(communityImpactData) {
 		postRequest(
 			this.communityImpactAPIUrl,
-			payload,
+			this.buildCommunityImpactPayload(communityImpactData),
 			{ headers: { 'X-CSRFToken': getCSRFToken() } },
 			false,
 			this.submitCommunityImpactResponse,
@@ -1446,6 +1456,9 @@ class MediaPageStore extends EventEmitter {
 
 	submitCommunityImpactResponse(response) {
 		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
+			// The new entry carries the viewer's permissions, so it shows in the section
+			// (with its status) without reloading the media.
+			this.appendCommunityImpact(response.data);
 			this.emit('community_impact_submit', response.data.uid);
 		}
 		setTimeout(
@@ -1457,7 +1470,52 @@ class MediaPageStore extends EventEmitter {
 		);
 	}
 
-	appendCommunityImpact(impact) {
+	updateCommunityImpact(uid, communityImpactData) {
+		axios
+			.patch(this.communityImpactAPIUrl + '/' + uid, this.buildCommunityImpactPayload(communityImpactData), {
+				headers: { 'X-CSRFToken': getCSRFToken() },
+			})
+			.then((response) => {
+				this.appendCommunityImpact(response.data, { keepPosition: true });
+				this.emit('community_impact_update', uid);
+			})
+			.catch((error) => {
+				this.emit('community_impact_update_fail', normalizeCommunityImpactSubmitError(error));
+			});
+	}
+
+	deleteCommunityImpact(uid) {
+		axios
+			.delete(this.communityImpactAPIUrl + '/' + uid, { headers: { 'X-CSRFToken': getCSRFToken() } })
+			.then(() => {
+				this.removeCommunityImpact(uid);
+				this.emit('community_impact_delete', uid);
+			})
+			.catch(() => {
+				this.emit('community_impact_delete_fail', uid);
+			});
+	}
+
+	setCommunityImpacts(nextImpacts) {
+		MediaPageStoreData[this.id].communityImpacts = nextImpacts;
+
+		if (MediaPageStoreData[this.id].data) {
+			MediaPageStoreData[this.id].data.community_impacts = nextImpacts;
+		}
+	}
+
+	removeCommunityImpact(uid) {
+		const currentImpacts = MediaPageStoreData[this.id].communityImpacts || {};
+		const nextImpacts = {};
+
+		Object.entries(currentImpacts).forEach(([category, value]) => {
+			nextImpacts[category] = Array.isArray(value) ? value.filter((entry) => entry.uid !== uid) : value;
+		});
+
+		this.setCommunityImpacts(nextImpacts);
+	}
+
+	appendCommunityImpact(impact, { keepPosition = false } = {}) {
 		if (!impact || !impact.category) {
 			return;
 		}
@@ -1469,9 +1527,13 @@ class MediaPageStore extends EventEmitter {
 			: Array.isArray(currentCategory?.entries)
 				? currentCategory.entries
 				: [];
-		const nextEntries = [impact].concat(currentEntries.filter((entry) => entry.uid !== impact.uid));
+		const existingIndex = currentEntries.findIndex((entry) => entry.uid === impact.uid);
+		const nextEntries =
+			keepPosition && existingIndex >= 0
+				? currentEntries.map((entry) => (entry.uid === impact.uid ? impact : entry))
+				: [impact].concat(currentEntries.filter((entry) => entry.uid !== impact.uid));
 
-		MediaPageStoreData[this.id].communityImpacts = {
+		this.setCommunityImpacts({
 			...currentImpacts,
 			[impact.category]: Array.isArray(currentCategory)
 				? nextEntries
@@ -1480,11 +1542,7 @@ class MediaPageStore extends EventEmitter {
 						entries: nextEntries,
 						totalCount: Math.max(Number(currentCategory?.totalCount) || 0, nextEntries.length),
 					},
-		};
-
-		if (MediaPageStoreData[this.id].data) {
-			MediaPageStoreData[this.id].data.community_impacts = MediaPageStoreData[this.id].communityImpacts;
-		}
+		});
 	}
 }
 
