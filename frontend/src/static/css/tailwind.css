@@ -1039,6 +1039,9 @@ body {
 	--bg-emblem-pacific: var(--cinemata-pacific-deep-600p);
 	--bg-emblem-forest: var(--cinemata-green-900);
 	--bg-emblem-red: var(--cinemata-red-950);
+	--bg-status-approved: var(--cinemata-coral-reef-700);
+	--bg-status-waiting: var(--cinemata-amber-700);
+	--bg-count: var(--cinemata-strait-blue-300);
 	--bg-dialog-close: var(--cinemata-strait-blue-400);
 	--bg-timeline-dot: var(--cinemata-strait-blue-200);
 	--bg-danger: var(--cinemata-red-500);
@@ -1089,6 +1092,7 @@ body {
 	--text-on-emblem-orange: var(--cinemata-sunset-horizon-100);
 	--text-on-emblem-forest: var(--cinemata-green-500);
 	--text-on-emblem-red: var(--cinemata-red-300);
+	--text-on-count: var(--cinemata-pacific-deep-800);
 	--text-on-dialog-close: var(--cinemata-pacific-deep-900);
 	--text-dialog-accent: var(--cinemata-strait-blue-400);
 	--text-danger: var(--cinemata-red-500);
@@ -1246,6 +1250,9 @@ body.dark_theme {
 	--color-bg-emblem-pacific: var(--bg-emblem-pacific);
 	--color-bg-emblem-forest: var(--bg-emblem-forest);
 	--color-bg-emblem-red: var(--bg-emblem-red);
+	--color-bg-status-approved: var(--bg-status-approved);
+	--color-bg-status-waiting: var(--bg-status-waiting);
+	--color-bg-count: var(--bg-count);
 	--color-bg-dialog-close: var(--bg-dialog-close);
 	--color-bg-timeline-dot: var(--bg-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
@@ -1297,6 +1304,7 @@ body.dark_theme {
 	--color-text-on-emblem-orange: var(--text-on-emblem-orange);
 	--color-text-on-emblem-forest: var(--text-on-emblem-forest);
 	--color-text-on-emblem-red: var(--text-on-emblem-red);
+	--color-text-on-count: var(--text-on-count);
 	--color-text-on-dialog-close: var(--text-on-dialog-close);
 	--color-text-dialog-accent: var(--text-dialog-accent);
 	--color-text-danger: var(--text-danger);
