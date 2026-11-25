@@ -152,6 +152,7 @@ class CommunityImpactAdmin(admin.ModelAdmin):
                     "organiser",
                     "organiser_private",
                     "creator",
+                    "term",
                     "publication",
                     "medium",
                     "award_result",

@@ -100,7 +100,7 @@ describe('CommunityImpactSection', () => {
 		await user.click(screen.getByRole('radio', { name: /^Article or Review/ }));
 		await user.type(screen.getByLabelText('Title'), 'Films that changed the conversation');
 		await user.type(screen.getByLabelText('Year'), '2023');
-		await user.type(screen.getByLabelText('Written by'), 'Dewi Lestari');
+		await user.type(screen.getByLabelText('Created by'), 'Dewi Lestari');
 		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
 		expect(onAddImpact).toHaveBeenCalledWith({

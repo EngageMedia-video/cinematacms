@@ -77,6 +77,7 @@ const COMMUNITY_IMPACT_DETAIL_FIELDS = [
 	'organiser',
 	'organiser_private',
 	'creator',
+	'term',
 	'publication',
 	'medium',
 	'award_result',

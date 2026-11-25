@@ -46,13 +46,41 @@ export const Screening = {
 	},
 };
 
-export const Award = {
+export const Recognition = {
 	play: async () => {
 		const body = within(document.body);
 
-		await userEvent.click(await body.findByRole('radio', { name: /^Award/ }));
-		await expect(body.getByLabelText('Award Name')).toBeVisible();
+		await userEvent.click(await body.findByRole('radio', { name: /^Recognition/ }));
+		await expect(body.getByLabelText('Given by')).toBeVisible();
 		await expect(body.getByLabelText('Citation (optional)')).toBeVisible();
+	},
+};
+
+export const Teaching = {
+	play: async () => {
+		const body = within(document.body);
+
+		await userEvent.click(await body.findByRole('radio', { name: /^Teaching or Research/ }));
+		await expect(body.getByLabelText('School or University')).toBeVisible();
+		await expect(body.getByLabelText('Term (optional)')).toBeVisible();
+	},
+};
+
+export const Referenced = {
+	play: async () => {
+		const body = within(document.body);
+
+		await userEvent.click(await body.findByRole('radio', { name: /^Referenced in Another Work/ }));
+		await expect(body.getByLabelText('Made by')).toBeVisible();
+	},
+};
+
+export const Article = {
+	play: async () => {
+		const body = within(document.body);
+
+		await userEvent.click(await body.findByRole('radio', { name: /^Article or Review/ }));
+		await expect(body.getByLabelText('Created by')).toBeVisible();
 	},
 };
 
@@ -63,7 +91,7 @@ export const SubmitReady = {
 		await userEvent.click(await body.findByRole('radio', { name: /^Article or Review/ }));
 		await userEvent.type(body.getByLabelText('Title'), 'Films that changed the conversation');
 		await userEvent.type(body.getByLabelText('Year'), '2023');
-		await userEvent.type(body.getByLabelText('Written by'), 'Dewi Lestari');
+		await userEvent.type(body.getByLabelText('Created by'), 'Dewi Lestari');
 		await userEvent.click(body.getByRole('button', { name: 'ADD IMPACT' }));
 
 		await expect(args.onSubmit).toHaveBeenCalledWith({

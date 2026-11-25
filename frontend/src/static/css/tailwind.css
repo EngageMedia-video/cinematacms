@@ -1036,6 +1036,9 @@ body {
 	--bg-emblem-strait-deep: var(--cinemata-strait-blue-700);
 	--bg-emblem-strait: var(--cinemata-strait-blue-600p);
 	--bg-emblem-strait-light: var(--cinemata-strait-blue-400);
+	--bg-emblem-pacific: var(--cinemata-pacific-deep-600p);
+	--bg-emblem-forest: var(--cinemata-green-900);
+	--bg-emblem-red: var(--cinemata-red-950);
 	--bg-dialog-close: var(--cinemata-strait-blue-400);
 	--bg-timeline-dot: var(--cinemata-strait-blue-200);
 	--bg-danger: var(--cinemata-red-500);
@@ -1082,6 +1085,10 @@ body {
 	--text-on-emblem-blue-deep: var(--cinemata-strait-blue-200);
 	--text-on-emblem-strait-deep: var(--cinemata-strait-blue-300);
 	--text-on-emblem-strait: var(--cinemata-strait-blue-100);
+	--text-on-emblem-amber-light: var(--cinemata-amber-300);
+	--text-on-emblem-orange: var(--cinemata-sunset-horizon-100);
+	--text-on-emblem-forest: var(--cinemata-green-500);
+	--text-on-emblem-red: var(--cinemata-red-300);
 	--text-on-dialog-close: var(--cinemata-pacific-deep-900);
 	--text-dialog-accent: var(--cinemata-strait-blue-400);
 	--text-danger: var(--cinemata-red-500);
@@ -1236,6 +1243,9 @@ body.dark_theme {
 	--color-bg-emblem-strait-deep: var(--bg-emblem-strait-deep);
 	--color-bg-emblem-strait: var(--bg-emblem-strait);
 	--color-bg-emblem-strait-light: var(--bg-emblem-strait-light);
+	--color-bg-emblem-pacific: var(--bg-emblem-pacific);
+	--color-bg-emblem-forest: var(--bg-emblem-forest);
+	--color-bg-emblem-red: var(--bg-emblem-red);
 	--color-bg-dialog-close: var(--bg-dialog-close);
 	--color-bg-timeline-dot: var(--bg-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
@@ -1283,6 +1293,10 @@ body.dark_theme {
 	--color-text-on-emblem-blue-deep: var(--text-on-emblem-blue-deep);
 	--color-text-on-emblem-strait-deep: var(--text-on-emblem-strait-deep);
 	--color-text-on-emblem-strait: var(--text-on-emblem-strait);
+	--color-text-on-emblem-amber-light: var(--text-on-emblem-amber-light);
+	--color-text-on-emblem-orange: var(--text-on-emblem-orange);
+	--color-text-on-emblem-forest: var(--text-on-emblem-forest);
+	--color-text-on-emblem-red: var(--text-on-emblem-red);
 	--color-text-on-dialog-close: var(--text-on-dialog-close);
 	--color-text-dialog-accent: var(--text-dialog-accent);
 	--color-text-danger: var(--text-danger);

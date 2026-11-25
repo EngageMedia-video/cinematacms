@@ -1,31 +1,42 @@
 export const IMPACT_DETAILS_MAX_WORDS = 80;
 export const MIN_IMPACT_YEAR = 1900;
 
+// Order, copy, and emblem colors follow the Figma "Impact Form" category options.
 export const IMPACT_FORM_CATEGORIES = [
+	{
+		value: 'award',
+		label: 'Recognition',
+		description: 'Won an award, nomination, or special mention.',
+		iconName: 'impactCertificate',
+		iconShellClassName: 'bg-bg-emblem-amber text-text-on-emblem-amber-light',
+	},
 	{
 		value: 'screening',
 		label: 'Screening',
 		description: 'Shown to an audience at a festival, community screening, or online.',
-	},
-	{
-		value: 'article',
-		label: 'Article or Review',
-		description: 'Written about in an article, review, book, or newsletter.',
-	},
-	{
-		value: 'referenced',
-		label: 'Referenced in Another Work',
-		description: 'Mentioned or used in a film, artwork, song, or performance.',
-	},
-	{
-		value: 'award',
-		label: 'Award',
-		description: 'Won an award, nomination, or special mention.',
+		iconName: 'impactFilmReel',
+		iconShellClassName: 'bg-bg-emblem-pacific text-text-on-emblem-blue-deep',
 	},
 	{
 		value: 'teaching',
 		label: 'Teaching or Research',
 		description: 'Used in a class, course, workshop, or research.',
+		iconName: 'impactBookOpen',
+		iconShellClassName: 'bg-bg-emblem-orange text-text-on-emblem-orange',
+	},
+	{
+		value: 'referenced',
+		label: 'Referenced in Another Work',
+		description: 'Mentioned or used in a film, artwork, song, or performance.',
+		iconName: 'impactGraph',
+		iconShellClassName: 'bg-bg-emblem-forest text-text-on-emblem-forest',
+	},
+	{
+		value: 'article',
+		label: 'Article or Review',
+		description: 'Written about in an article, review, book, or newsletter.',
+		iconName: 'impactNewspaper',
+		iconShellClassName: 'bg-bg-emblem-red text-text-on-emblem-red',
 	},
 ];
 
@@ -103,27 +114,59 @@ export const IMPACT_COUNTRY_OPTIONS = [
 
 const isOnlineScreening = (values) => values.is_online === true;
 
-const LINK_FIELD = { name: 'url', type: 'url', label: 'Link (optional)' };
+const linkField = (placeholder) => ({ name: 'url', type: 'url', label: 'Link (optional)', placeholder });
 
-// Field order and copy follow the Figma "Impact Form" variants. The design's
-// article frame repeats the screening fields and its teaching frame holds the
-// article fields, so teaching copy is written to match the same layout.
+// Field order and copy follow the Figma "Impact Form" variants. Where a variant
+// repeats another category's hint (details and link), the hint is written for
+// the category instead. Award keeps a Result select, which the design leaves
+// out but the server requires.
 export const IMPACT_FORM_FIELDS = {
+	award: [
+		{
+			name: 'title',
+			type: 'text',
+			label: 'Recognition',
+			placeholder: 'Example: Winner for Best Documentary, Nominated for Best Editing',
+			required: true,
+		},
+		{
+			name: 'award_result',
+			type: 'select',
+			label: 'Result',
+			options: IMPACT_AWARD_RESULT_OPTIONS,
+			required: true,
+		},
+		{
+			name: 'organiser',
+			type: 'text',
+			label: 'Given by',
+			placeholder: 'Festival, organisation, or institution that gave the award',
+			required: true,
+		},
+		{ name: 'year', type: 'year', label: 'Year', placeholder: 'When was this given?', required: true },
+		{
+			name: 'details',
+			type: 'textarea',
+			label: 'Citation (optional)',
+			placeholder: 'The jury’s statement, if there is one',
+		},
+		linkField('Announcement or festival page (https://...)'),
+	],
 	screening: [
 		{
 			name: 'title',
 			type: 'text',
 			label: 'Event or Festival Name',
-			helperText: 'The name of the festival, screening, or programme',
+			placeholder: 'The name of the festival, screening, or programme',
 			required: true,
 		},
-		{ name: 'year', type: 'year', label: 'Year', helperText: 'When was it screened?', required: true },
+		{ name: 'year', type: 'year', label: 'Year', placeholder: 'When was it screened?', required: true },
 		{ name: 'is_online', type: 'checkbox', label: 'This was an online screening' },
 		{
 			name: 'city',
 			type: 'text',
 			label: 'City',
-			helperText: 'Where did it happen?',
+			placeholder: 'Where did it happen?',
 			required: true,
 			maxLength: 100,
 			hidden: isOnlineScreening,
@@ -140,7 +183,7 @@ export const IMPACT_FORM_FIELDS = {
 			name: 'organiser',
 			type: 'text',
 			label: 'Who organised it?',
-			helperText: 'The group, collective, or curator behind the screening',
+			placeholder: 'The group, collective, or curator behind the screening',
 			required: true,
 		},
 		{
@@ -153,48 +196,52 @@ export const IMPACT_FORM_FIELDS = {
 			name: 'details',
 			type: 'textarea',
 			label: 'Anything else to share? (optional)',
-			helperText: 'Audience size, the discussion after, how people responded',
+			placeholder: 'Audience size, the discussion after, how people responded',
 		},
-		{ ...LINK_FIELD, helperText: 'A page about the event, if there is one' },
+		linkField('Announcement or festival page (https://...)'),
 	],
-	article: [
+	teaching: [
+		{ name: 'title', type: 'text', label: 'Course or Class Name', required: true },
+		{ name: 'organiser', type: 'text', label: 'School or University', required: true },
+		{ name: 'country', type: 'select', label: 'Country', options: IMPACT_COUNTRY_OPTIONS, required: true },
 		{
-			name: 'title',
-			type: 'text',
-			label: 'Title',
-			helperText: 'Title of the article, review, or book',
-			required: true,
-		},
-		{ name: 'year', type: 'year', label: 'Year', helperText: 'When was this published?', required: true },
-		{
-			name: 'creator',
-			type: 'text',
-			label: 'Written by',
-			helperText: 'Author or writer’s name',
+			name: 'year',
+			type: 'year',
+			label: 'Year',
+			placeholder: 'When was it used?',
+			helperText: 'For a course that runs across two years, use the year it started.',
 			required: true,
 		},
 		{
-			name: 'publication',
+			name: 'term',
 			type: 'text',
-			label: 'Where was it published? (optional)',
-			helperText: 'Publication, website, journal, or publisher',
+			label: 'Term (optional)',
+			placeholder: 'E.g. 1st semester, summer term',
+			maxLength: 100,
 		},
+		{ name: 'creator', type: 'text', label: 'Teacher or Facilitator (optional)' },
 		{
 			name: 'details',
 			type: 'textarea',
 			label: 'Anything else to share? (optional)',
-			helperText: 'What the piece said about the film',
+			placeholder: 'How the film was used, and how people responded',
 		},
-		{ ...LINK_FIELD, helperText: 'Where the piece can be read, if it is online' },
+		linkField('A course or research page (https://...)'),
 	],
 	referenced: [
 		{ name: 'title', type: 'text', label: 'Title of Work', required: true },
-		{ name: 'year', type: 'year', label: 'Year', helperText: 'When was this work released?', required: true },
+		{
+			name: 'year',
+			type: 'year',
+			label: 'Year',
+			placeholder: 'When was this work released?',
+			required: true,
+		},
 		{
 			name: 'creator',
 			type: 'text',
 			label: 'Made by',
-			helperText: 'Artist, filmmaker, writer, or group',
+			placeholder: 'Artist, filmmaker, writer, or group',
 			required: true,
 		},
 		{ name: 'medium', type: 'select', label: 'Medium', options: IMPACT_MEDIUM_OPTIONS, required: true },
@@ -202,70 +249,39 @@ export const IMPACT_FORM_FIELDS = {
 			name: 'details',
 			type: 'textarea',
 			label: 'Anything else to share? (optional)',
-			helperText: 'How the film appears in the work',
+			placeholder: 'How the film appears in the work',
 		},
-		{ ...LINK_FIELD, helperText: 'A page about the work, if there is one' },
+		linkField('A page about the work (https://...)'),
 	],
-	award: [
+	article: [
 		{
 			name: 'title',
 			type: 'text',
-			label: 'Award Name',
-			helperText: 'Example: Best Documentary, Jury Special Mention.',
+			label: 'Title',
+			placeholder: 'Title of the article, review, or book',
 			required: true,
 		},
-		{
-			name: 'award_result',
-			type: 'select',
-			label: 'Result',
-			options: IMPACT_AWARD_RESULT_OPTIONS,
-			required: true,
-		},
-		{
-			name: 'organiser',
-			type: 'text',
-			label: 'Given by',
-			helperText: 'Festival, organisation, or institution that gave the award',
-			required: true,
-		},
-		{ name: 'year', type: 'year', label: 'Year', helperText: 'When was this given?', required: true },
-		{
-			name: 'details',
-			type: 'textarea',
-			label: 'Citation (optional)',
-			helperText: 'The jury’s statement, if there is one',
-		},
-		{ ...LINK_FIELD, helperText: 'Announcement or festival page' },
-	],
-	teaching: [
-		{
-			name: 'title',
-			type: 'text',
-			label: 'Course or Research Title',
-			helperText: 'The class, course, workshop, or study that used the film',
-			required: true,
-		},
-		{ name: 'year', type: 'year', label: 'Year', helperText: 'When was it used?', required: true },
+		{ name: 'year', type: 'year', label: 'Year', placeholder: 'When was this published?', required: true },
 		{
 			name: 'creator',
 			type: 'text',
-			label: 'Led by',
-			helperText: 'Teacher, facilitator, or researcher',
+			label: 'Created by',
+			placeholder: 'Author or writer’s name',
 			required: true,
 		},
 		{
-			name: 'organiser',
+			name: 'publication',
 			type: 'text',
-			label: 'Institution (optional)',
-			helperText: 'School, university, or organisation',
+			label: 'Where was it published? (optional)',
+			placeholder: 'Name of publication, website, journal, or publisher',
 		},
 		{
 			name: 'details',
 			type: 'textarea',
 			label: 'Anything else to share? (optional)',
-			helperText: 'How the film was used, and how people responded',
+			placeholder: 'What the piece said about the film',
 		},
-		{ ...LINK_FIELD, helperText: 'A course or research page, if there is one' },
+		linkField('Where the piece can be read (https://...)'),
 	],
 };
 

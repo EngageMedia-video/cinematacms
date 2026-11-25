@@ -2609,11 +2609,13 @@ class CommunityImpact(models.Model):
     is_online = models.BooleanField(default=False)
     city = models.CharField(max_length=100, blank=True, default="")
     country = models.CharField(max_length=5, blank=True, default="", choices=lists.video_countries)
-    # Screening organiser, award giver, or teaching institution.
+    # Screening organiser, award giver, or the school or university that taught the film.
     organiser = models.CharField(max_length=200, blank=True, default="")
     organiser_private = models.BooleanField(default=False)
-    # Article author, maker of a referencing work, or teaching lead.
+    # Article author, maker of a referencing work, or teacher.
     creator = models.CharField(max_length=200, blank=True, default="")
+    # Teaching term, such as "1st semester".
+    term = models.CharField(max_length=100, blank=True, default="")
     publication = models.CharField(max_length=200, blank=True, default="")
     medium = models.CharField(max_length=20, blank=True, default="", choices=MEDIUM_CHOICES)
     award_result = models.CharField(max_length=20, blank=True, default="", choices=AWARD_RESULT_CHOICES)
@@ -2642,6 +2644,7 @@ class CommunityImpact(models.Model):
         self.city = strip_tags(self.city)
         self.organiser = strip_tags(self.organiser)
         self.creator = strip_tags(self.creator)
+        self.term = strip_tags(self.term)
         self.publication = strip_tags(self.publication)
         words = self.details.split()
         if len(words) > 80:

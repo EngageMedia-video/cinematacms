@@ -27,12 +27,18 @@ describe('AddImpactDialog', () => {
 		).toBeVisible();
 
 		const group = screen.getByRole('radiogroup', { name: 'What kind of impact?' });
-		expect(within(group).getAllByRole('radio')).toHaveLength(5);
-		expect(within(group).getByRole('radio', { name: /^Screening/ })).not.toBeChecked();
-		expect(within(group).getByRole('radio', { name: /^Article or Review/ })).toBeVisible();
+		const options = within(group).getAllByRole('radio');
+		expect(options.map((option) => option.value)).toEqual([
+			'award',
+			'screening',
+			'teaching',
+			'referenced',
+			'article',
+		]);
+		expect(options.every((option) => !option.checked)).toBe(true);
+		expect(within(group).getByRole('radio', { name: /^Recognition/ })).toBeVisible();
 		expect(within(group).getByRole('radio', { name: /^Referenced in Another Work/ })).toBeVisible();
-		expect(within(group).getByRole('radio', { name: /^Award/ })).toBeVisible();
-		expect(within(group).getByRole('radio', { name: /^Teaching or Research/ })).toBeVisible();
+		expect(group.querySelectorAll('svg')).toHaveLength(5);
 		expect(screen.queryByTestId('impact-category-fields')).not.toBeInTheDocument();
 	});
 
@@ -50,7 +56,7 @@ describe('AddImpactDialog', () => {
 		expect(onSubmit).not.toHaveBeenCalled();
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
-		await chooseCategory(user, 'Award');
+		await chooseCategory(user, 'Recognition');
 
 		expect(submit).toBeEnabled();
 	});
@@ -65,14 +71,15 @@ describe('AddImpactDialog', () => {
 		expect(fieldsPanel().getByLabelText('City')).toBeVisible();
 		expect(fieldsPanel().getByText('Keep organiser private')).toBeVisible();
 
-		await chooseCategory(user, 'Award');
-		expect(fieldsPanel().getByLabelText('Award Name')).toBeVisible();
+		await chooseCategory(user, 'Recognition');
+		expect(fieldsPanel().getByLabelText('Recognition')).toBeVisible();
+		expect(fieldsPanel().getByText('Result')).toBeVisible();
 		expect(fieldsPanel().getByLabelText('Given by')).toBeVisible();
 		expect(fieldsPanel().getByLabelText('Citation (optional)')).toBeVisible();
 		expect(fieldsPanel().queryByLabelText('City')).not.toBeInTheDocument();
 
 		await chooseCategory(user, 'Article or Review');
-		expect(fieldsPanel().getByLabelText('Written by')).toBeVisible();
+		expect(fieldsPanel().getByLabelText('Created by')).toBeVisible();
 		expect(fieldsPanel().getByLabelText('Where was it published? (optional)')).toBeVisible();
 
 		await chooseCategory(user, 'Referenced in Another Work');
@@ -81,9 +88,62 @@ describe('AddImpactDialog', () => {
 		expect(fieldsPanel().getByText('Medium')).toBeVisible();
 
 		await chooseCategory(user, 'Teaching or Research');
-		expect(fieldsPanel().getByLabelText('Course or Research Title')).toBeVisible();
-		expect(fieldsPanel().getByLabelText('Led by')).toBeVisible();
-		expect(fieldsPanel().getByLabelText('Institution (optional)')).toBeVisible();
+		expect(fieldsPanel().getByLabelText('Course or Class Name')).toBeVisible();
+		expect(fieldsPanel().getByLabelText('School or University')).toBeVisible();
+		expect(fieldsPanel().getByText('Country')).toBeVisible();
+		expect(fieldsPanel().getByLabelText('Term (optional)')).toBeVisible();
+		expect(fieldsPanel().getByLabelText('Teacher or Facilitator (optional)')).toBeVisible();
+	});
+
+	it('shows each field hint as its placeholder', async () => {
+		const user = userEvent.setup();
+
+		render(<AddImpactDialog open />);
+
+		await chooseCategory(user, 'Screening');
+		expect(screen.getByLabelText('Event or Festival Name')).toHaveAttribute(
+			'placeholder',
+			'The name of the festival, screening, or programme'
+		);
+		expect(screen.getByLabelText('Link (optional)')).toHaveAttribute(
+			'placeholder',
+			'Announcement or festival page (https://...)'
+		);
+
+		await chooseCategory(user, 'Teaching or Research');
+		expect(screen.getByLabelText('Year')).toHaveAttribute('placeholder', 'When was it used?');
+		expect(screen.getByText('For a course that runs across two years, use the year it started.')).toBeVisible();
+		expect(screen.getByLabelText('Term (optional)')).toHaveAttribute(
+			'placeholder',
+			'E.g. 1st semester, summer term'
+		);
+	});
+
+	it('submits a teaching entry with its school, country, and term', async () => {
+		const user = userEvent.setup();
+		const onSubmit = vi.fn();
+
+		render(<AddImpactDialog onSubmit={onSubmit} open />);
+
+		await chooseCategory(user, 'Teaching or Research');
+		await user.type(screen.getByLabelText('Course or Class Name'), 'Media and Climate Justice');
+		await user.type(screen.getByLabelText('School or University'), 'University of the Philippines');
+		await chooseOption(user, 'Philippines');
+		await user.type(screen.getByLabelText('Year'), '2025');
+		await user.type(screen.getByLabelText('Term (optional)'), '1st semester');
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+
+		expect(onSubmit).toHaveBeenCalledWith({
+			category: 'teaching',
+			title: 'Media and Climate Justice',
+			organiser: 'University of the Philippines',
+			country: 'PH',
+			year: 2025,
+			term: '1st semester',
+			creator: '',
+			details: '',
+			url: '',
+		});
 	});
 
 	it('submits a screening with its place, organiser and privacy choice', async () => {
@@ -147,8 +207,8 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
-		await chooseCategory(user, 'Award');
-		await user.type(screen.getByLabelText('Award Name'), 'Best Documentary');
+		await chooseCategory(user, 'Recognition');
+		await user.type(fieldsPanel().getByLabelText('Recognition'), 'Best Documentary');
 		await chooseOption(user, 'Special Mention');
 		await user.type(screen.getByLabelText('Given by'), 'Jogja-NETPAC');
 		await user.type(screen.getByLabelText('Year'), '2021');
@@ -194,7 +254,7 @@ describe('AddImpactDialog', () => {
 
 		await chooseCategory(user, 'Article or Review');
 		await user.type(screen.getByLabelText('Title'), 'Films that changed the conversation');
-		await user.type(screen.getByLabelText('Written by'), 'Dewi Lestari');
+		await user.type(screen.getByLabelText('Created by'), 'Dewi Lestari');
 		await user.type(screen.getByLabelText('Year'), String(nextYear));
 		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
@@ -209,9 +269,9 @@ describe('AddImpactDialog', () => {
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
 		await chooseCategory(user, 'Teaching or Research');
-		await user.type(screen.getByLabelText('Course or Research Title'), 'Media and Climate Justice');
+		await user.type(screen.getByLabelText('Course or Class Name'), 'Media and Climate Justice');
 		await user.type(screen.getByLabelText('Year'), '2025');
-		await user.type(screen.getByLabelText('Led by'), 'Dr. Maria Santos');
+		await user.type(screen.getByLabelText('Teacher or Facilitator (optional)'), 'Dr. Maria Santos');
 		fireEvent.change(screen.getByLabelText('Link (optional)'), { target: { value: 'javascript:alert(1)' } });
 		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
@@ -224,7 +284,7 @@ describe('AddImpactDialog', () => {
 		const onSubmitErrorClear = vi.fn();
 		const { rerender } = render(<AddImpactDialog onSubmitErrorClear={onSubmitErrorClear} open />);
 
-		await chooseCategory(user, 'Award');
+		await chooseCategory(user, 'Recognition');
 		rerender(
 			<AddImpactDialog
 				onSubmitErrorClear={onSubmitErrorClear}
@@ -290,7 +350,7 @@ describe('AddImpactDialog', () => {
 		await chooseCategory(user, 'Screening');
 		await user.type(screen.getByLabelText('Who organised it?'), 'Underground Film Club');
 		await user.click(screen.getByRole('checkbox', { name: /Keep organiser private/ }));
-		await chooseCategory(user, 'Award');
+		await chooseCategory(user, 'Recognition');
 
 		expect(screen.getByLabelText('Given by')).toHaveValue('');
 	});
@@ -302,7 +362,7 @@ describe('AddImpactDialog', () => {
 
 		await chooseCategory(user, 'Screening');
 		await user.type(screen.getByLabelText('Who organised it?'), 'Busan IFF');
-		await chooseCategory(user, 'Award');
+		await chooseCategory(user, 'Recognition');
 
 		expect(screen.getByLabelText('Given by')).toHaveValue('Busan IFF');
 	});
@@ -316,19 +376,23 @@ describe('AddImpactDialog', () => {
 
 		expect(screen.getByLabelText('City')).toHaveAttribute('maxlength', '100');
 		expect(screen.getByLabelText('Who organised it?')).toHaveAttribute('maxlength', '200');
+
+		await chooseCategory(user, 'Teaching or Research');
+
+		expect(screen.getByLabelText('Term (optional)')).toHaveAttribute('maxlength', '100');
 	});
 
 	it('starts blank again after it is closed and reopened', async () => {
 		const user = userEvent.setup();
 		const { rerender } = render(<AddImpactDialog open />);
 
-		await chooseCategory(user, 'Award');
-		await user.type(screen.getByLabelText('Award Name'), 'Best Documentary');
+		await chooseCategory(user, 'Recognition');
+		await user.type(fieldsPanel().getByLabelText('Recognition'), 'Best Documentary');
 
 		rerender(<AddImpactDialog open={false} />);
 		rerender(<AddImpactDialog open />);
 
-		expect(screen.getByRole('radio', { name: /^Award/ })).not.toBeChecked();
+		expect(screen.getByRole('radio', { name: /^Recognition/ })).not.toBeChecked();
 		expect(screen.queryByTestId('impact-category-fields')).not.toBeInTheDocument();
 	});
 });
@@ -373,8 +437,8 @@ describe('AddImpactDialog error reveal', () => {
 
 		render(<AddImpactDialog open />);
 
-		await chooseCategory(user, 'Award');
-		await user.type(screen.getByLabelText('Award Name'), 'Best Documentary');
+		await chooseCategory(user, 'Recognition');
+		await user.type(fieldsPanel().getByLabelText('Recognition'), 'Best Documentary');
 		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
 		const result = screen.getByRole('button', { name: 'Choose one' });
@@ -386,7 +450,7 @@ describe('AddImpactDialog error reveal', () => {
 		const user = userEvent.setup();
 		const { rerender } = render(<AddImpactDialog open />);
 
-		await chooseCategory(user, 'Award');
+		await chooseCategory(user, 'Recognition');
 		rerender(
 			<AddImpactDialog
 				open

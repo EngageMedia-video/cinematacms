@@ -52,6 +52,8 @@ TEACHING_PAYLOAD = {
     "year": 2025,
     "creator": "Dr. Maria Santos",
     "organiser": "University of the Philippines",
+    "country": "PH",
+    "term": "1st semester",
 }
 
 
@@ -133,12 +135,26 @@ class CommunityImpactCategoryValidationTests(TestCase):
     def test_award_rejects_unknown_result(self):
         self.assert_invalid(build_payload(AWARD_PAYLOAD, award_result="shortlisted"), "award_result")
 
-    def test_teaching_requires_title_year_and_lead(self):
-        for field in ("title", "year", "creator"):
+    def test_teaching_requires_title_year_school_and_country(self):
+        for field in ("title", "year", "organiser", "country"):
             with self.subTest(field=field):
                 self.assert_invalid(build_payload(TEACHING_PAYLOAD, **{field: None}), field)
 
-        self.assert_valid(build_payload(TEACHING_PAYLOAD, organiser=None))
+        validated = self.assert_valid(build_payload(TEACHING_PAYLOAD, creator=None, term=None))
+        self.assertNotIn("creator", validated)
+        self.assertNotIn("term", validated)
+
+    def test_teaching_keeps_its_term_and_country(self):
+        validated = self.assert_valid(build_payload(TEACHING_PAYLOAD, term="<b>Summer</b> term "))
+
+        self.assertEqual(validated["term"], "Summer term")
+        self.assertEqual(validated["country"], "PH")
+
+    def test_other_categories_drop_a_term(self):
+        for payload in (SCREENING_PAYLOAD, ARTICLE_PAYLOAD, REFERENCED_PAYLOAD, AWARD_PAYLOAD):
+            with self.subTest(category=payload["category"]):
+                validated = self.assert_valid(build_payload(payload, term="1st semester"))
+                self.assertEqual(validated["term"], "")
 
     def test_rejects_blank_required_text(self):
         self.assert_invalid(build_payload(ARTICLE_PAYLOAD, creator="   "), "creator")

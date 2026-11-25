@@ -1,24 +1,11 @@
 @layer utilities {
-	/* Shared field shells default to a filled surface; the impact form lays them flat on its panel. */
-	.impact-add-form .impact-add-field .group,
-	.impact-add-form .impact-add-field .group:hover,
-	.impact-add-form .impact-add-field .group:focus-within {
-		background-color: transparent !important;
-	}
-
+	/* The impact form's fields follow the Figma field spec: 14px above the label and below the value, border on the shell's bottom edge. */
 	.impact-add-form .impact-add-field .field-shell {
 		padding-top: 14px !important;
 	}
 
 	.impact-add-form .impact-add-field .field-shell > .border-b {
 		margin: 14px 0 0 !important;
-	}
-
-	.impact-add-form .impact-add-field > p,
-	.impact-add-form .impact-details-field .field-shell > div:last-child {
-		margin-top: 8px !important;
-		font-size: 16px !important;
-		line-height: 24px !important;
 	}
 
 	.impact-add-form .impact-details-field .field-shell {

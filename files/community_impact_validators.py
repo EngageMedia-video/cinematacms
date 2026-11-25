@@ -18,11 +18,12 @@ IMPACT_DETAIL_FIELD_DEFAULTS = {
     "organiser": "",
     "organiser_private": False,
     "creator": "",
+    "term": "",
     "publication": "",
     "medium": "",
     "award_result": "",
 }
-IMPACT_TEXT_FIELDS = ("city", "organiser", "creator", "publication")
+IMPACT_TEXT_FIELDS = ("city", "organiser", "creator", "term", "publication")
 
 # Detail fields each submission form collects. Anything else sent with the
 # category is reset so a record never carries another category's data.
@@ -44,8 +45,8 @@ IMPACT_CATEGORY_FIELDS = {
         "optional": (),
     },
     CommunityImpact.TEACHING: {
-        "required": ("year", "creator"),
-        "optional": ("organiser",),
+        "required": ("year", "organiser", "country"),
+        "optional": ("creator", "term"),
     },
 }
 ONLINE_SCREENING_FIELDS = ("city", "country")

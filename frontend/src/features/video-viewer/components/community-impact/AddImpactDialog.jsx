@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button, Dialog, DialogContent, Dropdown, EditorField, TextField } from '../../../shared/components';
+import { Button, Dialog, DialogContent, Dropdown, EditorField, Icon, TextField } from '../../../shared/components';
 import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { cn } from '../../../shared/utils/classNames';
 import heartIcon from './assets/impact-heart.svg';
@@ -128,7 +128,7 @@ function CategoryOption({ category, checked, name, onSelect }) {
 	return (
 		<label
 			className={cn(
-				'flex cursor-pointer flex-col gap-2 px-4 py-2 outline-none has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring-focus',
+				'box-border flex min-h-[92px] cursor-pointer items-start gap-4 rounded-ds-8 p-4 outline-none transition-colors duration-200 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring-focus',
 				checked ? 'bg-bg-primary text-text-on-primary' : 'bg-bg-surface-raised text-text-strong'
 			)}
 		>
@@ -140,9 +140,18 @@ function CategoryOption({ category, checked, name, onSelect }) {
 				checked={checked}
 				onChange={() => onSelect(category.value)}
 			/>
-			<span className="body-body-14-bold">{category.label}</span>
-			<span className={cn('body-body-12-regular', checked ? 'text-text-on-primary' : 'text-text-description')}>
-				{category.description}
+			<span
+				aria-hidden="true"
+				className={cn(
+					'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
+					category.iconShellClassName
+				)}
+			>
+				<Icon name={category.iconName} size={18} decorative />
+			</span>
+			<span className="flex min-w-0 flex-col gap-2">
+				<span className="body-body-14-bold">{category.label}</span>
+				<span className="body-body-12-regular">{category.description}</span>
 			</span>
 		</label>
 	);
@@ -151,6 +160,8 @@ function CategoryOption({ category, checked, name, onSelect }) {
 CategoryOption.propTypes = {
 	category: PropTypes.shape({
 		description: PropTypes.string.isRequired,
+		iconName: PropTypes.string.isRequired,
+		iconShellClassName: PropTypes.string.isRequired,
 		label: PropTypes.string.isRequired,
 		value: PropTypes.string.isRequired,
 	}).isRequired,
@@ -191,7 +202,8 @@ function ImpactField({ error, field, onChange, value }) {
 				label={field.label}
 				name={field.name}
 				options={field.options}
-				placeholder="Choose one"
+				placeholder={field.placeholder ?? 'Choose one'}
+				required={field.required}
 				value={value ?? ''}
 				onChange={(nextValue) => onChange(field.name, nextValue)}
 				helperText={error}
@@ -206,7 +218,7 @@ function ImpactField({ error, field, onChange, value }) {
 				className="impact-add-field impact-details-field w-full"
 				label={field.label}
 				name={field.name}
-				placeholder="Write here..."
+				placeholder={field.placeholder}
 				value={value ?? ''}
 				onChange={(event) => onChange(field.name, event.target.value)}
 				helperText={helperText}
@@ -225,13 +237,12 @@ function ImpactField({ error, field, onChange, value }) {
 			type={field.type === 'url' ? 'url' : 'text'}
 			inputMode={field.type === 'year' ? 'numeric' : undefined}
 			maxLength={field.maxLength ?? (field.type === 'year' ? 4 : 200)}
-			placeholder={field.type === 'url' ? 'https://' : undefined}
-			aria-required={field.required ? 'true' : undefined}
+			placeholder={field.placeholder}
+			required={field.required}
 			value={value ?? ''}
 			onChange={(event) => onChange(field.name, event.target.value)}
 			helperText={helperText}
 			invalid={invalid}
-			transparent
 		/>
 	);
 }
@@ -245,6 +256,7 @@ ImpactField.propTypes = {
 		maxLength: PropTypes.number,
 		name: PropTypes.string.isRequired,
 		options: PropTypes.arrayOf(PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })),
+		placeholder: PropTypes.string,
 		required: PropTypes.bool,
 		type: PropTypes.oneOf(['checkbox', 'select', 'text', 'textarea', 'url', 'year']).isRequired,
 	}).isRequired,
@@ -343,48 +355,51 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 					</p>
 				</div>
 
-				<div className="flex w-full flex-col gap-2">
-					<p id={categoryLabelId} className="body-body-16-regular m-0 text-text-description">
-						What kind of impact?<span aria-hidden="true"> *</span>
-					</p>
-					<div
-						role="radiogroup"
-						aria-labelledby={categoryLabelId}
-						aria-required="true"
-						className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-					>
-						{IMPACT_FORM_CATEGORIES.map((option) => (
-							<CategoryOption
-								key={option.value}
-								category={option}
-								checked={category === option.value}
-								name={categoryGroupName}
-								onSelect={handleCategorySelect}
-							/>
-						))}
-					</div>
-				</div>
-
-				{category ? (
-					<div
-						className="flex w-full flex-col gap-4 rounded-[16px] bg-bg-surface px-[22px] py-8"
-						data-testid="impact-category-fields"
-					>
-						{fields.map((field) => (
-							<div key={`${category}-${field.name}`} data-impact-field={field.name}>
-								<ImpactField
-									field={field}
-									value={values[field.name]}
-									error={
-										errors[field.name] ||
-										(serverFieldError?.field === field.name ? serverFieldError.message : '')
-									}
-									onChange={handleValueChange}
+				{/* The options keep the default frame's full width when a category is chosen, so they do not jump. */}
+				<div className="flex w-full flex-col gap-4">
+					<div className="flex w-full flex-col gap-2">
+						<p id={categoryLabelId} className="body-body-16-regular m-0 text-text-description">
+							What kind of impact?
+							<span aria-hidden="true" className="ml-0.5 text-text-danger">
+								*
+							</span>
+						</p>
+						<div
+							role="radiogroup"
+							aria-labelledby={categoryLabelId}
+							aria-required="true"
+							className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+						>
+							{IMPACT_FORM_CATEGORIES.map((option) => (
+								<CategoryOption
+									key={option.value}
+									category={option}
+									checked={category === option.value}
+									name={categoryGroupName}
+									onSelect={handleCategorySelect}
 								/>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
-				) : null}
+
+					{category ? (
+						<div className="flex w-full flex-col gap-4" data-testid="impact-category-fields">
+							{fields.map((field) => (
+								<div key={`${category}-${field.name}`} data-impact-field={field.name}>
+									<ImpactField
+										field={field}
+										value={values[field.name]}
+										error={
+											errors[field.name] ||
+											(serverFieldError?.field === field.name ? serverFieldError.message : '')
+										}
+										onChange={handleValueChange}
+									/>
+								</div>
+							))}
+						</div>
+					) : null}
+				</div>
 
 				{formError ? (
 					<p
