@@ -145,6 +145,8 @@ export default function ViewerInfoContent(props) {
 	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
 	const [communityImpactSubmitStatus, setCommunityImpactSubmitStatus] = useState('idle');
 	const [communityImpactSubmitError, setCommunityImpactSubmitError] = useState(null);
+	// Whether the impact dialog last added an entry or edited one, for its success message.
+	const [communityImpactAction, setCommunityImpactAction] = useState('add');
 
 	function proceedMediaRemoval() {
 		MediaPageActions.removeMedia();
@@ -197,13 +199,33 @@ export default function ViewerInfoContent(props) {
 			setCommunityImpactSubmitError(error || { field: null, message: 'Unable to submit film impact entry.' });
 		}
 
+		function onCommunityImpactDelete() {
+			syncCommunityImpacts();
+			PageActions.addNotification('Impact deleted.', 'communityImpactDelete');
+		}
+
+		function onCommunityImpactDeleteFail() {
+			PageActions.addNotification(
+				'The impact could not be deleted. Please try again.',
+				'communityImpactDeleteFail'
+			);
+		}
+
 		MediaPageStore.on('community_impact_submit', onCommunityImpactSubmit);
 		MediaPageStore.on('community_impact_submit_fail', onCommunityImpactSubmitFail);
+		MediaPageStore.on('community_impact_update', onCommunityImpactSubmit);
+		MediaPageStore.on('community_impact_update_fail', onCommunityImpactSubmitFail);
+		MediaPageStore.on('community_impact_delete', onCommunityImpactDelete);
+		MediaPageStore.on('community_impact_delete_fail', onCommunityImpactDeleteFail);
 		MediaPageStore.on('loaded_media_data', syncCommunityImpacts);
 
 		return () => {
 			MediaPageStore.removeListener('community_impact_submit', onCommunityImpactSubmit);
 			MediaPageStore.removeListener('community_impact_submit_fail', onCommunityImpactSubmitFail);
+			MediaPageStore.removeListener('community_impact_update', onCommunityImpactSubmit);
+			MediaPageStore.removeListener('community_impact_update_fail', onCommunityImpactSubmitFail);
+			MediaPageStore.removeListener('community_impact_delete', onCommunityImpactDelete);
+			MediaPageStore.removeListener('community_impact_delete_fail', onCommunityImpactDeleteFail);
 			MediaPageStore.removeListener('loaded_media_data', syncCommunityImpacts);
 		};
 	}, []);
@@ -497,16 +519,28 @@ export default function ViewerInfoContent(props) {
 									entries={communityImpacts}
 									canAdd={user?.is?.anonymous === false}
 									submitMessage={
-										communityImpactSubmitStatus === 'success' ? 'Submitted for review.' : ''
+										communityImpactSubmitStatus === 'success'
+											? communityImpactAction === 'edit'
+												? 'Changes saved.'
+												: 'Submitted for review.'
+											: ''
 									}
 									submitStatus={communityImpactSubmitStatus}
 									submitError={communityImpactSubmitError}
 									onSubmitErrorClear={clearCommunityImpactSubmitError}
 									onAddImpact={(formValues) => {
+										setCommunityImpactAction('add');
 										setCommunityImpactSubmitStatus('submitting');
 										setCommunityImpactSubmitError(null);
 										MediaPageActions.submitCommunityImpact(formValues);
 									}}
+									onEditImpact={(entry, formValues) => {
+										setCommunityImpactAction('edit');
+										setCommunityImpactSubmitStatus('submitting');
+										setCommunityImpactSubmitError(null);
+										MediaPageActions.updateCommunityImpact(entry.uid, formValues);
+									}}
+									onDeleteImpact={(entry) => MediaPageActions.deleteCommunityImpact(entry.uid)}
 								/>
 							</div>
 						</TabContent>

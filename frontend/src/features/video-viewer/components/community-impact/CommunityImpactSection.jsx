@@ -1,104 +1,26 @@
 import PropTypes from 'prop-types';
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Button, Text } from '../../../shared/components';
+import { Button, ConfirmationDialogContent, Dialog, DialogClose, Text } from '../../../shared/components';
 import { AddImpactDialog } from './AddImpactDialog';
-import { ImpactCard } from './ImpactCard';
 import { ImpactEmptyState } from './ImpactEmptyState';
-import { COMMUNITY_IMPACT_CATEGORIES } from './impactIcons';
+import { ImpactEntry } from './ImpactEntry';
+import { IMPACT_GROUP_PREVIEW_COUNT, ImpactGroup, ImpactPlaylistItem } from './ImpactGroup';
+import { getImpactPlaylists, groupImpactEntries } from './utils/groupImpactEntries';
 
-function hasListEntries(category) {
-	return Array.isArray(category)
-		? category.length > 0
-		: Array.isArray(category?.entries) && category.entries.length > 0;
-}
+const ADD_BUTTON_CLASSES =
+	'h-10 w-full shrink-0 justify-center bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus @lg:w-fit';
 
-function hasSummaryEntries(category) {
-	if (!category) {
-		return false;
-	}
-
-	if (Array.isArray(category)) {
-		return category.length > 0;
-	}
-
-	if (typeof category.totalCount === 'number') {
-		return category.totalCount > 0;
-	}
-
-	if (category.totalCount && typeof category.totalCount === 'object') {
-		return Object.values(category.totalCount).some((value) => Number(value) > 0);
-	}
-
-	return hasListEntries(category);
-}
-
-function normalizeEntry(entry) {
-	return {
-		...entry,
-		date: entry.date || entry.event_date,
-		title: entry.title || entry.location || '',
-		url: entry.url || entry.link || '',
-	};
-}
-
-function normalizeCategoryData(data = {}) {
-	if (Array.isArray(data)) {
-		return {
-			entries: data.map(normalizeEntry),
-			totalCount: data.length,
-		};
-	}
-
-	const entries = Array.isArray(data.entries) ? data.entries.map(normalizeEntry) : [];
-	return {
-		...data,
-		entries,
-		totalCount: data.totalCount ?? entries.length,
-	};
-}
-
-function getTotalCountNumber(totalCount) {
-	if (typeof totalCount === 'number') {
-		return totalCount;
-	}
-
-	if (totalCount && typeof totalCount === 'object') {
-		return Object.values(totalCount).reduce((sum, value) => sum + (Number(value) || 0), 0);
-	}
-
-	return 0;
-}
-
-function buildCardProps(variant, data = {}) {
-	const total = getTotalCountNumber(data.totalCount ?? data.entries?.length);
-
-	if (variant === 'screening') {
-		return { title: 'Screened In', subtitle: `This film has been screened ${total}x` };
-	}
-
-	if (variant === 'featured') {
-		return { title: 'Featured In', subtitle: `This film has been featured ${total}x` };
-	}
-
-	if (variant === 'curated') {
-		return {
-			title: 'Curated Into',
-			subtitle: `This film has been curated into ${total} ${total === 1 ? 'collection' : 'collections'}`,
-		};
-	}
-
-	if (variant === 'saves') {
-		return { title: 'Saves & Playlists', subtitle: `${total.toLocaleString()} reported community uses` };
-	}
-
-	return { title: 'Academic Usage', subtitle: `Used in ${total.toLocaleString()} academic contexts` };
+function previewOf(items, expanded) {
+	return expanded ? items : items.slice(0, IMPACT_GROUP_PREVIEW_COUNT);
 }
 
 export function CommunityImpactSection({
 	canAdd = true,
-	description = 'For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is reaching people.',
+	description = 'For filmmakers & viewers. A list of where the film has been screened, written about, taught, or recognised',
 	entries = {},
 	onAddImpact,
+	onDeleteImpact,
+	onEditImpact,
 	onSubmitErrorClear,
 	submitError = null,
 	submitMessage = '',
@@ -106,26 +28,14 @@ export function CommunityImpactSection({
 	title = "Film's Impact",
 }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
+	// The entry being edited; null while the dialog adds a new impact.
+	const [editingEntry, setEditingEntry] = useState(null);
+	const [deletingEntry, setDeletingEntry] = useState(null);
+	const [expandedGroups, setExpandedGroups] = useState(() => new Set());
 	const headingId = useId();
-	const cards = useMemo(
-		() =>
-			COMMUNITY_IMPACT_CATEGORIES.map(({ value }) => {
-				const data = normalizeCategoryData(entries[value] ?? {});
-				return {
-					...buildCardProps(value, data),
-					...data,
-					variant: value,
-				};
-			})
-				.filter((card) => card.variant !== 'curated')
-				.filter((card) =>
-					card.variant === 'saves' || card.variant === 'academic'
-						? hasSummaryEntries(card)
-						: hasListEntries(card)
-				),
-		[entries]
-	);
-	const populated = cards.length > 0;
+	const groups = useMemo(() => groupImpactEntries(entries), [entries]);
+	const { playlists, count: playlistCount } = useMemo(() => getImpactPlaylists(entries), [entries]);
+	const hasImpact = groups.length > 0 || playlists.length > 0;
 
 	useEffect(() => {
 		if (submitStatus === 'success') {
@@ -133,76 +43,190 @@ export function CommunityImpactSection({
 		}
 	}, [submitStatus]);
 
-	function handleAddClick() {
+	function openAddDialog() {
+		setEditingEntry(null);
+		setDialogOpen(true);
+	}
+
+	function openEditDialog(entry) {
+		setEditingEntry(entry);
 		setDialogOpen(true);
 	}
 
 	function handleSubmit(values) {
-		onAddImpact?.(values);
+		if (editingEntry) {
+			onEditImpact?.(editingEntry, values);
+		} else {
+			onAddImpact?.(values);
+		}
+	}
+
+	function confirmDelete() {
+		if (deletingEntry) {
+			onDeleteImpact?.(deletingEntry);
+		}
+		setDeletingEntry(null);
+	}
+
+	function toggleGroup(key) {
+		setExpandedGroups((current) => {
+			const next = new Set(current);
+			if (next.has(key)) {
+				next.delete(key);
+			} else {
+				next.add(key);
+			}
+			return next;
+		});
+	}
+
+	function renderPlaylists() {
+		const expanded = expandedGroups.has('saves');
+
+		return (
+			<ImpactGroup
+				title="Playlists"
+				iconKey="saves"
+				count={playlistCount}
+				expanded={expanded}
+				showToggle={playlists.length > IMPACT_GROUP_PREVIEW_COUNT}
+				onToggleExpanded={() => toggleGroup('saves')}
+			>
+				{previewOf(playlists, expanded).map((playlist) => (
+					<ImpactPlaylistItem key={playlist.friendly_token ?? playlist.url} playlist={playlist} />
+				))}
+			</ImpactGroup>
+		);
 	}
 
 	return (
-		<section aria-labelledby={headingId} className="w-full text-text-primary">
-			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
-				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
-						{title}
-					</Text>
-					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-						{description}
-					</Text>
-				</div>
+		<section aria-labelledby={headingId} className="@container flex w-full flex-col gap-4 text-text-primary">
+			<h2 id={headingId} className="sr-only">
+				{title}
+			</h2>
 
-				{canAdd ? (
-					<Button
-						className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
-						onClick={handleAddClick}
-					>
+			<div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
+				<p className="body-body-14-regular m-0 max-w-[697px] text-text-description">{description}</p>
+
+				{/* The empty state carries its own ADD IMPACT button, so the header shows one only once impacts are listed. */}
+				{canAdd && hasImpact ? (
+					<Button className={ADD_BUTTON_CLASSES} onClick={openAddDialog}>
 						ADD IMPACT
 					</Button>
 				) : null}
 			</div>
 
 			{submitMessage ? (
-				<Text as="p" variant="body-14-bold" color="accent" className="m-0 mt-space-sm" aria-live="polite">
+				<Text as="p" variant="body-14-bold" color="accent" className="m-0" aria-live="polite">
 					{submitMessage}
 				</Text>
 			) : null}
 
-			<div className="mt-space-lg">
-				{populated ? (
-					<div className="grid grid-cols-1 gap-space-base lg:grid-cols-2">
-						{cards.map((card) => (
-							<ImpactCard key={card.variant} {...card} />
-						))}
-					</div>
-				) : (
-					<ImpactEmptyState canAdd={canAdd} onAddImpact={handleAddClick} />
-				)}
-			</div>
+			<hr className="m-0 border-0 border-t border-border-divider" />
+
+			{hasImpact ? (
+				<div className="grid grid-cols-1 items-start gap-4 @4xl:grid-cols-3">
+					{groups.length ? (
+						<div
+							className={
+								playlists.length
+									? 'flex flex-col gap-5 @4xl:col-span-2'
+									: 'flex flex-col gap-5 @4xl:col-span-3'
+							}
+						>
+							{groups.map((group) => {
+								const expanded = expandedGroups.has(group.key);
+
+								return (
+									<ImpactGroup
+										key={group.key}
+										title={group.title}
+										iconKey={group.key}
+										count={group.entries.length}
+										expanded={expanded}
+										showToggle={group.entries.length > IMPACT_GROUP_PREVIEW_COUNT}
+										onToggleExpanded={() => toggleGroup(group.key)}
+									>
+										{previewOf(group.entries, expanded).map((entry) => (
+											<ImpactEntry
+												key={entry.uid ?? `${entry.category}-${entry.title}`}
+												entry={entry}
+												onEdit={onEditImpact ? openEditDialog : undefined}
+												onDelete={onDeleteImpact ? setDeletingEntry : undefined}
+											/>
+										))}
+									</ImpactGroup>
+								);
+							})}
+						</div>
+					) : null}
+					{playlists.length ? (
+						<div className={groups.length ? undefined : '@4xl:col-span-3'}>{renderPlaylists()}</div>
+					) : null}
+				</div>
+			) : (
+				<ImpactEmptyState canAdd={canAdd} onAddImpact={openAddDialog} />
+			)}
 
 			<AddImpactDialog
 				open={dialogOpen}
-				onClose={() => setDialogOpen(false)}
+				impact={editingEntry}
+				onClose={() => {
+					setDialogOpen(false);
+					if (submitError) {
+						onSubmitErrorClear?.();
+					}
+				}}
 				onSubmit={handleSubmit}
 				onSubmitErrorClear={onSubmitErrorClear}
 				submitError={submitError}
 				submitting={submitStatus === 'submitting'}
 			/>
+
+			<Dialog
+				open={Boolean(deletingEntry)}
+				onOpenChange={(nextOpen) => {
+					if (!nextOpen) {
+						setDeletingEntry(null);
+					}
+				}}
+			>
+				{deletingEntry ? (
+					<ConfirmationDialogContent
+						title="Delete this impact?"
+						subtitle={`“${deletingEntry.title}” will be removed from this film's Community Impact. This cannot be undone.`}
+						actions={
+							<>
+								<DialogClose asChild>
+									<Button variant="secondary" className="h-10 px-4 py-0">
+										CANCEL
+									</Button>
+								</DialogClose>
+								<Button
+									className="h-10 bg-bg-danger px-4 py-0 text-text-on-primary hover:bg-bg-danger-strong-hover"
+									onClick={confirmDelete}
+								>
+									DELETE
+								</Button>
+							</>
+						}
+					/>
+				) : null}
+			</Dialog>
 		</section>
 	);
 }
 
-const listEntryShape = PropTypes.shape({
-	date: PropTypes.string,
+const entryShape = PropTypes.shape({
+	category: PropTypes.string,
 	title: PropTypes.string.isRequired,
-	url: PropTypes.string,
+	uid: PropTypes.string,
 });
 
 const entryCategoryShape = PropTypes.oneOfType([
-	PropTypes.arrayOf(listEntryShape),
+	PropTypes.arrayOf(entryShape),
 	PropTypes.shape({
-		entries: PropTypes.arrayOf(listEntryShape),
+		entries: PropTypes.arrayOf(entryShape),
 		totalCount: PropTypes.number,
 	}),
 ]);
@@ -212,29 +236,34 @@ CommunityImpactSection.propTypes = {
 	description: PropTypes.string,
 	title: PropTypes.string,
 	entries: PropTypes.shape({
-		academic: PropTypes.oneOfType([
-			PropTypes.arrayOf(listEntryShape),
-			PropTypes.shape({
-				label: PropTypes.string,
-				lastReportedAt: PropTypes.string,
-				totalCount: PropTypes.number,
-			}),
-		]),
+		academic: PropTypes.oneOfType([PropTypes.arrayOf(entryShape), PropTypes.object]),
+		article: entryCategoryShape,
+		award: entryCategoryShape,
 		featured: entryCategoryShape,
 		curated: entryCategoryShape,
-		saves: PropTypes.oneOfType([
-			PropTypes.arrayOf(listEntryShape),
-			PropTypes.shape({
-				lastEventAt: PropTypes.string,
-				totalCount: PropTypes.shape({
-					playlists: PropTypes.number,
-					saves: PropTypes.number,
-				}),
+		referenced: entryCategoryShape,
+		saves: PropTypes.shape({
+			lastEventAt: PropTypes.string,
+			playlists: PropTypes.arrayOf(
+				PropTypes.shape({
+					add_date: PropTypes.string,
+					curator_name: PropTypes.string,
+					friendly_token: PropTypes.string,
+					title: PropTypes.string.isRequired,
+					url: PropTypes.string,
+				})
+			),
+			totalCount: PropTypes.shape({
+				playlists: PropTypes.number,
+				saves: PropTypes.number,
 			}),
-		]),
+		}),
 		screening: entryCategoryShape,
+		teaching: entryCategoryShape,
 	}),
 	onAddImpact: PropTypes.func,
+	onDeleteImpact: PropTypes.func,
+	onEditImpact: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,
 	submitError: PropTypes.shape({
 		field: PropTypes.string,

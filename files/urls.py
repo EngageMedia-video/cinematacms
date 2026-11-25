@@ -103,6 +103,10 @@ urlpatterns = [
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/community-impacts$",
         views.CommunityImpactList.as_view(),
     ),
+    re_path(
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/community-impacts/(?P<uid>[\w]+(-[\w]+)*)$",
+        views.CommunityImpactDetail.as_view(),
+    ),
     path("api/v1/playlists", views.PlaylistList.as_view()),
     path("api/v1/playlists/", views.PlaylistList.as_view()),
     re_path(
@@ -129,6 +133,7 @@ urlpatterns = [
     path("manage/comments", views.manage_comments, name="manage_comments"),
     path("manage/film-impact", views.manage_film_impact, name="manage_film_impact"),
     path("manage/film-impact/<uuid:uid>/edit", views.manage_film_impact_edit, name="manage_film_impact_edit"),
+    path("manage/film-impact/<uuid:uid>/review", views.manage_film_impact_review, name="manage_film_impact_review"),
     # USER MANAGE UPLOADS
     path("api/v1/my_uploads", management_views.MyUploadsList.as_view()),
     path("api/v1/my_uploads/bulk_state", management_views.MyUploadsBulkState.as_view()),

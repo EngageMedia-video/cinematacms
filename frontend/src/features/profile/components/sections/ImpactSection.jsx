@@ -3,7 +3,7 @@ import { useAuthorImpact } from '../../hooks/useAuthorImpact';
 import { ImpactFilmGroup } from './ImpactFilmGroup';
 
 // Categories surfaced on the profile Impact tab (matches ImpactFilmGroup).
-const DISPLAY_CATEGORIES = ['screening', 'featured', 'academic'];
+const DISPLAY_CATEGORIES = ['screening', 'article', 'referenced', 'award', 'teaching', 'featured', 'academic'];
 
 function normalizeFilms(data) {
 	if (Array.isArray(data?.films)) return data.films;

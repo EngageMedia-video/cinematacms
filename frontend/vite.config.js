@@ -126,6 +126,7 @@ export default defineConfig({
 				'manage-users': 'src/entries/manage-users.js',
 				'manage-comments': 'src/entries/manage-comments.js',
 				'manage-film-impact': 'src/entries/manage-film-impact.js',
+				'film-impact-review': 'src/entries/film-impact-review.js',
 				'manage-uploads': 'src/entries/manage-uploads.js',
 				'profile-home': 'src/entries/profile-home.js',
 				'profile-revamp': 'src/entries/profile-revamp.js',

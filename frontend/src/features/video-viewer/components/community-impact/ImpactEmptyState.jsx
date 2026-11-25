@@ -17,8 +17,7 @@ export function ImpactEmptyState({ canAdd = true, onAddImpact }) {
 				Where has this film made an impact?
 			</Text>
 			<Text variant="body-14" color="meta" className="m-0 mt-space-sm max-w-[calc(var(--size-96)*5)]">
-				Share screenings, features, saves, playlists, or academic use so the community can see how this film
-				travels.
+				Tell us where this film has been screened, written about, taught, or recognised.
 			</Text>
 			{canAdd ? (
 				<Button

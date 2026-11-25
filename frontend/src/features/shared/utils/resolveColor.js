@@ -32,6 +32,8 @@ const SEMANTIC_COLOR_TOKENS = {
 		'chip-active',
 		'chip',
 		'tab-trigger-selected',
+		'status-approved',
+		'status-waiting',
 	]),
 	text: new Set([
 		'strong',

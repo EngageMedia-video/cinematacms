@@ -12,6 +12,14 @@ from files.models import CommunityImpact, Playlist, PlaylistMedia
 from files.serializers import CommunityImpactSerializer, ManageCommunityImpactSerializer, SingleMediaSerializer
 from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
 
+# A screening submission must say when, where, and by whom it was organised.
+SCREENING_DETAILS = {
+    "year": 2024,
+    "city": "Manila",
+    "country": "PH",
+    "organiser": "Youth Media Collective",
+}
+
 
 class CommunityImpactModelTests(TestCase):
     def test_save_truncates_details_to_80_words(self):
@@ -37,6 +45,7 @@ class CommunityImpactSerializerTests(TestCase):
         details = " ".join(f"word{i}" for i in range(81))
         serializer = CommunityImpactSerializer(
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening",
                 "details": details,
@@ -52,6 +61,7 @@ class CommunityImpactSerializerTests(TestCase):
         for bad_url in ("http://drive.google.com/x", "https://192.168.1.1/x"):
             serializer = CommunityImpactSerializer(
                 data={
+                    **SCREENING_DETAILS,
                     "category": CommunityImpact.SCREENING,
                     "title": "Community screening",
                     "event_date": "2026-05-29",
@@ -78,6 +88,7 @@ class CommunityImpactSerializerTests(TestCase):
     def test_defaults_event_date_to_submission_date(self):
         serializer = CommunityImpactSerializer(
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening",
                 "url": "",
@@ -91,6 +102,7 @@ class CommunityImpactSerializerTests(TestCase):
         for good_url in ("https://drive.google.com/file/d/abc/view", "https://example.com/path"):
             serializer = CommunityImpactSerializer(
                 data={
+                    **SCREENING_DETAILS,
                     "category": CommunityImpact.SCREENING,
                     "title": "Community screening",
                     "event_date": "2026-05-29",
@@ -255,6 +267,7 @@ class CommunityImpactEndpointTests(TestCase):
             response = self.client.post(
                 self.url,
                 data={
+                    **SCREENING_DETAILS,
                     "category": CommunityImpact.SCREENING,
                     "title": "Community screening",
                     "details": "Screened with a youth media collective.",
@@ -276,6 +289,7 @@ class CommunityImpactEndpointTests(TestCase):
         response = self.client.post(
             self.url,
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening",
                 "url": "",
@@ -296,6 +310,7 @@ class CommunityImpactEndpointTests(TestCase):
         response = self.client.post(
             f"/api/v1/media/{trusted_media.friendly_token}/community-impacts",
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening by owner",
                 "url": "",
@@ -315,6 +330,7 @@ class CommunityImpactEndpointTests(TestCase):
         response = self.client.post(
             self.url,
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening by trusted user",
                 "url": "",
@@ -342,6 +358,7 @@ class CommunityImpactEndpointTests(TestCase):
                 response = self.client.post(
                     self.url,
                     data={
+                        **SCREENING_DETAILS,
                         "category": CommunityImpact.SCREENING,
                         "title": f"Community screening by {role_user.username}",
                         "url": "",
@@ -360,6 +377,7 @@ class CommunityImpactEndpointTests(TestCase):
         response = self.client.post(
             self.url,
             data={
+                **SCREENING_DETAILS,
                 "category": CommunityImpact.SCREENING,
                 "title": "Unsafe screening",
                 "url": "https://192.168.1.1/x",

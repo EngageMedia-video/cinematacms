@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 import ApiUrlContext from '../../contexts/ApiUrlContext';
@@ -12,15 +11,22 @@ import '../styles/ManageFilmImpactPage.scss';
 const CATEGORY_OPTIONS = [
 	{ value: '', label: 'All categories' },
 	{ value: 'screening', label: 'Screened In' },
+	{ value: 'article', label: 'Article or Review' },
+	{ value: 'referenced', label: 'Referenced in Another Work' },
+	{ value: 'award', label: 'Award' },
+	{ value: 'teaching', label: 'Teaching or Research' },
 	{ value: 'featured', label: 'Featured In' },
 	{ value: 'saves', label: 'Saves & Playlists' },
 	{ value: 'academic', label: 'Academic Usage' },
 	{ value: 'curated', label: 'Curated Into' },
 ];
 
-const EDIT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((option) =>
-	['screening', 'featured', 'academic'].includes(option.value)
-);
+// This form cannot edit the category-specific details (year, place, organiser, result...),
+// and the API requires them when the category changes, so the category is shown read-only.
+const ENTRY_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((option) => option.value);
+
+// Fields the edit form renders with their own error message.
+const EDIT_FORM_FIELDS = ['title', 'category', 'details', 'status', 'event_date', 'url'];
 
 const STATUS_OPTIONS = [
 	{ value: '', label: 'All statuses' },
@@ -476,6 +482,34 @@ export class ManageFilmImpactPage extends Page {
 		return <span className="manage-film-impact-page__field-error">{this.state.formErrors[field].join(' ')}</span>;
 	}
 
+	renderOtherErrors() {
+		const errors = this.state.formErrors;
+		if (!errors) {
+			return null;
+		}
+
+		const messages = Object.keys(errors)
+			.filter((field) => !EDIT_FORM_FIELDS.includes(field))
+			.map((field) => {
+				const text = [].concat(errors[field]).join(' ');
+				return field === 'detail' || field === 'non_field_errors'
+					? text
+					: `${field.replace(/_/g, ' ')}: ${text}`;
+			});
+
+		if (!messages.length) {
+			return null;
+		}
+
+		return (
+			<ul className="manage-film-impact-page__error" role="alert">
+				{messages.map((message) => (
+					<li key={message}>{message}</li>
+				))}
+			</ul>
+		);
+	}
+
 	renderEditForm() {
 		if (this.state.loading && !this.state.form) {
 			return (
@@ -528,8 +562,13 @@ export class ManageFilmImpactPage extends Page {
 
 					<label>
 						<span>Category</span>
-						<select name="category" value={this.state.form.category} onChange={this.onFormFieldChange}>
-							{EDIT_CATEGORY_OPTIONS.map((option) => (
+						<select
+							name="category"
+							value={this.state.form.category}
+							disabled
+							aria-describedby="manage-film-impact-category-hint"
+						>
+							{ENTRY_CATEGORY_OPTIONS.map((option) => (
 								<option key={option.value} value={option.value}>
 									{option.label}
 								</option>
@@ -537,6 +576,9 @@ export class ManageFilmImpactPage extends Page {
 						</select>
 						{this.renderFieldError('category')}
 					</label>
+					<p id="manage-film-impact-category-hint" className="manage-film-impact-page__hint">
+						Category details can be changed in the Django admin.
+					</p>
 
 					<label>
 						<span>Details</span>
@@ -597,6 +639,7 @@ export class ManageFilmImpactPage extends Page {
 					{this.state.error && this.state.formErrors ? (
 						<p className="manage-film-impact-page__error">{this.state.error}</p>
 					) : null}
+					{this.renderOtherErrors()}
 					{this.state.saveMessage ? (
 						<p className="manage-film-impact-page__success" aria-live="polite">
 							{this.state.saveMessage}

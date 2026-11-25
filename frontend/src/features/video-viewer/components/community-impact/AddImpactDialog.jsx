@@ -1,23 +1,23 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Dialog, DialogContent, Dropdown, EditorField, Icon, TextField } from '../../../shared/components';
-import { COMMUNITY_IMPACT_CATEGORIES, getImpactIconConfig } from './impactIcons';
+import { CheckboxButton } from '../../../shared/components/CheckboxButton';
+import { cn } from '../../../shared/utils/classNames';
+import heartIcon from './assets/impact-heart.svg';
+import rippleDecoration from './assets/impact-ripple.svg';
+import {
+	IMPACT_DETAILS_MAX_WORDS,
+	IMPACT_FORM_CATEGORIES,
+	IMPACT_FORM_FIELDS,
+	MIN_IMPACT_YEAR,
+	getVisibleImpactFields,
+} from './impactFormFields';
+import { getImpactIconConfig } from './impactIcons';
 import './AddImpactDialog.css';
 
-const ADD_IMPACT_CATEGORY_VALUES = new Set(['screening', 'featured', 'academic']);
-
-function createEmptyValues() {
-	return {
-		category: '',
-		details: '',
-		link: '',
-		location: '',
-	};
-}
-
-function countWords(value) {
-	return value.trim().split(/\s+/).filter(Boolean).length;
-}
+const REQUIRED_MESSAGE = 'This field is required.';
+const FOCUSABLE_CONTROL = 'input:not([type="hidden"]), textarea, button';
+const INVALID_LINK_MESSAGE = 'Enter a valid https link, e.g. https://drive.google.com/file/d/abc/view';
 
 export function normalizeImpactLink(raw) {
 	const trimmed = (raw || '').trim();
@@ -49,8 +49,484 @@ export function normalizeImpactLink(raw) {
 	return tryParse(`https://${trimmed}`);
 }
 
+function isBlank(value) {
+	return typeof value !== 'string' || value.trim() === '';
+}
+
+function validateYear(raw) {
+	const currentYear = new Date().getFullYear();
+	const year = Number(raw);
+
+	if (!/^\d{4}$/.test(raw.trim()) || year < MIN_IMPACT_YEAR || year > currentYear) {
+		return `Enter a year between ${MIN_IMPACT_YEAR} and ${currentYear}.`;
+	}
+
+	return '';
+}
+
+// Returns the submission payload, or the per-field errors that block it.
+function buildSubmission(category, values) {
+	const errors = {};
+	const payload = { category };
+
+	for (const field of getVisibleImpactFields(category, values)) {
+		const value = values[field.name];
+
+		if (field.type === 'checkbox') {
+			payload[field.name] = value === true;
+			continue;
+		}
+
+		const text = typeof value === 'string' ? value.trim() : '';
+
+		if (field.required && isBlank(text)) {
+			errors[field.name] = REQUIRED_MESSAGE;
+			continue;
+		}
+
+		if (field.type === 'year') {
+			const yearError = validateYear(text);
+			if (yearError) {
+				errors[field.name] = yearError;
+			} else {
+				payload.year = Number(text);
+			}
+			continue;
+		}
+
+		if (field.type === 'url') {
+			const link = normalizeImpactLink(text);
+			if (link === null) {
+				errors[field.name] = INVALID_LINK_MESSAGE;
+			} else {
+				payload.url = link;
+			}
+			continue;
+		}
+
+		payload[field.name] = text;
+	}
+
+	return { errors, payload };
+}
+
+function findFieldContainer(form, name) {
+	return form?.querySelector(`[data-impact-field="${name}"]`) ?? null;
+}
+
+// Errors can sit far above the submit button, so bring the control into view
+// and focus it; focus also makes screen readers read its error text.
+function revealInvalidControl(container) {
+	if (!container) {
+		return;
+	}
+
+	const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+	container.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+	container.querySelector(FOCUSABLE_CONTROL)?.focus({ preventScroll: true });
+}
+
+function CategoryOption({ category, checked, disabled = false, name, onSelect }) {
+	const icon = getImpactIconConfig(category.value);
+
+	return (
+		<label
+			className={cn(
+				'box-border flex min-h-[92px] items-start gap-4 rounded-ds-8 p-4 outline-none transition-colors duration-200 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring-focus',
+				checked ? 'bg-bg-primary text-text-on-primary' : 'bg-bg-surface-raised text-text-strong',
+				disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+			)}
+		>
+			<input
+				type="radio"
+				className="sr-only"
+				name={name}
+				value={category.value}
+				checked={checked}
+				disabled={disabled}
+				onChange={() => onSelect(category.value)}
+			/>
+			<span
+				aria-hidden="true"
+				className={cn(
+					'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
+					icon.iconShellClassName
+				)}
+			>
+				<Icon name={icon.iconName} size={18} decorative />
+			</span>
+			<span className="flex min-w-0 flex-col gap-2">
+				<span className="body-body-14-bold">{category.label}</span>
+				<span className="body-body-12-regular">{category.description}</span>
+			</span>
+		</label>
+	);
+}
+
+CategoryOption.propTypes = {
+	category: PropTypes.shape({
+		description: PropTypes.string.isRequired,
+		label: PropTypes.string.isRequired,
+		value: PropTypes.string.isRequired,
+	}).isRequired,
+	checked: PropTypes.bool.isRequired,
+	disabled: PropTypes.bool,
+	name: PropTypes.string.isRequired,
+	onSelect: PropTypes.func.isRequired,
+};
+
+function ImpactField({ error, field, onChange, value }) {
+	const helperText = error || field.helperText || '';
+	const invalid = Boolean(error);
+
+	if (field.type === 'checkbox') {
+		return (
+			<CheckboxButton
+				className={cn('py-4', field.description ? 'items-start' : '')}
+				controlStyle={{ width: 26, height: 26 }}
+				checked={value === true}
+				name={field.name}
+				onChange={(event) => onChange(field.name, event.target.checked)}
+			>
+				{field.description ? (
+					<span className="flex flex-col gap-2">
+						<span>{field.label}</span>
+						<span className="body-body-12-regular">{field.description}</span>
+					</span>
+				) : (
+					field.label
+				)}
+			</CheckboxButton>
+		);
+	}
+
+	if (field.type === 'select') {
+		return (
+			<Dropdown
+				className="impact-add-field w-full"
+				label={field.label}
+				name={field.name}
+				options={field.options}
+				placeholder={field.placeholder ?? 'Choose one'}
+				required={field.required}
+				value={value ?? ''}
+				onChange={(nextValue) => onChange(field.name, nextValue)}
+				helperText={error}
+				invalid={invalid}
+			/>
+		);
+	}
+
+	if (field.type === 'textarea') {
+		return (
+			<EditorField
+				className="impact-add-field impact-details-field w-full"
+				label={field.label}
+				name={field.name}
+				placeholder={field.placeholder}
+				value={value ?? ''}
+				onChange={(event) => onChange(field.name, event.target.value)}
+				helperText={helperText}
+				invalid={invalid}
+				maxWordsLength={IMPACT_DETAILS_MAX_WORDS}
+				rows={4}
+			/>
+		);
+	}
+
+	return (
+		<TextField
+			className="impact-add-field w-full"
+			label={field.label}
+			name={field.name}
+			type={field.type === 'url' ? 'url' : 'text'}
+			inputMode={field.type === 'year' ? 'numeric' : undefined}
+			maxLength={field.maxLength ?? (field.type === 'year' ? 4 : 200)}
+			placeholder={field.placeholder}
+			required={field.required}
+			value={value ?? ''}
+			onChange={(event) => onChange(field.name, event.target.value)}
+			helperText={helperText}
+			invalid={invalid}
+		/>
+	);
+}
+
+ImpactField.propTypes = {
+	error: PropTypes.string,
+	field: PropTypes.shape({
+		description: PropTypes.string,
+		helperText: PropTypes.string,
+		label: PropTypes.string.isRequired,
+		maxLength: PropTypes.number,
+		name: PropTypes.string.isRequired,
+		options: PropTypes.arrayOf(PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })),
+		placeholder: PropTypes.string,
+		required: PropTypes.bool,
+		type: PropTypes.oneOf(['checkbox', 'select', 'text', 'textarea', 'url', 'year']).isRequired,
+	}).isRequired,
+	onChange: PropTypes.func.isRequired,
+	value: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
+};
+
+// Lives inside DialogContent, which unmounts on close, so every open starts blank.
+// Form values for an existing entry, so the edit form opens filled in.
+function valuesFromImpact(impact) {
+	const values = {};
+
+	for (const field of IMPACT_FORM_FIELDS[impact?.category] ?? []) {
+		const value = impact[field.name];
+
+		if (field.type === 'checkbox') {
+			values[field.name] = value === true;
+		} else {
+			values[field.name] = value === null || value === undefined ? '' : String(value);
+		}
+	}
+
+	return values;
+}
+
+const SUBMIT_BUTTON_CLASSES =
+	'h-10 bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus';
+const SECONDARY_BUTTON_CLASSES = 'h-10 px-4 py-0 focus-visible:ring-2 focus-visible:ring-ring-focus';
+
+/**
+ * The impact form: category options, the chosen category's fields, and its actions.
+ * The add-impact dialog uses it with its intro; the film impact review page uses it
+ * on a page with its own actions. Each action submits the form with its intent.
+ */
+export function ImpactForm({
+	actions,
+	className = '',
+	impact = null,
+	intro = true,
+	onCancel,
+	onSubmit,
+	onSubmitErrorClear,
+	submitError,
+	submitting = false,
+}) {
+	const editing = Boolean(impact);
+	const formActions = actions ?? [
+		editing
+			? { intent: 'save', label: 'SAVE CHANGES', busyLabel: 'SAVING...' }
+			: { intent: 'add', label: 'ADD IMPACT', busyLabel: 'SUBMITTING...' },
+	];
+	const [pendingIntent, setPendingIntent] = useState(formActions[formActions.length - 1].intent);
+	const [category, setCategory] = useState(impact?.category ?? '');
+	const [values, setValues] = useState(() => valuesFromImpact(impact));
+	const [errors, setErrors] = useState({});
+	const categoryLabelId = useId();
+	const categoryGroupName = useId();
+	const formRef = useRef(null);
+	const formErrorRef = useRef(null);
+	const fields = getVisibleImpactFields(category, values);
+	const fieldNames = new Set(fields.map((field) => field.name));
+	const serverFieldError = submitError?.field && fieldNames.has(submitError.field) ? submitError : null;
+	const formError = submitError && !serverFieldError ? submitError.message : '';
+
+	useEffect(() => {
+		if (!submitError) {
+			return;
+		}
+
+		const field = submitError.field ? findFieldContainer(formRef.current, submitError.field) : null;
+		if (field) {
+			revealInvalidControl(field);
+		} else {
+			formErrorRef.current?.scrollIntoView?.({ block: 'nearest' });
+		}
+	}, [submitError]);
+
+	function clearSubmitError() {
+		if (submitError) {
+			onSubmitErrorClear?.();
+		}
+	}
+
+	function handleCategorySelect(nextCategory) {
+		setCategory(nextCategory);
+		// Other categories reuse the organiser field without a privacy option.
+		setValues((current) =>
+			current.organiser_private ? { ...current, organiser: '', organiser_private: false } : current
+		);
+		setErrors({});
+		clearSubmitError();
+	}
+
+	function handleValueChange(name, value) {
+		setValues((current) => ({ ...current, [name]: value }));
+		setErrors((current) => {
+			if (!current[name]) {
+				return current;
+			}
+			const { [name]: _removed, ...rest } = current;
+			return rest;
+		});
+		clearSubmitError();
+	}
+
+	function handleSubmit(event, intent = formActions[formActions.length - 1].intent) {
+		event.preventDefault();
+
+		if (submitting || !category) {
+			return;
+		}
+
+		setPendingIntent(intent);
+
+		const submission = buildSubmission(category, values);
+		setErrors(submission.errors);
+
+		const firstInvalidField = fields.find((field) => submission.errors[field.name]);
+		if (firstInvalidField) {
+			revealInvalidControl(findFieldContainer(formRef.current, firstInvalidField.name));
+			return;
+		}
+
+		onSubmit?.(submission.payload, intent);
+	}
+
+	return (
+		<form
+			ref={formRef}
+			onSubmit={(event) => handleSubmit(event)}
+			noValidate
+			className={cn('impact-add-form relative flex flex-col items-center gap-8', className)}
+		>
+			{intro ? (
+				<img src={heartIcon} alt="" aria-hidden="true" width={58} height={54} className="relative shrink-0" />
+			) : null}
+
+			<div className="relative flex w-full flex-col items-center gap-6">
+				{intro ? (
+					<div className="flex w-full flex-col items-center gap-5 text-center">
+						<h2 className="heading-h4-32-medium m-0 text-text-strong">
+							{editing ? 'Edit this impact' : 'Where has this film made an impact?'}
+						</h2>
+						<p className="body-body-14-regular m-0 text-text-description">
+							Tell us where this film has been screened, written about, taught, or recognised.
+						</p>
+					</div>
+				) : null}
+
+				{/* The options keep the default frame's full width when a category is chosen, so they do not jump. */}
+				<div className="flex w-full flex-col gap-4">
+					<div className="flex w-full flex-col gap-2">
+						<p id={categoryLabelId} className="body-body-16-regular m-0 text-text-description">
+							What kind of impact?
+							<span aria-hidden="true" className="ml-0.5 text-text-danger">
+								*
+							</span>
+						</p>
+						<div
+							role="radiogroup"
+							aria-labelledby={categoryLabelId}
+							aria-required="true"
+							className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+						>
+							{IMPACT_FORM_CATEGORIES.map((option) => (
+								<CategoryOption
+									key={option.value}
+									category={option}
+									checked={category === option.value}
+									disabled={editing && category !== option.value}
+									name={categoryGroupName}
+									onSelect={handleCategorySelect}
+								/>
+							))}
+						</div>
+					</div>
+
+					{category ? (
+						<div className="flex w-full flex-col gap-4" data-testid="impact-category-fields">
+							{fields.map((field) => (
+								<div key={`${category}-${field.name}`} data-impact-field={field.name}>
+									<ImpactField
+										field={field}
+										value={values[field.name]}
+										error={
+											errors[field.name] ||
+											(serverFieldError?.field === field.name ? serverFieldError.message : '')
+										}
+										onChange={handleValueChange}
+									/>
+								</div>
+							))}
+						</div>
+					) : null}
+				</div>
+
+				{formError ? (
+					<p
+						ref={formErrorRef}
+						className="body-body-14-regular m-0 w-full text-center text-text-danger"
+						role="alert"
+					>
+						{formError}
+					</p>
+				) : null}
+
+				<div className="flex w-full flex-wrap items-center justify-end gap-2">
+					{onCancel ? (
+						<Button variant="secondary" className={SECONDARY_BUTTON_CLASSES} onClick={onCancel}>
+							CANCEL
+						</Button>
+					) : null}
+					{formActions.map((action, index) => {
+						// The last action is the form's main one; Enter in a field submits with it.
+						const primary = index === formActions.length - 1;
+
+						return (
+							<Button
+								key={action.intent}
+								type={primary ? 'submit' : 'button'}
+								variant={primary ? 'primary' : 'secondary'}
+								className={primary ? SUBMIT_BUTTON_CLASSES : SECONDARY_BUTTON_CLASSES}
+								disabled={submitting || !category}
+								onClick={primary ? undefined : (event) => handleSubmit(event, action.intent)}
+							>
+								{submitting && pendingIntent === action.intent ? action.busyLabel : action.label}
+							</Button>
+						);
+					})}
+				</div>
+			</div>
+		</form>
+	);
+}
+
+const submitErrorShape = PropTypes.shape({
+	field: PropTypes.string,
+	message: PropTypes.string.isRequired,
+});
+
+const impactShape = PropTypes.shape({
+	category: PropTypes.string.isRequired,
+	uid: PropTypes.string,
+});
+
+ImpactForm.propTypes = {
+	actions: PropTypes.arrayOf(
+		PropTypes.shape({
+			busyLabel: PropTypes.string.isRequired,
+			intent: PropTypes.string.isRequired,
+			label: PropTypes.string.isRequired,
+		})
+	),
+	className: PropTypes.string,
+	impact: impactShape,
+	intro: PropTypes.bool,
+	onCancel: PropTypes.func,
+	onSubmit: PropTypes.func,
+	onSubmitErrorClear: PropTypes.func,
+	submitError: submitErrorShape,
+	submitting: PropTypes.bool,
+};
+
 export function AddImpactDialog({
-	categories = COMMUNITY_IMPACT_CATEGORIES,
+	impact = null,
 	onClose,
 	onSubmit,
 	onSubmitErrorClear,
@@ -58,67 +534,6 @@ export function AddImpactDialog({
 	submitError = null,
 	submitting = false,
 }) {
-	const [values, setValues] = useState(createEmptyValues);
-	const [linkError, setLinkError] = useState('');
-	const wordCount = countWords(values.details);
-	const wordLimitExceeded = wordCount > 80;
-	const canSubmit = values.location.trim() && values.category && !wordLimitExceeded && !submitting;
-	const formError = submitError && submitError.field !== 'url' ? submitError.message : '';
-	const heartConfig = getImpactIconConfig('heart');
-	const categoryOptions = useMemo(
-		() => categories.filter((category) => ADD_IMPACT_CATEGORY_VALUES.has(category.value)),
-		[categories]
-	);
-
-	useEffect(() => {
-		if (open && submitError?.field === 'url') {
-			setLinkError(submitError.message);
-		}
-	}, [open, submitError]);
-
-	useEffect(() => {
-		if (!open) {
-			setValues(createEmptyValues());
-			setLinkError('');
-		}
-	}, [open]);
-
-	function updateValue(name, value) {
-		setValues((current) => ({
-			...current,
-			[name]: value,
-		}));
-		if (name === 'link' && linkError) {
-			setLinkError('');
-		}
-		if (submitError) {
-			onSubmitErrorClear?.();
-		}
-	}
-
-	function handleSubmit(event) {
-		event.preventDefault();
-
-		if (!canSubmit) {
-			return;
-		}
-
-		const normalizedLink = normalizeImpactLink(values.link);
-		if (normalizedLink === null) {
-			setLinkError('Enter a valid https link, e.g. https://drive.google.com/file/d/abc/view');
-			return;
-		}
-
-		onSubmit?.({
-			category: values.category,
-			details: values.details.trim(),
-			link: normalizedLink,
-			location: values.location.trim(),
-			title: values.location.trim(),
-			url: normalizedLink,
-		});
-	}
-
 	return (
 		<Dialog
 			open={open}
@@ -129,110 +544,39 @@ export function AddImpactDialog({
 			}}
 		>
 			<DialogContent
-				aria-label="Add community impact"
-				className="impact-add-dialog flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[544px] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-bg-surface shadow-lg"
+				aria-label={impact ? 'Edit community impact' : 'Add community impact'}
+				className="impact-add-dialog w-full max-w-[640px] overflow-hidden rounded-[16px] bg-linear-to-br from-bg-surface from-35% to-bg-page p-0 shadow-lg"
 			>
-				<form
-					onSubmit={handleSubmit}
-					noValidate
-					className="impact-add-form relative flex max-h-full flex-col items-center overflow-y-auto px-[64px] pb-[44px] pt-[58px] max-[560px]:px-6 max-[560px]:pt-10"
-				>
-					<Button
-						variant="icon"
-						className="absolute right-4 top-4 h-size-32 w-size-32 rounded-full text-text-description outline-none hover:text-text-strong focus-visible:ring-2 focus-visible:ring-ring-focus"
-						aria-label="Close add impact dialog"
-						onClick={onClose}
-						type="button"
-						icon={<Icon name="close" size="sm" decorative />}
-					/>
-
-					<div className="flex w-full flex-col items-center text-center">
-						<span
-							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-text-dialog-accent"
-							aria-hidden="true"
-						>
-							<Icon name={heartConfig.iconName} size={67} decorative />
-						</span>
-
-						<h2 className="m-0 mt-[26px] text-[20px] font-bold leading-[24px] text-text-strong">
-							Where has this film made an impact?
-						</h2>
-						<p className="m-0 mt-[11px] max-w-[404px] text-[16px] font-normal leading-[24px] text-text-description">
-							For filmmakers &amp; viewers. Add screenings, playlists, or discussions to show how this
-							film is reaching people.
-						</p>
-					</div>
-
-					<div className="mt-[33px] grid w-full max-w-[404px] gap-0">
-						<TextField
-							className="impact-add-field w-full"
-							label="Where did you see this film"
-							value={values.location}
-							onChange={(event) => updateValue('location', event.target.value)}
-							required
-						/>
-						<EditorField
-							className="impact-add-field impact-details-field w-full"
-							label="Add more details"
-							placeholder="Write here..."
-							value={values.details}
-							onChange={(event) => updateValue('details', event.target.value)}
-							helperText={`Maximum 80 Words${wordLimitExceeded ? ` • ${wordCount}/80` : ''}`}
-							invalid={wordLimitExceeded}
-							rows={5}
-						/>
-						<Dropdown
-							className="impact-add-field w-full"
-							label="Choose a category"
-							options={categoryOptions}
-							placeholder="Select community impact category"
-							value={values.category}
-							onChange={(value) => updateValue('category', value)}
-						/>
-						<TextField
-							className="impact-add-field w-full"
-							label="Add a link"
-							type="url"
-							value={values.link}
-							onChange={(event) => updateValue('link', event.target.value)}
-							helperText={linkError}
-							invalid={Boolean(linkError)}
-						/>
-					</div>
-
-					{formError ? (
-						<p className="m-0 mt-[16px] max-w-[404px] text-center text-[12px] leading-[18px] text-text-danger">
-							{formError}
-						</p>
-					) : null}
-
-					<Button
-						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-bg-secondary px-0 py-0 text-[14px] font-bold leading-none text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
-						disabled={!canSubmit}
-						type="submit"
-					>
-						{submitting ? 'SUBMITTING...' : 'SUBMIT COMMUNITY IMPACT'}
-					</Button>
-				</form>
+				{/* Outside the scrolling form so the overhanging art cannot widen its scroll area. */}
+				<img
+					src={rippleDecoration}
+					alt=""
+					aria-hidden="true"
+					width={298}
+					height={295}
+					className="pointer-events-none absolute right-[-130px] bottom-[-120px] h-[295px] w-[298px] invert dark:invert-0"
+				/>
+				<ImpactForm
+					key={impact?.uid ?? 'new'}
+					className="max-h-[calc(100vh-var(--size-64))] overflow-y-auto p-6"
+					impact={impact}
+					onCancel={onClose}
+					onSubmit={(payload) => onSubmit?.(payload)}
+					onSubmitErrorClear={onSubmitErrorClear}
+					submitError={submitError}
+					submitting={submitting}
+				/>
 			</DialogContent>
 		</Dialog>
 	);
 }
 
 AddImpactDialog.propTypes = {
-	categories: PropTypes.arrayOf(
-		PropTypes.shape({
-			label: PropTypes.string.isRequired,
-			value: PropTypes.string.isRequired,
-		})
-	),
+	impact: impactShape,
 	onClose: PropTypes.func,
 	onSubmit: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,
 	open: PropTypes.bool,
-	submitError: PropTypes.shape({
-		field: PropTypes.string,
-		message: PropTypes.string.isRequired,
-	}),
+	submitError: submitErrorShape,
 	submitting: PropTypes.bool,
 };

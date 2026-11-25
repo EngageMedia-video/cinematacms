@@ -1,0 +1,1 @@
+export { FilmImpactReviewPage } from './FilmImpactReviewPage';

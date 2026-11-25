@@ -181,6 +181,11 @@ _OWNED_ROUTE_RULES = (
         "media_api",
         "other",
     ),
+    _rule(
+        "^api/v1/media/(?P<friendly_token>[\\w]+(-[\\w]+)*)/community-impacts/(?P<uid>[\\w]+(-[\\w]+)*)$",
+        "media_api",
+        "other",
+    ),
     _rule("api/v1/playlists", "playlists_api", "playlist_list"),
     _rule("api/v1/playlists/", "playlists_api", "playlist_list"),
     _rule(
@@ -241,6 +246,12 @@ _OWNED_ROUTE_RULES = (
         "moderation_ui",
         "other",
         url_name="manage_film_impact_edit",
+    ),
+    _rule(
+        "manage/film-impact/<uuid:uid>/review",
+        "moderation_ui",
+        "other",
+        url_name="manage_film_impact_review",
     ),
     _rule("api/v1/my_uploads", "self_upload_api", "self_uploads_list"),
     _rule("api/v1/my_uploads/bulk_state", "self_upload_api", "self_uploads_bulk_state"),
