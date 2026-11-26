@@ -1041,14 +1041,13 @@ body {
 	--bg-label: var(--cinemata-strait-blue-50);
 	--bg-progress: var(--cinemata-coral-reef-400p);
 	--bg-selected: var(--cinemata-strait-blue-200);
+	--bg-selected-strong: var(--cinemata-strait-blue-800);
 	--bg-marker: var(--cinemata-strait-blue-200);
 	--bg-scrollbar: var(--cinemata-strait-blue-200);
 	--bg-tertiary: var(--cinemata-strait-blue-900);
 	--bg-tertiary-hover: var(--cinemata-strait-blue-800);
 	--bg-accent-hover: var(--cinemata-sunset-horizon-500);
 	--bg-media: var(--cinemata-black);
-	--bg-nav-selected: var(--cinemata-strait-blue-800);
-	--bg-nav-hover: var(--cinemata-pacific-deep-50);
 	--border-active: var(--cinemata-coral-reef-400p);
 	--border-chrome: var(--cinemata-pacific-deep-700);
 	--border-danger: var(--cinemata-red-500);
@@ -1061,7 +1060,6 @@ body {
 	--border-accent: var(--cinemata-sunset-horizon-400p);
 	--border-disclosure: var(--cinemata-pacific-deep-300);
 	--border-secondary: var(--cinemata-sunset-horizon-400p);
-	--border-nav: var(--cinemata-neutral-200);
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
 	--text-accent-hover: var(--cinemata-sunset-horizon-500);
@@ -1092,7 +1090,6 @@ body {
 	--text-on-secondary: var(--cinemata-neutral-50);
 	--text-on-tertiary: var(--cinemata-strait-blue-100);
 	--text-on-media: var(--cinemata-strait-blue-500);
-	--text-on-nav-selected: var(--cinemata-strait-blue-50);
 	--text-required: var(--cinemata-red-400);
 }
 
@@ -1123,14 +1120,12 @@ body.dark_theme {
 	--bg-emblem-gray: var(--cinemata-neutral-900);
 	--bg-emblem-green: var(--cinemata-coral-reef-900);
 	--bg-emblem-orange: var(--cinemata-sunset-horizon-800);
-	--bg-nav-hover: var(--cinemata-strait-blue-900);
 	--border-active: var(--cinemata-sunset-horizon-400p);
 	--border: var(--cinemata-pacific-deep-700);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-subtle: var(--cinemata-pacific-deep-800);
 	--border-disclosure: transparent;
 	--border-secondary: var(--cinemata-sunset-horizon-500);
-	--border-nav: var(--cinemata-neutral-800);
 	--text-danger: var(--cinemata-red-400);
 	--text: var(--cinemata-strait-blue-50);
 	--text-info: var(--cinemata-strait-blue-200);
@@ -1196,14 +1191,13 @@ body.dark_theme {
 	--color-bg-label: var(--bg-label);
 	--color-bg-progress: var(--bg-progress);
 	--color-bg-selected: var(--bg-selected);
+	--color-bg-selected-strong: var(--bg-selected-strong);
 	--color-bg-marker: var(--bg-marker);
 	--color-bg-scrollbar: var(--bg-scrollbar);
 	--color-bg-tertiary: var(--bg-tertiary);
 	--color-bg-tertiary-hover: var(--bg-tertiary-hover);
 	--color-bg-accent-hover: var(--bg-accent-hover);
 	--color-bg-media: var(--bg-media);
-	--color-bg-nav-selected: var(--bg-nav-selected);
-	--color-bg-nav-hover: var(--bg-nav-hover);
 	--color-border-active: var(--border-active);
 	--color-border-chrome: var(--border-chrome);
 	--color-border-danger: var(--border-danger);
@@ -1216,7 +1210,6 @@ body.dark_theme {
 	--color-border-accent: var(--border-accent);
 	--color-border-disclosure: var(--border-disclosure);
 	--color-border-secondary: var(--border-secondary);
-	--color-border-nav: var(--border-nav);
 	--color-ring-focus: var(--ring-focus);
 	--color-text-accent: var(--text-accent);
 	--color-text-accent-hover: var(--text-accent-hover);
@@ -1247,7 +1240,6 @@ body.dark_theme {
 	--color-text-on-secondary: var(--text-on-secondary);
 	--color-text-on-tertiary: var(--text-on-tertiary);
 	--color-text-on-media: var(--text-on-media);
-	--color-text-on-nav-selected: var(--text-on-nav-selected);
 	--color-text-required: var(--text-required);
 }
 /* END GENERATED color tokens */

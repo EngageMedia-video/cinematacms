@@ -161,7 +161,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 					<div className="relative z-10 space-y-4">
 						{shouldRenderSidebarContent ? <SidebarNavigationMenu /> : null}
 						{shouldRenderSidebarContent && socialLinks.length ? (
-							<ul className="relative m-0 flex w-full list-none items-center justify-center gap-8 border-y border-border-nav px-8 py-4">
+							<ul className="relative m-0 flex w-full list-none items-center justify-center gap-8 border-y border-border-subtle px-8 py-4">
 								{socialLinks.map((item) => (
 									<li key={item.link}>
 										<SidebarSocialLink {...item} />

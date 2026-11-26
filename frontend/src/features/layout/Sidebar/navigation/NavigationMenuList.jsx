@@ -151,8 +151,8 @@ export function NavigationMenuListItem({
 						'flex flex-row gap-4 mx-4 px-4 py-2 no-underline items-center rounded-ds-8 body-body-14-medium',
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
 						active
-							? 'bg-bg-nav-selected text-text-on-nav-selected'
-							: 'bg-transparent hover:bg-bg-nav-hover text-text-subtle'
+							? 'bg-bg-selected-strong text-text-on-chrome'
+							: 'bg-transparent hover:bg-bg-surface-hover text-text-subtle'
 					)}
 				>
 					{children}

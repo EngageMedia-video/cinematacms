@@ -260,8 +260,6 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/label` | `bg-bg-label` | `strait-blue-50` | `strait-blue-50` |
 | `bg/marker` | `bg-bg-marker` | `strait-blue-200` | `strait-blue-200` |
 | `bg/media` | `bg-bg-media` | `black` | `black` |
-| `bg/nav/hover` | `bg-bg-nav-hover` | `pacific-deep-50` | `strait-blue-900` |
-| `bg/nav/selected` | `bg-bg-nav-selected` | `strait-blue-800` | `strait-blue-800` |
 | `bg/overlay/default` | `bg-bg-overlay` | `pacific-deep-900` | `pacific-deep-900` |
 | `bg/overlay/strong` | `bg-bg-overlay-strong` | `pacific-deep-950` | `pacific-deep-950` |
 | `bg/page` | `bg-bg-page` | `pacific-deep-50` | `pacific-deep-950` |
@@ -273,7 +271,8 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/secondary/default` | `bg-bg-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
 | `bg/secondary/hover` | `bg-bg-secondary-hover` | `sunset-horizon-500` | `sunset-horizon-400p` |
 | `bg/secondary/strong` | `bg-bg-secondary-strong` | `sunset-horizon-800` | `sunset-horizon-800` |
-| `bg/selected` | `bg-bg-selected` | `strait-blue-200` | `strait-blue-200` |
+| `bg/selected/default` | `bg-bg-selected` | `strait-blue-200` | `strait-blue-200` |
+| `bg/selected/strong` | `bg-bg-selected-strong` | `strait-blue-800` | `strait-blue-800` |
 | `bg/skeleton/default` | `bg-bg-skeleton` | `pacific-deep-100` | `pacific-deep-700` |
 | `bg/skeleton/strong` | `bg-bg-skeleton-strong` | `pacific-deep-200` | `pacific-deep-500` |
 | `bg/success/default` | `bg-bg-success` | `green-500` | `green-500` |
@@ -298,7 +297,6 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `border/default` | `border-border` | `pacific-deep-200` | `pacific-deep-700` |
 | `border/disclosure` | `border-border-disclosure` | `pacific-deep-300` | `transparent` |
 | `border/info` | `border-border-info` | `strait-blue-500` | `strait-blue-500` |
-| `border/nav` | `border-border-nav` | `neutral-200` | `neutral-800` |
 | `border/secondary` | `border-border-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
 | `border/strong` | `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` |
 | `border/subtle` | `border-border-subtle` | `neutral-200` | `pacific-deep-800` |
@@ -325,7 +323,6 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `text/on-info` | `text-text-on-info` | `pacific-deep-900` | `pacific-deep-900` |
 | `text/on-label` | `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` |
 | `text/on-media` | `text-text-on-media` | `strait-blue-500` | `strait-blue-300` |
-| `text/on-nav-selected` | `text-text-on-nav-selected` | `strait-blue-50` | `strait-blue-50` |
 | `text/on-primary/default` | `text-text-on-primary` | `white` | `white` |
 | `text/on-primary/inverse` | `text-text-on-primary-inverse` | `strait-blue-100` | `strait-blue-50` |
 | `text/on-secondary` | `text-text-on-secondary` | `neutral-50` | `neutral-50` |
