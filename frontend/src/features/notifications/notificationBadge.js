@@ -6,8 +6,6 @@ const NOTIFICATION_BADGES = {
 	added_to_playlist: { icon: 'addedFavorite', bgClass: 'bg-bg-badge-accent' },
 	follow: { icon: 'followUser', bgClass: 'bg-bg-badge-info' },
 	new_media: { icon: 'recentlyUpload', bgClass: 'bg-bg-badge-muted' },
-	system_announcement: { icon: 'notificationBell', bgClass: 'bg-bg-badge-muted' },
-	media_report: { icon: 'infoCircle', bgClass: 'bg-bg-badge-danger' },
 };
 
 export function getBadgeForType(type) {

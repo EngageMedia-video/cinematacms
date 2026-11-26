@@ -1238,7 +1238,6 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "deliver_email",
             "recover_stale_email_deliveries",
             "cleanup_email_delivery_receipts",
-            "notify_followers_new_media",
             "record_beat_freshness",
             "purge_playback_summaries",
             "cleanup_media_action_ips",
