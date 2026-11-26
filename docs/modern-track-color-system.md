@@ -264,7 +264,17 @@ For the per-token light/dark lookup table, see the Storybook `Introduction > Col
 
 ## How modern semantic tokens are wired
 
-The modern semantic tokens live in `frontend/src/static/css/tailwind.css` in three coordinated blocks:
+The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has three groups:
+
+- `semantic`: the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`.
+- `component`: code-only tokens for one component family (`emblem.green.bg` is `--emblem-green-bg`).
+- `legacy`: older names kept as aliases of a semantic or component token until their callers move. Phase 5 of #1172 deletes them.
+
+`$value` is the light mode. `$extensions["org.cinemata.modes"].dark` holds a different dark value. `{palette.<step>}` names a `--cinemata-<step>` primitive.
+
+To change a color, edit `tokens.json` and run `uv run python scripts/generate_color_tokens.py`. The script rewrites the region between the `BEGIN GENERATED` and `END GENERATED` markers in `tailwind.css`. Pre-commit runs it with `--check`, so `make lint` and CI fail when the CSS differs from `tokens.json`. The script also fails on an unknown palette step, a reference to a missing token, and two tokens with one CSS name.
+
+The generated region has three coordinated blocks:
 
 1. **`body { ... }`** declares the light-mode intermediate vars (`--bg-page`, `--text-strong`, `--border-default`, `--ring-focus`, etc.) and points them at the appropriate `--cinemata-*` palette steps.
 2. **`body.dark_theme { ... }`** overrides only the tokens whose value differs in dark mode. Tokens that are theme-agnostic (e.g. `--bg-danger`, `--ring-focus`) appear only in the `body` block.
@@ -336,7 +346,7 @@ The component contains no shade decisions, no `dark:` variants, and no palette r
 </button>
 
 <input
-  className="bg-bg-surface text-text-primary placeholder:text-text-subtle
+  className="bg-bg-surface text-text-primary placeholder:text-text-muted
              border border-border-strong focus:border-border-input
              focus-visible:ring-2 focus-visible:ring-ring-focus"
 />
