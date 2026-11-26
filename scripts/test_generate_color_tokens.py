@@ -26,7 +26,6 @@ class GenerateColorTokensTests(unittest.TestCase):
                     "bg": {"surface": {"default": color("{palette.white}", "{palette.pacific-deep-900}")}},
                     "ring": {"focus": color("{palette.pacific-deep-900}")},
                 },
-                "legacy": {"bg-panel": color("{semantic.bg.surface.default}")},
             }
         )
 
@@ -35,10 +34,9 @@ class GenerateColorTokensTests(unittest.TestCase):
         self.assertNotIn("stale", css)
         light, dark = css.split("body.dark_theme {")
         self.assertIn("--bg-surface: var(--cinemata-white);", light)
-        self.assertIn("--bg-panel: var(--bg-surface);", light)
         self.assertIn("--bg-surface: var(--cinemata-pacific-deep-900);", dark)
         self.assertNotIn("--ring-focus", dark.split("@theme")[0])
-        self.assertIn("--color-bg-panel: var(--bg-panel);", css)
+        self.assertIn("--color-bg-surface: var(--bg-surface);", css)
 
     def test_output_is_stable_when_run_twice(self):
         document = {"semantic": {"text": {"default": color("{palette.white}")}}}
@@ -49,16 +47,22 @@ class GenerateColorTokensTests(unittest.TestCase):
         with self.assertRaisesRegex(TokenError, "no --cinemata-red-500"):
             generate({"semantic": {"bg": {"danger": color("{palette.red-500}")}}})
 
-    def test_rejects_a_reference_to_a_missing_token(self):
-        with self.assertRaisesRegex(TokenError, "no such token"):
-            generate({"legacy": {"bg-old": color("{semantic.bg.gone}")}})
+    def test_rejects_a_value_that_is_not_a_palette_step(self):
+        with self.assertRaisesRegex(TokenError, "unsupported value"):
+            generate({"semantic": {"bg": {"panel": color("{semantic.bg.surface}")}}})
+
+    def test_rejects_a_group_other_than_semantic(self):
+        with self.assertRaisesRegex(TokenError, "found: legacy"):
+            generate({"semantic": {}, "legacy": {"bg-panel": color("{palette.white}")}})
 
     def test_rejects_two_tokens_with_one_css_name(self):
         with self.assertRaisesRegex(TokenError, "text-subtle"):
             generate(
                 {
-                    "semantic": {"text": {"subtle": color("{palette.white}")}},
-                    "legacy": {"text-subtle": color("{semantic.text.subtle}")},
+                    "semantic": {
+                        "text": {"subtle": color("{palette.white}")},
+                        "text-subtle": color("{palette.white}"),
+                    }
                 }
             )
 

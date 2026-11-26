@@ -35,7 +35,7 @@ export function Statistic({ label, value, description, comparison, className = '
 							aria-label={`About ${label.toLowerCase()}`}
 							icon={<Icon name="infoCircle" size={16} decorative />}
 							iconPosition="right"
-							className="min-h-11 gap-1 text-left font-medium text-text-primary normal-case focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus p-0"
+							className="min-h-11 gap-1 text-left font-medium text-text normal-case focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus p-0"
 							textClassName="text-left leading-6"
 						>
 							{label}
@@ -45,7 +45,7 @@ export function Statistic({ label, value, description, comparison, className = '
 					label
 				)}
 			</Text>
-			<Text as="dd" variant="h4-bold" className="m-0 break-words font-sans tabular-nums text-text-primary">
+			<Text as="dd" variant="h4-bold" className="m-0 break-words font-sans tabular-nums text-text">
 				{value}
 			</Text>
 		</div>

@@ -131,7 +131,7 @@ export function CommentsPanel({
 							) : null}
 						</div>
 
-						<div className="mt-[26px] border-t border-border-default" aria-hidden="true" />
+						<div className="mt-[26px] border-t border-border" aria-hidden="true" />
 					</div>
 
 					{isLoading ? (
@@ -150,7 +150,7 @@ export function CommentsPanel({
 					) : loadedCount === 0 ? (
 						<p className="py-4 text-center text-sm text-text-muted">No comments yet.</p>
 					) : (
-						<ul className="flex list-none flex-col divide-y divide-border-default pl-0">
+						<ul className="flex list-none flex-col divide-y divide-border pl-0">
 							{comments.map((c, idx) => (
 								<li
 									key={c.uid}

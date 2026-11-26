@@ -16,7 +16,7 @@
 
 .logout-signout__card {
 	--so-panel-to: var(--bg-page);
-	--so-shadow: color-mix(in srgb, var(--bg-overlay-dark) 18%, transparent);
+	--so-shadow: color-mix(in srgb, var(--bg-overlay) 18%, transparent);
 	--so-ring: color-mix(in srgb, var(--text-muted) 28%, transparent);
 
 	align-items: center;
@@ -35,7 +35,7 @@
 }
 
 body.dark_theme .logout-signout__card {
-	--so-shadow: color-mix(in srgb, var(--bg-overlay-dark) 28%, transparent);
+	--so-shadow: color-mix(in srgb, var(--bg-overlay) 28%, transparent);
 	--so-ring: color-mix(in srgb, var(--text-strong) 24%, transparent);
 }
 

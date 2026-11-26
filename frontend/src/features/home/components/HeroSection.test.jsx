@@ -212,7 +212,7 @@ describe('HeroSection', () => {
 		const card = screen.getByRole('article');
 		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
-		expect(screen.getByRole('heading', { level: 2 })).toHaveClass('text-text-primary');
+		expect(screen.getByRole('heading', { level: 2 })).toHaveClass('text-text');
 	});
 
 	it('passes a full-height desktop player class to the player', async () => {

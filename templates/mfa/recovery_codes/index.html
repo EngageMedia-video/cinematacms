@@ -23,11 +23,11 @@
   <p class="m-0 w-full text-center text-sm leading-5 text-text-muted">{% trans "If you lose access to your authenticator app, use one of these codes to sign in. Each code can only be used once." %}</p>
   {% endif %}
 
-  <p class="m-0 text-sm leading-5 text-text-secondary">
+  <p class="m-0 text-sm leading-5 text-text-subtle">
     {% blocktranslate count unused_count=unused_codes|length %}{{ unused_count }} of {{ total_count }} recovery code available.{% plural %}{{ unused_count }} of {{ total_count }} recovery codes available.{% endblocktranslate %}
   </p>
 
-  <div class="w-full rounded-lg border border-border-default bg-bg-surface-muted p-4">
+  <div class="w-full rounded-lg border border-border bg-bg-surface-muted p-4">
     <ul class="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-2 p-0 text-center font-mono text-sm tracking-wide text-text-strong">
       {% for code in unused_codes %}
         <li>{{ code }}</li>
@@ -43,7 +43,7 @@
   </div>
 
   {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
-    <div class="flex w-full justify-center border-t border-border-divider pt-6">
+    <div class="flex w-full justify-center border-t border-border pt-6">
       <a href="{% url 'mfa_success' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Complete setup" %}</a>
     </div>
   {% endif %}

@@ -48,7 +48,7 @@ export function ProfileHeader({ author }) {
 					/>
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
-							<Text as="h1" variant="h4-bold" className="m-0 text-text-primary">
+							<Text as="h1" variant="h4-bold" className="m-0 text-text">
 								{displayName}
 							</Text>
 							{author.email_is_verified ? (

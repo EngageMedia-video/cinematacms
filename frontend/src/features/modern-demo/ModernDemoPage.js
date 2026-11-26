@@ -82,7 +82,7 @@ const TOKEN_SECTIONS = [
 		description: 'Border and divider colors.',
 		display: 'swatch',
 		tokens: [
-			['border-input', '--input-border-color', 'Input/card borders'],
+			['border-active', '--border-active', 'Input/card borders'],
 			['border-hr', '--hr-color', 'Horizontal rules'],
 			['border-dotted-outline', '--dotted-outline-color', 'Dotted outlines (focus, dropzones)'],
 		],
@@ -684,7 +684,7 @@ function SwatchRow({ token }) {
 	return (
 		<div className="flex items-center gap-3 py-1">
 			<div
-				className="h-6 w-6 shrink-0 rounded border border-border-input"
+				className="h-6 w-6 shrink-0 rounded border border-border-active"
 				style={{ backgroundColor: swatchColor(cssVar) }}
 				title={cssVar}
 			/>
@@ -699,7 +699,7 @@ function TokenTable({ tokens }) {
 		<div className="overflow-x-auto">
 			<table className="w-full text-left text-xs">
 				<thead>
-					<tr className="border-b border-border-input text-content-body/50">
+					<tr className="border-b border-border-active text-content-body/50">
 						<th className="w-6 pb-1 pr-2 font-medium" />
 						<th className="pb-1 pr-3 font-medium">Token</th>
 						<th className="pb-1 pr-3 font-medium">CSS Variable</th>
@@ -708,10 +708,10 @@ function TokenTable({ tokens }) {
 				</thead>
 				<tbody>
 					{tokens.map(([name, cssVar, purpose]) => (
-						<tr key={name} className="border-b border-border-input/30">
+						<tr key={name} className="border-b border-border-active/30">
 							<td className="py-1 pr-2">
 								<div
-									className="h-3 w-3 rounded-sm border border-border-input/50"
+									className="h-3 w-3 rounded-sm border border-border-active/50"
 									style={{ backgroundColor: swatchColor(cssVar) }}
 								/>
 							</td>
@@ -735,7 +735,7 @@ function PairsTable({ pairs }) {
 		<div className="overflow-x-auto">
 			<table className="w-full text-left text-xs">
 				<thead>
-					<tr className="border-b border-border-input text-content-body/50">
+					<tr className="border-b border-border-active text-content-body/50">
 						<th className="pb-1 pr-3 font-medium">Purpose</th>
 						<th className="pb-1 pr-3 font-medium">Token</th>
 						<th className="pb-1 pr-3 font-medium" colSpan={2}>
@@ -748,21 +748,21 @@ function PairsTable({ pairs }) {
 				</thead>
 				<tbody>
 					{pairs.map(([purpose, token, lightHex, darkHex], i) => (
-						<tr key={i} className="border-b border-border-input/30">
+						<tr key={i} className="border-b border-border-active/30">
 							<td className="py-1.5 pr-3 text-content-body">{purpose}</td>
 							<td className="py-1.5 pr-3">
 								<code className="text-content-body">{token}</code>
 							</td>
 							<td className="w-5 py-1.5 pr-1">
 								<div
-									className="h-4 w-4 rounded-sm border border-border-input/50"
+									className="h-4 w-4 rounded-sm border border-border-active/50"
 									style={{ backgroundColor: lightHex }}
 								/>
 							</td>
 							<td className="py-1.5 pr-3 text-content-body/40">{lightHex}</td>
 							<td className="w-5 py-1.5 pr-1">
 								<div
-									className="h-4 w-4 rounded-sm border border-border-input/50"
+									className="h-4 w-4 rounded-sm border border-border-active/50"
 									style={{ backgroundColor: darkHex }}
 								/>
 							</td>
@@ -819,7 +819,7 @@ function TokenSection({ section, children }) {
 
 function TokenNav() {
 	return (
-		<nav className="sticky top-0 z-10 -mx-4 mb-6 flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-border-input/50 bg-surface-body px-4 py-3">
+		<nav className="sticky top-0 z-10 -mx-4 mb-6 flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-border-active/50 bg-surface-body px-4 py-3">
 			<span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-content-body/40">Core</span>
 			{CORE_SECTIONS.map((s) => (
 				<a
@@ -849,7 +849,7 @@ function TokenNav() {
 
 function HowItWorks() {
 	return (
-		<div className="mb-8 rounded-lg border border-border-input bg-surface-sidebar/30 p-5">
+		<div className="mb-8 rounded-lg border border-border-active bg-surface-sidebar/30 p-5">
 			<h3 className="mb-3 text-sm font-semibold text-content-body">How the Token Bridge Works</h3>
 			<div className="space-y-3 text-xs text-content-body/80">
 				<div>
@@ -886,33 +886,33 @@ function HowItWorks() {
 				<h4 className="mb-2 text-xs font-semibold text-content-body">Quick Start &mdash; 5 Most Used</h4>
 				<table className="w-full text-left text-xs">
 					<thead>
-						<tr className="border-b border-border-input text-content-body/50">
+						<tr className="border-b border-border-active text-content-body/50">
 							<th className="pb-1 pr-4 font-medium">Class</th>
 							<th className="pb-1 font-medium">Use for</th>
 						</tr>
 					</thead>
 					<tbody className="text-content-body/80">
-						<tr className="border-b border-border-input/30">
+						<tr className="border-b border-border-active/30">
 							<td className="py-1 pr-4">
 								<code>text-content-body</code>
 							</td>
 							<td>Default body text</td>
 						</tr>
-						<tr className="border-b border-border-input/30">
+						<tr className="border-b border-border-active/30">
 							<td className="py-1 pr-4">
 								<code>bg-brand-primary</code>
 							</td>
 							<td>Primary action buttons</td>
 						</tr>
-						<tr className="border-b border-border-input/30">
+						<tr className="border-b border-border-active/30">
 							<td className="py-1 pr-4">
 								<code>bg-surface-body</code>
 							</td>
 							<td>Page backgrounds</td>
 						</tr>
-						<tr className="border-b border-border-input/30">
+						<tr className="border-b border-border-active/30">
 							<td className="py-1 pr-4">
-								<code>border-border-input</code>
+								<code>border-border-active</code>
 							</td>
 							<td>Input/card borders</td>
 						</tr>
@@ -933,7 +933,7 @@ function HowItWorks() {
 
 function ButtonRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">Live example</p>
 			<div className="flex flex-wrap gap-3">
 				<button className="rounded bg-brand-primary px-4 py-2 text-sm text-btn-text hover:bg-brand-primary-hover">
@@ -949,24 +949,24 @@ function ButtonRecipe() {
 
 function SurfaceRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">
 				Live example &mdash; visual hierarchy
 			</p>
 			<div className="flex gap-3">
-				<div className="rounded border border-border-input bg-surface-body p-3 text-xs text-content-body">
+				<div className="rounded border border-border-active bg-surface-body p-3 text-xs text-content-body">
 					body
 					<div className="mt-2 rounded bg-surface-sidebar p-3">
 						sidebar
-						<div className="mt-2 rounded border border-border-input bg-surface-popup p-3">popup</div>
+						<div className="mt-2 rounded border border-border-active bg-surface-popup p-3">popup</div>
 					</div>
 				</div>
 				<div className="flex flex-col gap-2">
 					<div className="rounded bg-surface-header p-3 text-xs text-content-body">header</div>
-					<div className="rounded border border-border-input bg-surface-input p-3 text-xs text-content-input">
+					<div className="rounded border border-border-active bg-surface-input p-3 text-xs text-content-input">
 						input
 					</div>
-					<div className="rounded border border-border-input bg-surface-input-disabled p-3 text-xs text-content-body/40">
+					<div className="rounded border border-border-active bg-surface-input-disabled p-3 text-xs text-content-body/40">
 						disabled
 					</div>
 				</div>
@@ -977,7 +977,7 @@ function SurfaceRecipe() {
 
 function ContentRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">Live example</p>
 			<p className="text-sm text-content-body">
 				Regular body text with a{' '}
@@ -1001,12 +1001,12 @@ function ContentRecipe() {
 
 function BorderRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">Live example</p>
 			<div className="space-y-3">
 				<div>
-					<hr className="border-t border-border-input" />
-					<span className="text-[10px] text-content-body/40">border-input</span>
+					<hr className="border-t border-border-active" />
+					<span className="text-[10px] text-content-body/40">border-active</span>
 				</div>
 				<div>
 					<hr className="border-t border-border-hr" />
@@ -1023,7 +1023,7 @@ function BorderRecipe() {
 
 function TypographyRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">Live example</p>
 			<h4 className="font-heading text-lg font-semibold text-content-body">
 				Heading in font-heading (Barlow Semi Condensed)
@@ -1037,7 +1037,7 @@ function TypographyRecipe() {
 
 function SpacingRecipe() {
 	return (
-		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
+		<div className="mt-4 rounded border border-border-active/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">
 				Live values (from current theme)
 			</p>
@@ -1108,9 +1108,9 @@ function DemoContent() {
 					onChange={(e) => setSearchQuery(e.target.value)}
 					placeholder="Filter by title..."
 					aria-label="Filter media by title"
-					className="rounded border border-border-input bg-surface-input px-3 py-1.5 text-sm text-content-input outline-none"
+					className="rounded border border-border-active bg-surface-input px-3 py-1.5 text-sm text-content-input outline-none"
 				/>
-				<div className="flex rounded border border-border-input" role="group" aria-label="View mode">
+				<div className="flex rounded border border-border-active" role="group" aria-label="View mode">
 					<button
 						onClick={() => setViewMode('grid')}
 						aria-pressed={viewMode === 'grid'}
@@ -1138,7 +1138,7 @@ function DemoContent() {
 			{data && <MediaGrid items={filteredItems} />}
 
 			{/* ── Comprehensive Token Reference ──────────────────────────────── */}
-			<div className="mt-10 rounded border border-border-input p-4">
+			<div className="mt-10 rounded border border-border-active p-4">
 				<div className="mb-4 flex items-baseline gap-3">
 					<h2 className="font-heading text-lg font-semibold text-content-body">Token Reference</h2>
 					<span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-primary">
@@ -1182,7 +1182,7 @@ function DemoContent() {
 			</div>
 
 			{/* Comparison panel */}
-			<div className="mt-10 rounded border border-border-input p-4">
+			<div className="mt-10 rounded border border-border-active p-4">
 				<h2 className="mb-4 text-lg font-semibold text-content-body">Architecture Comparison</h2>
 				<div className="grid gap-4 md:grid-cols-2">
 					<div className="rounded bg-surface-sidebar p-3">

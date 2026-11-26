@@ -128,7 +128,7 @@ export function VideoMediaDownloadLink({
 				<PopupMain>
 					<nav
 						aria-label="Download options"
-						className="min-w-[220px] overflow-hidden rounded-ds-4 border border-border-strong-constant bg-bg-surface"
+						className="min-w-[220px] overflow-hidden rounded-ds-4 border border-border-strong bg-bg-surface"
 					>
 						<ul role="menu" className="m-0 list-none p-size-4">
 							{downloadOptions.map((option) => (

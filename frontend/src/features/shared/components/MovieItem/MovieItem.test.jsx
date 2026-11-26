@@ -34,9 +34,9 @@ describe('MovieItem', () => {
 		expect(screen.getByText('2h 3m')).toHaveClass('text-[12px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('leading-[13.5px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('tracking-[0.5px]');
-		expect(screen.getByText('2h 3m')).toHaveClass('bg-bg-overlay-dark');
+		expect(screen.getByText('2h 3m')).toHaveClass('bg-bg-overlay');
 		expect(article).toContainElement(image);
-		expect(screen.getByText('Arrival')).toHaveClass('text-text-primary');
+		expect(screen.getByText('Arrival')).toHaveClass('text-text');
 		expect(screen.getByText('Arrival')).toHaveClass('[font-family:Inter,Arial,sans-serif]');
 		expect(screen.getByText('Arrival')).toHaveClass('leading-[22px]');
 		expect(screen.getByText('Arrival')).toHaveClass('tracking-[-0.18px]');

@@ -156,7 +156,7 @@ export function NavigationMenuListItem({
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
 						active
 							? 'bg-cinemata-strait-blue-800 text-cinemata-strait-blue-50'
-							: 'bg-transparent hover:bg-cinemata-pacific-deep-50 dark:hover:bg-cinemata-strait-blue-900 text-text-secondary'
+							: 'bg-transparent hover:bg-cinemata-pacific-deep-50 dark:hover:bg-cinemata-strait-blue-900 text-text-subtle'
 					)}
 				>
 					{children}

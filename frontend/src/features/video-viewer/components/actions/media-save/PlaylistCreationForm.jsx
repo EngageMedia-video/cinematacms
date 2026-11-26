@@ -86,8 +86,8 @@ export function PlaylistCreationForm({ onCancel, onPlaylistSave }) {
 					value={title}
 					onChange={onTitleChange}
 					className={cn(
-						'body-body-14-regular w-full rounded-ds-8 border bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-input focus:ring-0',
-						titleInvalid ? 'border-border-danger' : 'border-border-strong-constant'
+						'body-body-14-regular w-full rounded-ds-8 border bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-active focus:ring-0',
+						titleInvalid ? 'border-border-danger' : 'border-border-strong'
 					)}
 				/>
 				{titleInvalid && (
@@ -107,7 +107,7 @@ export function PlaylistCreationForm({ onCancel, onPlaylistSave }) {
 					placeholder="Enter playlist description..."
 					value={description}
 					onChange={(event) => setDescription(event.target.value)}
-					className="body-body-14-regular w-full resize-y rounded-ds-8 border border-border-strong-constant bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-input focus:ring-0"
+					className="body-body-14-regular w-full resize-y rounded-ds-8 border border-border-strong bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-active focus:ring-0"
 				/>
 			</label>
 

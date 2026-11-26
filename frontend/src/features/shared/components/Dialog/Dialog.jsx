@@ -276,11 +276,11 @@ export function DialogContent({
 					data-dialog-overlay
 					className={cn(
 						'absolute inset-0',
-						// Fallback to a literal color: the bg-overlay-dark token chains
+						// Fallback to a literal color: the --bg-overlay token chains
 						// through legacy theme SCSS vars that aren't loaded on every page,
 						// which would otherwise leave the overlay transparent.
 						overlayClassName ||
-							'bg-[color-mix(in_srgb,var(--bg-overlay-dark,#011c34)_70%,transparent)] dark:opacity-80'
+							'bg-[color-mix(in_srgb,var(--bg-overlay,#011c34)_70%,transparent)] dark:opacity-80'
 					)}
 					onClick={() => {
 						if (closeOnOverlayClick) {

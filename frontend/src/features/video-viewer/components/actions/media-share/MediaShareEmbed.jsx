@@ -42,13 +42,13 @@ function DimensionInput({ label, value, unit, units, onValueChange, onUnitChange
 				max={99999}
 				value={value}
 				onChange={(event) => onValueChange(event.target.value)}
-				className="body-body-14-regular w-[110px] rounded-ds-4 border border-border-strong-constant bg-bg-surface px-size-8 py-size-8 text-text-strong outline-none focus:border-border-input focus:ring-0"
+				className="body-body-14-regular w-[110px] rounded-ds-4 border border-border-strong bg-bg-surface px-size-8 py-size-8 text-text-strong outline-none focus:border-border-active focus:ring-0"
 			/>
 
 			<select
 				value={unit}
 				onChange={(event) => onUnitChange(event.target.value)}
-				className="body-body-14-regular rounded-ds-4 border border-border-strong-constant bg-bg-surface py-size-8 text-text-strong outline-none focus:border-border-input focus:ring-0"
+				className="body-body-14-regular rounded-ds-4 border border-border-strong bg-bg-surface py-size-8 text-text-strong outline-none focus:border-border-active focus:ring-0"
 			>
 				{units.map((u) => (
 					<option key={u.key} value={u.key}>
@@ -170,7 +170,7 @@ export function MediaShareEmbed({ triggerPopupClose, startAt = 0 }) {
 				readOnly
 				value={embedCode}
 				rows={4}
-				className="body-body-14-regular w-full resize-none rounded-ds-8 border border-border-strong-constant bg-bg-surface p-size-12 text-text-strong outline-none focus:border-border-input focus:ring-0"
+				className="body-body-14-regular w-full resize-none rounded-ds-8 border border-border-strong bg-bg-surface p-size-12 text-text-strong outline-none focus:border-border-active focus:ring-0"
 			/>
 
 			<div className="flex flex-col gap-size-12">
@@ -187,7 +187,7 @@ export function MediaShareEmbed({ triggerPopupClose, startAt = 0 }) {
 						<select
 							value={aspectRatio}
 							onChange={onAspectRatioChange}
-							className="body-body-14-regular rounded-ds-4 border border-border-strong-constant bg-bg-surface px-size-8 py-size-8 text-text-strong outline-none focus:border-border-input focus:ring-0"
+							className="body-body-14-regular rounded-ds-4 border border-border-strong bg-bg-surface px-size-8 py-size-8 text-text-strong outline-none focus:border-border-active focus:ring-0"
 						>
 							{ASPECT_RATIO_OPTIONS.map((group) => (
 								<optgroup key={group.group} label={group.group}>

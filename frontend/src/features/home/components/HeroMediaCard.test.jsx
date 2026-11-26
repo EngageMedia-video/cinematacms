@@ -26,7 +26,7 @@ describe('HeroMediaCard', () => {
 		const heading = screen.getByRole('heading', { level: 2 });
 		expect(heading).toHaveClass('heading-h6-20-medium');
 		expect(heading).toHaveClass('break-words');
-		expect(heading).toHaveClass('text-text-primary');
+		expect(heading).toHaveClass('text-text');
 
 		const titleLink = screen.getByRole('link', {
 			name: 'A Long Featured Film Title That Still Needs To Wrap Cleanly',
@@ -38,7 +38,7 @@ describe('HeroMediaCard', () => {
 
 		const description = screen.getByText('A synopsis loaded from the media summary.');
 		expect(description).toHaveClass('body-body-14-regular');
-		expect(description).toHaveClass('text-text-description');
+		expect(description).toHaveClass('text-text-muted');
 		expect(description.className).not.toMatch(/dark:text-\[/);
 		expect(screen.queryByText('More information and credits from the media form.')).not.toBeInTheDocument();
 

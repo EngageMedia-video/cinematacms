@@ -18,7 +18,7 @@ export function Breadcrumbs({ items, className = '' }) {
 								action="text-link"
 								variant="body-14-medium"
 								href={item.href}
-								className="inline-flex min-h-11 items-center text-text-secondary hover:underline"
+								className="inline-flex min-h-11 items-center text-text-subtle hover:underline"
 							>
 								{item.label}
 							</Text>

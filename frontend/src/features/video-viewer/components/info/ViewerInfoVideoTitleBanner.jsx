@@ -29,7 +29,7 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 		}
 
 		return (
-			<div className="flex flex-col gap-2 border-b border-b-border-divider px-4 py-8 md:px-0">
+			<div className="flex flex-col gap-2 border-b border-b-border px-4 py-8 md:px-0">
 				{displayViews &&
 					PageStore.get('config-options').pages.media.categoriesWithTitle &&
 					this.mediaCategories(true)}

@@ -61,7 +61,7 @@ export function QuickPreview({
 			className={cn('flex w-full flex-col gap-4 rounded-2xl bg-bg-surface px-[22px] py-8', className)}
 		>
 			<h2 className="h5-24-medium m-0 text-text-strong">Quick Preview</h2>
-			<hr className="m-0 w-full border-0 border-t border-border-default" />
+			<hr className="m-0 w-full border-0 border-t border-border" />
 			<VerticalMovieItem
 				title={title || 'Untitled media'}
 				imageSrc={thumbnailUrl || PLACEHOLDER_THUMBNAIL}

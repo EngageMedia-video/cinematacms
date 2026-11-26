@@ -285,7 +285,7 @@ export default function ViewerInfoContent(props) {
 					href={websiteContent}
 					target="_blank"
 					rel="noreferrer noopener"
-					className="decoration-none text-text-primary no-underline"
+					className="decoration-none text-text no-underline"
 				>
 					{websiteContent}
 				</a>
@@ -320,7 +320,7 @@ export default function ViewerInfoContent(props) {
 					<TabView
 						tabMode="wrap"
 						listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
-						triggerClassName="rounded-none py-3 px-size-24 text-neutral-50 aria-selected:text-text-primary dark:aria-selected:text-neutral-50"
+						triggerClassName="rounded-none py-3 px-size-24 text-neutral-50 aria-selected:text-text dark:aria-selected:text-neutral-50"
 						triggerSelectedColor="bg-bg-surface"
 						panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
 					>
@@ -342,7 +342,7 @@ export default function ViewerInfoContent(props) {
 										</div>
 
 										{(hasSynopsis || hasMoreInformationText || metaFields.length) && (
-											<div className="mt-6 border-b border-b-border-divider" />
+											<div className="mt-6 border-b border-b-border" />
 										)}
 									</>
 								)}
@@ -421,7 +421,7 @@ export default function ViewerInfoContent(props) {
 								)}
 
 								{(hasMoreInformationText || hasSynopsis) && metaFields.length > 0 && (
-									<div className="mt-6 border-b border-b-border-divider" />
+									<div className="mt-6 border-b border-b-border" />
 								)}
 
 								<div className="block">

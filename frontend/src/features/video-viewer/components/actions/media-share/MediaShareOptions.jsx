@@ -229,7 +229,7 @@ export function MediaShareOptions({ timestamp = 0, startAtSelected = false, onTo
 				</div>
 			)}
 
-			<div className="flex items-stretch gap-size-8 rounded-ds-8 border border-border-strong-constant bg-bg-surface p-size-4">
+			<div className="flex items-stretch gap-size-8 rounded-ds-8 border border-border-strong bg-bg-surface p-size-4">
 				<input
 					ref={inputRef}
 					type="text"

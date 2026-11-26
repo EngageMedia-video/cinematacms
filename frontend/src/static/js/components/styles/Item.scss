@@ -166,7 +166,7 @@ a.item-thumb {
 		margin: 4px;
 		padding: 2px 4px;
 		color: var(--text-on-chrome);
-		background-color: var(--bg-overlay-dark);
+		background-color: var(--bg-overlay);
 		border-radius: 2px;
 		opacity: 0.8;
 	}
@@ -598,7 +598,7 @@ a.item-edit-link {
 				opacity: 1;
 				background: radial-gradient(
 					circle,
-					color-mix(in srgb, var(--bg-overlay-dark) 75%, transparent) 0%,
+					color-mix(in srgb, var(--bg-overlay) 75%, transparent) 0%,
 					color-mix(in srgb, var(--bg-chrome) 75%, transparent) 100%
 				);
 			}
@@ -677,7 +677,7 @@ a.item-edit-link {
 	}
 
 	&.badge-private {
-		background: var(--bg-overlay-dark);
+		background: var(--bg-overlay);
 		color: var(--text-on-chrome);
 	}
 

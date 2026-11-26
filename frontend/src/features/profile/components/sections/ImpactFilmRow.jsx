@@ -43,7 +43,7 @@ export function ImpactFilmRow({ media, index = 0 }) {
 					</span>
 				)}
 				{duration ? (
-					<span className="absolute right-1 bottom-1 rounded-ds-2 bg-bg-overlay-dark/80 px-1 py-0.5 text-text-on-chrome body-body-12-medium">
+					<span className="absolute right-1 bottom-1 rounded-ds-2 bg-bg-overlay/80 px-1 py-0.5 text-text-on-chrome body-body-12-medium">
 						{duration}
 					</span>
 				) : null}
@@ -68,7 +68,7 @@ export function ImpactFilmRow({ media, index = 0 }) {
 			<div className="min-w-0">
 				<p className="m-0 mb-3 text-text-muted body-body-14-regular">Synopsis</p>
 				{description ? (
-					<p className="m-0 line-clamp-6 break-words text-text-primary body-body-14-regular sm:line-clamp-3">
+					<p className="m-0 line-clamp-6 break-words text-text body-body-14-regular sm:line-clamp-3">
 						{description}
 					</p>
 				) : (

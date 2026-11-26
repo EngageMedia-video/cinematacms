@@ -169,7 +169,7 @@ function DurationBadge({ value }) {
 	}
 
 	return (
-		<div className="body-body-12-regular absolute bottom-2 right-2 z-20 rounded-[2px] bg-bg-overlay-dark/80 px-1 py-[2px] leading-[13.5px] tracking-[0.5px] text-text-on-chrome">
+		<div className="body-body-12-regular absolute bottom-2 right-2 z-20 rounded-[2px] bg-bg-overlay/80 px-1 py-[2px] leading-[13.5px] tracking-[0.5px] text-text-on-chrome">
 			{value}
 		</div>
 	);

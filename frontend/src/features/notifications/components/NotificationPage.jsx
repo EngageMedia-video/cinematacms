@@ -184,7 +184,7 @@ function NotificationPageContent() {
 										className={`cursor-pointer border-0 text-[14px] font-bold uppercase leading-5 tracking-normal shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus ${
 											active
 												? 'bg-bg-surface px-[22px] py-[12px] text-text-strong'
-												: 'bg-bg-surface-muted px-[16px] py-[12px] text-text-secondary hover:bg-bg-surface-hover'
+												: 'bg-bg-surface-muted px-[16px] py-[12px] text-text-subtle hover:bg-bg-surface-hover'
 										}`}
 										style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}
 									>

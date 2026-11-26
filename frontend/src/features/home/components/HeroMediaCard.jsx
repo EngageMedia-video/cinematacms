@@ -80,7 +80,7 @@ export function HeroMediaCard({ className = '', media, style }) {
 				)}
 			>
 				<div className="flex min-w-0 flex-col gap-3">
-					<Text as="h2" variant="h6" className="m-0 max-w-full overflow-hidden break-words text-text-primary">
+					<Text as="h2" variant="h6" className="m-0 max-w-full overflow-hidden break-words text-text">
 						{mediaHref ? (
 							<a
 								href={mediaHref}

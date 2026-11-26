@@ -24,7 +24,7 @@ export function Pagination({ page, totalPages, previousHref, nextHref, label = '
 								variant="body-12-medium"
 								href={href}
 								rel={text === 'Previous' ? 'prev' : 'next'}
-								className="inline-flex min-h-11 items-center px-2 text-text-secondary hover:text-text-link"
+								className="inline-flex min-h-11 items-center px-2 text-text-subtle hover:text-text-link"
 							>
 								{text}
 							</Text>

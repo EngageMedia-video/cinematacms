@@ -107,7 +107,7 @@ export function TopbarMobileBar() {
 	if (sidebarVisible || home) {
 		if (isAnonymous) {
 			return (
-				<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay-dark">
+				<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay">
 					<button
 						type="button"
 						onClick={openMobileSearch}
@@ -123,7 +123,7 @@ export function TopbarMobileBar() {
 			);
 		}
 		return (
-			<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay-dark">
+			<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay">
 				<TopbarUploadButton className="flex w-full" />
 			</div>
 		);
@@ -131,7 +131,7 @@ export function TopbarMobileBar() {
 
 	// Non-home → back + page title + (UPLOAD if user can upload).
 	return (
-		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-bg-overlay-dark">
+		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-bg-overlay">
 			<button
 				type="button"
 				onClick={onBack}

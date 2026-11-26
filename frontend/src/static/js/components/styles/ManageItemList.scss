@@ -589,14 +589,14 @@
 		margin-bottom: 12px;
 		min-height: 40px;
 		padding: 0 40px 0 16px;
-		color: var(--text-primary, var(--input-color));
+		color: var(--text, var(--input-color));
 		border: 0;
 		border-radius: var(--radius-4);
 		background-color: var(--bg-surface-muted, var(--input-bg-color));
 		box-shadow: none;
 
 		&:focus {
-			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-input));
+			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-active));
 		}
 	}
 
