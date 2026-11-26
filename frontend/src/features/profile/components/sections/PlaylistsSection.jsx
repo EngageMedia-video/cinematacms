@@ -22,13 +22,13 @@ function PlaylistCard({ playlist }) {
 
 				{/* Right-side count panel (old-page style): count above the
 				    playlist-play icon, centered in a fixed 92px column. */}
-				<span className="absolute inset-y-0 right-0 flex w-[92px] flex-col items-center justify-center gap-0.5 bg-bg-overlay-dark/80 text-text-on-chrome">
+				<span className="absolute inset-y-0 right-0 flex w-[92px] flex-col items-center justify-center gap-0.5 bg-bg-overlay/80 text-text-on-chrome">
 					<span className="leading-tight body-body-14-regular">{count}</span>
 					<Icon name="playlistPlay" size={29} decorative />
 				</span>
 
 				{/* Hover "PLAY ALL" overlay. */}
-				<span className="absolute inset-0 flex items-center justify-center gap-2 bg-bg-overlay-dark/80 text-text-on-chrome opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
+				<span className="absolute inset-0 flex items-center justify-center gap-2 bg-bg-overlay/80 text-text-on-chrome opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
 					<Icon name="play" size="sm" decorative />
 					<Text as="span" variant="body-14-medium" className="uppercase">
 						Play all
@@ -39,7 +39,7 @@ function PlaylistCard({ playlist }) {
 			<div className="mt-3 flex min-w-0 flex-col items-start">
 				<a
 					href={link}
-					className="line-clamp-2 text-text-primary no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
+					className="line-clamp-2 text-text no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
 				>
 					{title}
 				</a>

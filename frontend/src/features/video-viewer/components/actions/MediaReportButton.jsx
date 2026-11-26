@@ -185,8 +185,8 @@ export function MediaReportButton() {
 								aria-invalid={descriptionInvalid ? 'true' : undefined}
 								aria-describedby={`${descriptionId}-help`}
 								className={cn(
-									'body-body-14-regular w-full resize-y rounded-ds-8 border bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-input focus:ring-0',
-									descriptionInvalid ? 'border-border-danger' : 'border-border-strong-constant'
+									'body-body-14-regular w-full resize-y rounded-ds-8 border bg-bg-surface px-size-12 py-size-10 text-text-strong outline-none transition-colors focus:border-border-active focus:ring-0',
+									descriptionInvalid ? 'border-border-danger' : 'border-border-strong'
 								)}
 							/>
 							<Text

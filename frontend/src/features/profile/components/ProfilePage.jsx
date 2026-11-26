@@ -36,7 +36,7 @@ function ProfilePageContent({ author, activeTab }) {
 	const bannerImage = author.banner_thumbnail_url || defaultProfileBanner;
 
 	return (
-		<div className="min-h-screen bg-bg-page text-text-primary">
+		<div className="min-h-screen bg-bg-page text-text">
 			<div
 				className={`relative h-[230px] overflow-hidden bg-bg-chrome bg-cover sm:h-[310px] ${
 					author.banner_thumbnail_url
@@ -45,7 +45,7 @@ function ProfilePageContent({ author, activeTab }) {
 				}`}
 				style={{
 					backgroundImage: author.banner_thumbnail_url
-						? `linear-gradient(color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent), color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent)), url("${bannerImage}")`
+						? `linear-gradient(color-mix(in srgb, var(--bg-overlay) 38%, transparent), color-mix(in srgb, var(--bg-overlay) 38%, transparent)), url("${bannerImage}")`
 						: `url("${bannerImage}")`,
 				}}
 				aria-hidden="true"
@@ -53,7 +53,7 @@ function ProfilePageContent({ author, activeTab }) {
 
 			<div className="relative z-10 mx-auto -mt-[84px] w-[calc(100%_-_32px)] max-w-[1515px] overflow-hidden rounded-lg bg-bg-page">
 				<ProfileHeader author={author} />
-				<div className="mx-4 border-t border-border-divider sm:mx-8" />
+				<div className="mx-4 border-t border-border sm:mx-8" />
 				<div className="mx-4 mt-4 overflow-hidden rounded-2xl bg-bg-surface sm:mx-8">
 					<div className="px-4 pt-4">
 						<ProfileTabs activeTab={selectedTab} tabs={tabs} />

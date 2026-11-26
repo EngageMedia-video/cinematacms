@@ -2,7 +2,7 @@ import { Button } from '../../shared/components';
 
 export function SubmitActions({ isSubmitting, uploadBusy, onCancel }) {
 	return (
-		<div className="flex flex-col-reverse gap-3 border-t border-border-divider pt-6 sm:flex-row sm:justify-end">
+		<div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
 			<Button type="button" variant="secondary-outline" onClick={onCancel} disabled={isSubmitting}>
 				Cancel
 			</Button>

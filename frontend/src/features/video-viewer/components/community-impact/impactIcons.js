@@ -26,13 +26,13 @@ const IMPACT_ICON_CONFIG = {
 		iconName: 'filmReel',
 		label: 'Screened In',
 		accentClassName: 'text-text-accent',
-		iconShellClassName: 'bg-bg-emblem-blue-deep text-text-secondary',
+		iconShellClassName: 'bg-bg-emblem-blue-deep text-text-subtle',
 	},
 	featured: {
 		iconName: 'eye',
 		label: 'Featured In',
-		accentClassName: 'text-text-secondary',
-		iconShellClassName: 'bg-bg-emblem-blue text-text-secondary',
+		accentClassName: 'text-text-subtle',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-subtle',
 	},
 	saves: {
 		iconName: 'bookmarkPennant',
@@ -55,8 +55,8 @@ const IMPACT_ICON_CONFIG = {
 	heart: {
 		iconName: 'heart',
 		label: 'Community Impact',
-		accentClassName: 'text-text-secondary',
-		iconShellClassName: 'bg-bg-emblem-blue text-text-secondary',
+		accentClassName: 'text-text-subtle',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-subtle',
 	},
 };
 

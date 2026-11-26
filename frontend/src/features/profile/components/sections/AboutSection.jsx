@@ -32,7 +32,7 @@ function Details({ author }) {
 	];
 
 	return (
-		<section className="rounded-lg border border-border-default p-4">
+		<section className="rounded-lg border border-border p-4">
 			<ProfileSectionHeader icon="profileDetails" title="Details" />
 			<dl className="mt-4 grid gap-3 sm:ml-[57px]">
 				{rows
@@ -43,7 +43,7 @@ function Details({ author }) {
 								<Icon name={row.icon} size="xs" decorative />
 								{row.label}
 							</dt>
-							<dd className="body-body-14-regular m-0 min-w-0 break-words text-text-primary">
+							<dd className="body-body-14-regular m-0 min-w-0 break-words text-text">
 								{row.href ? (
 									<a
 										href={row.href}
@@ -83,7 +83,7 @@ function RecentPlaylists({ playlists, author }) {
 	if (!playlists.length) return null;
 
 	return (
-		<section className="rounded-lg border border-border-default p-4">
+		<section className="rounded-lg border border-border p-4">
 			<ProfileSectionHeader
 				icon="profileRecentPlaylists"
 				title="Recent Playlists"
@@ -105,7 +105,7 @@ function RecentPlaylists({ playlists, author }) {
 								loading="lazy"
 								className="h-full w-full object-cover"
 							/>
-							<span className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center gap-2 bg-bg-overlay-dark/80 py-[10px]">
+							<span className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center gap-2 bg-bg-overlay/80 py-[10px]">
 								<Icon name="play" size="sm" className="text-text-on-chrome" decorative />
 								<Text as="span" variant="body-14-medium" className="text-text-on-chrome uppercase">
 									Play all
@@ -113,10 +113,7 @@ function RecentPlaylists({ playlists, author }) {
 							</span>
 						</a>
 						<div className="min-w-0">
-							<a
-								href={playlist.url}
-								className="body-body-16-medium text-text-primary hover:text-text-link-hover"
-							>
+							<a href={playlist.url} className="body-body-16-medium text-text hover:text-text-link-hover">
 								{playlist.title}
 							</a>
 							<Text as="p" variant="body-12" className="mt-2 mb-0 text-text-muted">
@@ -143,11 +140,11 @@ export function AboutSection({ author }) {
 	return (
 		<div className="space-y-4">
 			<div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-				<section className="rounded-lg border border-border-default p-4">
+				<section className="rounded-lg border border-border p-4">
 					<ProfileSectionHeader icon="profileBionote" title="Bionote" />
 					{sanitizedBiography ? (
 						<div
-							className="body-body-14-regular mt-4 space-y-3 whitespace-pre-line text-text-primary sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
+							className="body-body-14-regular mt-4 space-y-3 whitespace-pre-line text-text sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
 							dangerouslySetInnerHTML={{ __html: sanitizedBiography }}
 						/>
 					) : (
@@ -166,7 +163,7 @@ export function AboutSection({ author }) {
 					className={`grid gap-4 ${author.is_owner && (showPlaylists || playlistsLoading || playlistsError) ? 'xl:grid-cols-2' : ''}`}
 				>
 					{author.is_owner ? (
-						<section className="rounded-lg border border-border-default p-4">
+						<section className="rounded-lg border border-border p-4">
 							<ProfileSectionHeader icon="profileFavoriteFilms" title="Favorite Films" />
 							{favoritesQuery.isLoading ? (
 								<div
@@ -189,7 +186,7 @@ export function AboutSection({ author }) {
 						</section>
 					) : null}
 					{author.is_owner && playlistsLoading ? (
-						<section className="rounded-lg border border-border-default p-4">
+						<section className="rounded-lg border border-border p-4">
 							<ProfileSectionHeader icon="profileRecentPlaylists" title="Recent Playlists" />
 							<div
 								className="mt-4 h-24 animate-pulse rounded-lg bg-bg-skeleton sm:ml-[57px]"
@@ -197,7 +194,7 @@ export function AboutSection({ author }) {
 							/>
 						</section>
 					) : author.is_owner && playlistsError ? (
-						<section className="rounded-lg border border-border-default p-4">
+						<section className="rounded-lg border border-border p-4">
 							<ProfileSectionHeader icon="profileRecentPlaylists" title="Recent Playlists" />
 							<Text as="p" variant="body-14" className="mt-4 mb-0 text-text-danger sm:ml-[57px]">
 								Playlists could not be loaded.

@@ -256,10 +256,10 @@ function SearchPageContent() {
 			data-modern-track
 			// overflow-x-clip, not hidden: hidden makes this div a scroll container, so the filter
 			// rail's sticky would resolve against it instead of the viewport and never stick.
-			className="mx-auto min-h-screen w-full max-w-378.75 overflow-x-clip px-4 py-6 text-text-primary sm:px-6.75"
+			className="mx-auto min-h-screen w-full max-w-378.75 overflow-x-clip px-4 py-6 text-text sm:px-6.75"
 		>
 			<header className="mb-6 flex max-w-[760px] flex-col gap-2">
-				<h1 className="m-0 font-['Barlow_Semi_Condensed',Arial,sans-serif] text-[24px] leading-[30px] font-medium text-text-primary">
+				<h1 className="m-0 font-['Barlow_Semi_Condensed',Arial,sans-serif] text-[24px] leading-[30px] font-medium text-text">
 					Search
 				</h1>
 				<p className="m-0 font-sans text-[16px] leading-6 text-text-muted">
@@ -300,9 +300,9 @@ function SearchPageContent() {
 						<SelectedFilters filters={selectedFilters} onDismiss={handleDismiss} />
 					</div>
 
-					<section className="rounded-[8px] bg-bg-panel-primary px-4 py-6 sm:p-6">
+					<section className="rounded-[8px] bg-bg-surface px-4 py-6 sm:p-6">
 						<div className="mb-6 flex items-center justify-between gap-3">
-							<p className="m-0 font-sans text-[14px] leading-5 text-text-primary">{resultsLabel}</p>
+							<p className="m-0 font-sans text-[14px] leading-5 text-text">{resultsLabel}</p>
 							<SearchSortDropdown
 								sort={sort}
 								hasQuery={Boolean(trimmedQuery)}
@@ -331,7 +331,7 @@ function SearchPageContent() {
 						) : null}
 
 						{activeSearch && !search.isLoading && !search.isError && results.length === 0 ? (
-							<div className="rounded-[4px] border border-border-panel-divider bg-bg-surface p-6 text-text-muted">
+							<div className="rounded-[4px] border border-border-subtle bg-bg-surface p-6 text-text-muted">
 								No results match these filters.
 							</div>
 						) : null}

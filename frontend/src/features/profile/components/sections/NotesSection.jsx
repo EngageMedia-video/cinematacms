@@ -13,7 +13,7 @@ function EmptyNotes() {
 			<span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-bg-surface-muted text-text-muted">
 				<Icon name="notes" size="md" decorative />
 			</span>
-			<Text as="h3" variant="h6-bold" className="m-0 text-text-primary">
+			<Text as="h3" variant="h6-bold" className="m-0 text-text">
 				No notes yet
 			</Text>
 			<Text as="p" variant="body-14" className="m-0 max-w-md text-text-muted">

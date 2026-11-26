@@ -22,8 +22,8 @@ describe('cn', () => {
 		expect(cn('p-0', 'px-space-base')).toBe('p-0 px-space-base');
 		expect(cn('rounded-ds-8 sm:rounded-ds-12', 'sm:rounded-none')).toBe('rounded-ds-8 sm:rounded-none');
 		expect(cn('px-space-base hover:px-space-lg', 'hover:px-2')).toBe('px-space-base hover:px-2');
-		expect(cn('text-text-primary bg-bg-surface', 'p-size-12 rounded-ds-8')).toBe(
-			'text-text-primary bg-bg-surface p-size-12 rounded-ds-8'
+		expect(cn('text-text bg-bg-surface', 'p-size-12 rounded-ds-8')).toBe(
+			'text-text bg-bg-surface p-size-12 rounded-ds-8'
 		);
 	});
 });

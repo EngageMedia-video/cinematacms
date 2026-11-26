@@ -1014,12 +1014,12 @@ body .hover-overlay-title .item .item-meta .item-media-count {
 
 body .hover-overlay-title .item .item-content-link:before {
 	opacity: 0.7;
-	background: var(--bg-overlay-dark);
+	background: var(--bg-overlay);
 }
 
 body .hover-overlay-title .item .item-content-link:hover:before {
 	opacity: 0.86;
-	background: var(--bg-overlay-dark);
+	background: var(--bg-overlay);
 }
 
 body .hover-overlay-title .item .item-content-link:after {

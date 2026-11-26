@@ -146,7 +146,7 @@ export function TopicCheckboxGroup({ value = [], onChange, options = [], id, nam
 			value={value}
 			onChange={(next) => onChange?.(next)}
 			error={error}
-			listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full"
+			listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-bg-info-muted [&::-webkit-scrollbar-thumb]:rounded-full"
 		/>
 	);
 }
@@ -283,7 +283,7 @@ export function LicenseChooser({
 					License
 				</Text>
 
-				<div className="flex flex-col gap-3 border-b border-border-strong-constant pb-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-col gap-3 border-b border-border-strong pb-4 sm:flex-row sm:items-center sm:justify-between">
 					<Text
 						variant="body-16"
 						as="span"
@@ -375,7 +375,7 @@ export function LicenseChooser({
 						custom_license: event.target.checked ? '' : String(selectedLicense?.id ?? value ?? ''),
 					})
 				}
-				controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-control-checked"
+				controlClassName="bg-bg-control peer-checked:bg-bg-control-checked"
 			>
 				<span>
 					<Text variant="body-16" as="span" className="block text-text-strong">

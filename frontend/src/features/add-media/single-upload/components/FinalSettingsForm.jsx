@@ -19,7 +19,7 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 
 				<AllowDownloadCheckbox checked={singleUpload.allowDownload} onChange={singleUpload.setAllowDownload} />
 
-				<div className="my-4 border-b border-b-border-divider" />
+				<div className="my-4 border-b border-b-border" />
 
 				<StatusRadioGroup
 					name="state"
@@ -43,7 +43,7 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 
 				{singleUpload.mediaStatus !== 'private' ? (
 					<>
-						<div className="my-4 border-b border-b-border-divider" />
+						<div className="my-4 border-b border-b-border" />
 
 						<VisibilityExpirationField
 							expireEnabled={singleUpload.expireEnabled}
@@ -57,7 +57,7 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 					</>
 				) : null}
 
-				<div className="my-4 border-b border-b-border-divider" />
+				<div className="my-4 border-b border-b-border" />
 
 				<StreamProtectionField checked={singleUpload.isEncrypted} onChange={singleUpload.setIsEncrypted} />
 			</div>

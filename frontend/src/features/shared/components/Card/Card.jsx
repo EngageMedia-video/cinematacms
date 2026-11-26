@@ -3,7 +3,7 @@ import { cn } from '../../utils/classNames';
 const VARIANT_CLASSES = {
 	default: 'rounded-xl bg-bg-surface',
 	muted: 'rounded-xl bg-bg-surface-muted',
-	outlined: 'rounded-xl border border-border-default bg-bg-surface',
+	outlined: 'rounded-xl border border-border bg-bg-surface',
 };
 
 export function Card({ as: Component = 'article', children, className = '', variant = 'default', ...props }) {

@@ -186,7 +186,7 @@ export function YearChooserField({
 					id={popoverId}
 					role="dialog"
 					aria-label="Choose year"
-					className="absolute left-0 top-full z-20 mt-2 w-full max-w-[360px] rounded-ds-4 border border-border-strong-constant bg-bg-surface p-3 shadow-2xl"
+					className="absolute left-0 top-full z-20 mt-2 w-full max-w-[360px] rounded-ds-4 border border-border-strong bg-bg-surface p-3 shadow-2xl"
 				>
 					<div className="mb-3 grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2">
 						<button
@@ -224,7 +224,7 @@ export function YearChooserField({
 									className={cn(
 										'body-body-14-medium h-10 cursor-pointer rounded-ds-4 border-0 px-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
 										selected
-											? 'bg-bg-control-checked text-text-control-checked'
+											? 'bg-bg-control-checked text-text-on-control-checked'
 											: 'bg-transparent text-text-strong hover:bg-bg-surface-hover'
 									)}
 								>

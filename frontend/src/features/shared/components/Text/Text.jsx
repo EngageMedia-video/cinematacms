@@ -41,9 +41,9 @@ const VARIANT_MAP = {
 // Semantic color presets — one class applied at a time, no cascade conflict.
 // Heading variants default to null (no color); body/caption default to 'body'.
 const COLOR_CLASSES = {
-	body: 'text-text-primary',
+	body: 'text-text',
 	meta: 'text-text-muted',
-	description: 'text-text-description',
+	description: 'text-text-muted',
 	'sunset-horizon': 'text-text-link',
 	accent: 'text-text-accent',
 };

@@ -18,7 +18,7 @@ export function WizardFooter({
 	isSubmitting = false,
 }) {
 	return (
-		<div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border-divider pt-6">
+		<div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
 			<Button variant="tertiary" onClick={onSaveDraft} disabled={!canDraft || isSubmitting}>
 				Save as Draft
 			</Button>

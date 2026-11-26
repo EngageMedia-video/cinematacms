@@ -88,7 +88,7 @@ export const Outlined = {
 		const card = canvas.getByRole('article');
 
 		await expect(card).toHaveClass('border');
-		await expect(card).toHaveClass('border-border-default');
+		await expect(card).toHaveClass('border-border');
 		await expect(card).toHaveClass('bg-bg-surface');
 	},
 };
@@ -117,7 +117,7 @@ export const AllVariants = {
 		<div className="flex max-w-sm flex-col gap-4 bg-bg-page p-6">
 			{['default', 'muted', 'outlined'].map((v) => (
 				<Card key={v} variant={v} className="p-4">
-					<p className="body-body-12-regular m-0 text-text-primary">{v}</p>
+					<p className="body-body-12-regular m-0 text-text">{v}</p>
 				</Card>
 			))}
 		</div>

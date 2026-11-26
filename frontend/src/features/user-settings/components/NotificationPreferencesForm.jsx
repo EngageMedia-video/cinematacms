@@ -45,7 +45,7 @@ function ChannelSegmentedControl({ disabled, label, value, onChange }) {
 		<div
 			role="group"
 			aria-label={`${label} notification channel`}
-			className="grid w-[140px] max-w-full grid-cols-[0.7fr_0.75fr_1fr] overflow-hidden rounded-full border border-border-default bg-bg-surface-muted p-0.5"
+			className="grid w-[140px] max-w-full grid-cols-[0.7fr_0.75fr_1fr] overflow-hidden rounded-full border border-border bg-bg-surface-muted p-0.5"
 		>
 			{CHANNEL_OPTIONS.map((option) => {
 				const isSelected = value === option.value;
@@ -61,7 +61,7 @@ function ChannelSegmentedControl({ disabled, label, value, onChange }) {
 						className={`min-h-[24px] min-w-0 rounded-full border-0 px-1.5 text-[11px] font-medium leading-[14px] tracking-normal transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:opacity-60 ${
 							isSelected
 								? 'bg-bg-primary text-text-on-primary'
-								: 'bg-transparent text-text-secondary hover:bg-bg-surface hover:text-text-primary'
+								: 'bg-transparent text-text-subtle hover:bg-bg-surface hover:text-text'
 						}`}
 					>
 						<span className="block truncate">{option.label}</span>
@@ -92,12 +92,12 @@ export function NotificationPreferencesForm() {
 	const isDirty = useMemo(() => isDirtyState(draft, data), [draft, data]);
 
 	if (isLoading) {
-		return <p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">Loading…</p>;
+		return <p className="px-4 py-8 text-center text-[14px] leading-5 text-text-subtle">Loading…</p>;
 	}
 
 	if (isError) {
 		return (
-			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">
+			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-subtle">
 				Failed to load preferences: {error?.message ?? 'unknown error'}
 			</p>
 		);
@@ -139,7 +139,7 @@ export function NotificationPreferencesForm() {
 				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-text-strong">
 					Notification Preferences
 				</h2>
-				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
+				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-text-subtle">
 					Choose how you hear about activity on your films and in discussions. App shows it in your Cinemata
 					notifications. Email sends it to your inbox as well.
 				</p>
@@ -150,7 +150,7 @@ export function NotificationPreferencesForm() {
 					<React.Fragment key={category.id}>
 						{idx > 0 && <div className="h-px bg-border-subtle" aria-hidden="true" />}
 						<fieldset className="m-0 flex flex-col gap-[8px] border-0 p-0">
-							<legend className="mb-0 p-0 text-[16px] font-normal leading-[24px] tracking-normal text-text-primary">
+							<legend className="mb-0 p-0 text-[16px] font-normal leading-[24px] tracking-normal text-text">
 								{category.title}
 							</legend>
 							{category.items.map((item) => {
@@ -160,7 +160,7 @@ export function NotificationPreferencesForm() {
 										key={item.label}
 										className="grid min-h-[24px] min-w-0 grid-cols-1 gap-2 pb-[1.3px] pt-[2.5px] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
 									>
-										<span className="min-w-0 text-[13px] font-normal leading-[20px] tracking-normal text-text-secondary">
+										<span className="min-w-0 text-[13px] font-normal leading-[20px] tracking-normal text-text-subtle">
 											{item.label}
 										</span>
 										{isActive ? (
@@ -195,7 +195,7 @@ export function NotificationPreferencesForm() {
 				{isSaveError && (
 					<span className="mr-auto text-xs text-text-danger">{saveError?.message ?? 'Save failed'}</span>
 				)}
-				{isSuccess && !isDirty && <span className="mr-auto text-xs text-text-secondary">Saved</span>}
+				{isSuccess && !isDirty && <span className="mr-auto text-xs text-text-subtle">Saved</span>}
 				<button
 					type="button"
 					onClick={handleReset}

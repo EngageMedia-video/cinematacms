@@ -33,11 +33,11 @@ const HELPER_VARIANT_CLASSES = {
 	disabled: 'text-text-accent',
 };
 
-const ACTIVE_BORDER_CLASSES = 'border-border-input';
+const ACTIVE_BORDER_CLASSES = 'border-border-active';
 const BORDER_VARIANT_CLASSES = {
-	default: 'border-border-strong-constant',
+	default: 'border-border-strong',
 	error: 'border-border-danger',
-	disabled: 'border-border-input',
+	disabled: 'border-border-active',
 };
 
 function hasTextValue(value) {

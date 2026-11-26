@@ -126,12 +126,12 @@ export function ImpactCard({
 	return (
 		<Card
 			variant="outlined"
-			className="relative flex flex-col rounded-ds-8 border-border-default p-space-base"
+			className="relative flex flex-col rounded-ds-8 border-border p-space-base"
 			aria-label={categoryLabel}
 		>
 			<Button
 				variant="icon"
-				className="absolute top-space-base right-space-base z-10 h-size-32 w-size-32 shrink-0 text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
+				className="absolute top-space-base right-space-base z-10 h-size-32 w-size-32 shrink-0 text-text-muted outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring-focus"
 				aria-haspopup="dialog"
 				aria-label={`Open ${categoryLabel} details`}
 				onClick={() => setModalOpen(true)}
@@ -148,7 +148,7 @@ export function ImpactCard({
 					>
 						<li className="relative grid min-h-[80px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
 							<span className="relative flex justify-center" aria-hidden="true">
-								<span className="absolute top-[38px] h-[42px] w-px bg-border-default" />
+								<span className="absolute top-[38px] h-[42px] w-px bg-border" />
 								<span
 									className={cn(
 										'relative z-10 inline-flex h-size-32 w-size-32 shrink-0 items-center justify-center rounded-full',
@@ -162,7 +162,7 @@ export function ImpactCard({
 								<p className="body-body-12-regular m-0 text-text-muted">{categoryLabel}</p>
 								<p
 									id={`${contentId}-title`}
-									className="body-body-14-bold m-0 mt-space-xs break-words text-text-primary"
+									className="body-body-14-bold m-0 mt-space-xs break-words text-text"
 								>
 									{renderTitle(firstEntry)}
 								</p>

@@ -71,7 +71,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 					</span>
 				)}
 				{duration ? (
-					<span className="absolute right-[4px] bottom-[4px] inline-flex h-[18px] min-w-[33px] items-center justify-center rounded-ds-2 bg-bg-note-thumbnail-duration px-[4px] text-text-note-thumbnail-duration body-body-12-medium">
+					<span className="absolute right-[4px] bottom-[4px] inline-flex h-[18px] min-w-[33px] items-center justify-center rounded-ds-2 bg-bg-label px-[4px] text-text-on-label body-body-12-medium">
 						{duration}
 					</span>
 				) : null}
@@ -85,13 +85,13 @@ export function NoteEntry({ note, noteCount = 1 }) {
 					{noteTime}
 				</a>
 
-				<span aria-hidden="true" className="col-start-3 block h-[97px] w-px bg-border-note-divider" />
+				<span aria-hidden="true" className="col-start-3 block h-[97px] w-px bg-border-strong" />
 
 				<div className="col-start-5 min-w-0">
 					<div className="flex items-center gap-[12px] text-text-muted body-body-14-regular">
 						<span>Last Note</span>
 					</div>
-					<p className="m-0 mt-[12px] line-clamp-2 break-words whitespace-pre-line text-text-primary body-body-16-regular">
+					<p className="m-0 mt-[12px] line-clamp-2 break-words whitespace-pre-line text-text body-body-16-regular">
 						<LinkifiedText text={note?.text || ''} />
 					</p>
 					{dayLabel || clockLabel ? (
@@ -107,7 +107,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 			<div className="col-span-full sm:col-start-1 sm:row-start-2">
 				<a
 					href={href}
-					className="line-clamp-1 text-text-primary no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
+					className="line-clamp-1 text-text no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
 				>
 					{title}
 				</a>

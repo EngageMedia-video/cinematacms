@@ -271,7 +271,7 @@ light and dark value, so a component that uses one needs no `dark:` variant.
 Choose the first layer that covers the case:
 
 1. A modern semantic token utility, such as `bg-bg-page`, `text-text-strong`,
-   `border-border-default`, or `ring-ring-focus`. This is the default.
+   `border-border`, or `ring-ring-focus`. This is the default.
 2. A raw `--cinemata-*` palette utility, such as `bg-cinemata-neutral-200`, when
    the color must stay the same in both themes and no semantic role covers it.
 3. A legacy alias, such as `bg-brand-primary` or `text-content-body`, when the

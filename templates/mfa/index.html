@@ -14,7 +14,7 @@
 {% block auth_body %}
 <div class="flex w-full flex-col">
   {% if "totp" in MFA_SUPPORTED_TYPES %}
-    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0">
+    <div class="flex flex-col gap-3 border-b border-border py-6 first:pt-0">
       <div class="flex flex-col gap-1 text-left">
         <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Authenticator App" %}</h2>
         <p class="m-0 text-sm leading-5 text-text-muted">
@@ -32,7 +32,7 @@
   {% endif %}
 
   {% if "webauthn" in MFA_SUPPORTED_TYPES %}
-    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0">
+    <div class="flex flex-col gap-3 border-b border-border py-6 first:pt-0">
       <div class="flex flex-col gap-1 text-left">
         <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Security Keys" %}</h2>
         <p class="m-0 text-sm leading-5 text-text-muted">
@@ -51,7 +51,7 @@
 
   {% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
     {% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
-    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0 last:border-b-0 last:pb-0">
+    <div class="flex flex-col gap-3 border-b border-border py-6 first:pt-0 last:border-b-0 last:pb-0">
       <div class="flex flex-col gap-1 text-left">
         <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Recovery Codes" %}</h2>
         <p class="m-0 text-sm leading-5 text-text-muted">

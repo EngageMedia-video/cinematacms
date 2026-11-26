@@ -578,7 +578,7 @@ export class AddMediaPage extends Page {
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
+				<main className="add-media-feature @container/page mx-4 py-8 text-text sm:mx-6 lg:mx-10">
 					<div className="grid grid-cols-1 gap-8 @5xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @5xl/page:items-start">
 						<header className="flex items-start justify-between gap-4 @5xl/page:col-start-2 @5xl/page:row-start-1">
 							<div className="w-full">
@@ -619,8 +619,8 @@ export class AddMediaPage extends Page {
 						>
 							<TabView
 								tabMode="wrap"
-								triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger"
-								triggerSelectedColor="bg-bg-section-header"
+								triggerClassName="rounded-none py-3 px-size-24 text-text-on-primary"
+								triggerSelectedColor="bg-bg-primary"
 								panelClassName={tabsHidden ? 'mt-0' : 'mt-8'}
 								hideTabList={tabsHidden}
 								aria-label="Upload media type"

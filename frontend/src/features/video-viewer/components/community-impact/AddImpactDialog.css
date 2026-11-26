@@ -11,7 +11,7 @@
 	.impact-add-form .impact-add-field > div:first-child {
 		min-height: 84px;
 		border-bottom-width: 1px;
-		border-bottom-color: var(--border-default) !important;
+		border-bottom-color: var(--border) !important;
 		background-color: transparent !important;
 		padding: 18px 0 15px;
 	}
@@ -23,14 +23,14 @@
 		background-color: transparent !important;
 	}
 
-	.impact-add-form .impact-add-field .border-border-input {
+	.impact-add-form .impact-add-field .border-border-active {
 		border-bottom-color: var(--ring-focus) !important;
 	}
 
 	.impact-add-form .impact-add-field label,
 	.impact-add-form .impact-add-field button > span > span:first-child {
 		margin-bottom: 8px;
-		color: var(--text-description) !important;
+		color: var(--text-muted) !important;
 		font-size: 16px;
 		font-weight: 400;
 		line-height: 24px;
@@ -78,7 +78,7 @@
 	}
 
 	.impact-add-form .impact-add-field [role='menu'] {
-		border-color: var(--border-default) !important;
+		border-color: var(--border) !important;
 		background-color: var(--bg-surface) !important;
 	}
 

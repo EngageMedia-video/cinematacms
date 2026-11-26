@@ -233,42 +233,101 @@ Component-scoped legacy semantic groups also exist (search, comments, playlists,
 
 The **video player** group (`--site-player-accent-color`, `--site-player-progress-color`, `--site-player-track-color`, `--site-player-loaded-color`, `--site-player-tooltip-bg-color`, `--site-player-control-color`, `--site-player-canvas-color`, `--site-player-control-surface-color`, `--site-player-subtitle-bg-color`, `--site-player-subtitle-color`, `--site-player-shadow-color`) is theme-aware and exposed as `--color-site-player-*` utilities. It is the shared accent and control-surface system for both the legacy media view page player (`frontend/src/static/js/components/styles/VideoPlayer.scss`, consumed as plain `var(--site-player-*)`) and the home hero player. The progress / volume / subtitle accent resolves to sunset-horizon (500 light / 400p dark); the big play button to strait-blue (500 light / 300 dark); the buffered range to pacific-deep; the seek tooltip to pacific-deep-950; control text and subtitle text to white; the video canvas to black. The hero player consumes these tokens directly instead of declaring its own color aliases. This replaces the player-specific use of the configurable site `--brand-color`.
 
-**C. Modern semantic tokens (role-based)** — added on top of the legacy aliases, these are the preferred vocabulary for new code in `features/`. They use slash-prefixed namespaces (`bg/*`, `text/*`, `border/*`, `ring/*`) that become double-prefix Tailwind utilities (`bg-bg-page`, `text-text-strong`, etc.). Intermediate vars are defined on `body` and `body.dark_theme` and exposed through `@theme inline`, so each token resolves at the using element's scope (which is always a body descendant).
+**C. Modern semantic tokens (role-based)** — the roles in `tokens.json`, and the preferred vocabulary for new code in `features/`. They use slash-prefixed namespaces (`bg/*`, `text/*`, `border/*`, `ring/*`) that become double-prefix Tailwind utilities (`bg-bg-page`, `text-text-strong`, etc.). Intermediate vars are defined on `body` and `body.dark_theme` and exposed through `@theme inline`, so each token resolves at the using element's scope (which is always a body descendant).
 
-| Family | Tokens | Use |
-|---|---|---|
-| `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
-| `bg/panel-primary`, `bg/panel-surface`, `bg/panel-selected` | 3 | Primary panel/rail surface, inner expanded body, and selected-state card — reusable for any panel-style layout. The selected card is `neutral-50` in light mode per Figma `40000003-11716` and `pacific-deep-900` in dark mode. |
-| `bg/section-header` | 1 | Colored section-header bar inside a panel. Light `strait-blue-600p` / Dark `strait-blue-500`. |
-| `bg/disclosure-trigger`, `bg/disclosure-content` | 2 | Disclosure/accordion trigger and expanded content surfaces. Light mode uses neutral trigger/content surfaces; dark mode uses the filled strait-blue/pacific-deep treatment. |
-| `bg/action-inverse` | 1 | Dark action button surface (inverted relative to panel background). Light `strait-blue-900` / Dark `strait-blue-600p`. |
-| `bg/control-unchecked`, `bg/control-checked` | 2 | Unchecked and checked states of checkbox/radio controls. Checked controls use `pacific-deep-700` in light mode and `sunset-horizon-400p` in dark mode. |
-| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (light `sunset-horizon-400p` / dark `sunset-horizon-500`) and inactive chip fill. |
-| `text/panel-muted`, `text/option`, `text/section-header`, `text/disclosure-trigger`, `text/action-inverse`, `text/panel-heading`, `text/control-checked` | 7 | Quiet panel metadata, option/choice labels, text on section-header bars, disclosure trigger labels, text on dark action buttons, panel card headings, and checked-control icons. |
-| `border/panel-divider`, `border/disclosure-content`, `border/disclosure-trigger`, `border/chip-active` | 4 | Dividers and category borders inside a panel. Disclosure content uses `pacific-deep-200` light / `pacific-deep-700` dark; closed disclosure triggers keep the light divider from Figma `40000003-11716` but are transparent in dark mode per `40000003-11739`. Active chips use the constant orange active-chip border. |
-| `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-700`, an alias of `bg/surface/highlight`. |
-| `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
-| `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
-| `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
-| `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is the AA-safe sunset-horizon brand action color (400p light / 500 dark) and is what `bg-brand-primary` now routes through. |
-| `bg/emblem-blue`, `bg/emblem-blue-deep`, `bg/emblem-green`, `bg/emblem-orange`, `bg/emblem-gray` | 5 | Categorical emblem fills (icon shells, chips) — solid identity colors named by hue so any feature can reuse them. Community Impact maps featured→blue, screening→blue-deep, saves→green, academic→orange, curated→gray. |
-| `bg/dialog-close`, `bg/timeline-dot` | 2 | Reusable dialog/list decorations: filled circular close-button surface (any modal), and the node marker on a vertical timeline rail. |
-| `bg/danger`, `bg/danger-strong`, `bg/danger-strong-hover`, `bg/success`, `bg/success-strong`, `bg/warning` | 6 | Semantic feedback. Strong danger tokens cover active destructive/toggled-danger surfaces; `success-strong` pairs with `success` for striped progress fills. |
-| `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled`, `text/avatar-fallback` | 8 | Themed content text plus avatar initials fallback text. |
-| `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted`, `text/profile-section-icon`, `text/on-emblem-green`, `text/on-dialog-close` | 7 | Text on inverse/action/chrome/emblem/close surfaces. `profile-section-icon` is the constant Figma-specified foreground for profile section emblems; `on-emblem-green` is the icon foreground on `bg/emblem-green`; `on-dialog-close` is the icon on `bg/dialog-close`. |
-| `text/link`, `text/link-hover`, `text/accent`, `text/dialog-accent`, `text/danger`, `text/success`, `text/warning` | 7 | Inline-link and semantic text. `dialog-accent` is the decorative hero glyph in a dialog header (e.g. the Add Impact heart). Link tokens use darker sunset-horizon steps in light theme for AA contrast on white and raised tinted surfaces. |
-| `border/default`, `border/subtle`, `border/divider`, `border/scrollbar`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 9 | Card borders, section dividers, scrollbar thumbs, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
-| `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
+| Role (Figma) | Utility | Light | Dark |
+|---|---|---|---|
+| `bg/chrome/default` | `bg-bg-chrome` | `pacific-deep-800` | `pacific-deep-800` |
+| `bg/chrome/hover` | `bg-bg-chrome-hover` | `pacific-deep-700` | `pacific-deep-700` |
+| `bg/control/checked` | `bg-bg-control-checked` | `pacific-deep-700` | `sunset-horizon-400p` |
+| `bg/control/default` | `bg-bg-control` | `neutral-300` | `pacific-deep-700` |
+| `bg/control/thumb` | `bg-bg-control-thumb` | `neutral-100` | `neutral-100` |
+| `bg/control/track-off` | `bg-bg-control-track-off` | `pacific-deep-900` | `pacific-deep-800` |
+| `bg/control/track-on` | `bg-bg-control-track-on` | `coral-reef-600` | `coral-reef-700` |
+| `bg/danger/default` | `bg-bg-danger` | `red-500` | `red-500` |
+| `bg/danger/hover` | `bg-bg-danger-hover` | `red-900` | `red-900` |
+| `bg/danger/strong` | `bg-bg-danger-strong` | `red-800` | `red-800` |
+| `bg/danger/subtle` | `bg-bg-danger-subtle` | `red-100` | `red-950` |
+| `bg/emblem/blue` | `bg-bg-emblem-blue` | `pacific-deep-800` | `pacific-deep-800` |
+| `bg/emblem/blue-deep` | `bg-bg-emblem-blue-deep` | `pacific-deep-900` | `pacific-deep-950` |
+| `bg/emblem/gray` | `bg-bg-emblem-gray` | `neutral-800` | `neutral-900` |
+| `bg/emblem/green` | `bg-bg-emblem-green` | `coral-reef-800` | `coral-reef-900` |
+| `bg/emblem/orange` | `bg-bg-emblem-orange` | `sunset-horizon-700` | `sunset-horizon-800` |
+| `bg/info/default` | `bg-bg-info` | `strait-blue-500` | `strait-blue-500` |
+| `bg/info/muted` | `bg-bg-info-muted` | `strait-blue-400` | `strait-blue-400` |
+| `bg/info/strong` | `bg-bg-info-strong` | `strait-blue-800` | `strait-blue-800` |
+| `bg/label` | `bg-bg-label` | `strait-blue-50` | `strait-blue-50` |
+| `bg/marker` | `bg-bg-marker` | `strait-blue-200` | `strait-blue-200` |
+| `bg/overlay` | `bg-bg-overlay` | `pacific-deep-900` | `pacific-deep-900` |
+| `bg/page` | `bg-bg-page` | `pacific-deep-50` | `pacific-deep-950` |
+| `bg/primary/default` | `bg-bg-primary` | `strait-blue-600p` | `strait-blue-500` |
+| `bg/primary/hover` | `bg-bg-primary-hover` | `strait-blue-800` | `strait-blue-700` |
+| `bg/primary/inverse` | `bg-bg-primary-inverse` | `strait-blue-900` | `strait-blue-600p` |
+| `bg/progress` | `bg-bg-progress` | `coral-reef-400p` | `coral-reef-400p` |
+| `bg/scrollbar` | `bg-bg-scrollbar` | `strait-blue-200` | `strait-blue-200` |
+| `bg/secondary/default` | `bg-bg-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
+| `bg/secondary/hover` | `bg-bg-secondary-hover` | `sunset-horizon-500` | `sunset-horizon-400p` |
+| `bg/secondary/strong` | `bg-bg-secondary-strong` | `sunset-horizon-800` | `sunset-horizon-800` |
+| `bg/selected` | `bg-bg-selected` | `strait-blue-200` | `strait-blue-200` |
+| `bg/skeleton/default` | `bg-bg-skeleton` | `pacific-deep-100` | `pacific-deep-700` |
+| `bg/skeleton/strong` | `bg-bg-skeleton-strong` | `pacific-deep-200` | `pacific-deep-500` |
+| `bg/success/default` | `bg-bg-success` | `green-500` | `green-500` |
+| `bg/success/strong` | `bg-bg-success-strong` | `green-800` | `green-800` |
+| `bg/success/subtle` | `bg-bg-success-subtle` | `green-100` | `green-950` |
+| `bg/surface/default` | `bg-bg-surface` | `neutral-50` | `pacific-deep-900` |
+| `bg/surface/highlight` | `bg-bg-surface-highlight` | `pacific-deep-100` | `pacific-deep-700` |
+| `bg/surface/hover` | `bg-bg-surface-hover` | `pacific-deep-50` | `pacific-deep-700` |
+| `bg/surface/inverse` | `bg-bg-surface-inverse` | `pacific-deep-900` | `white` |
+| `bg/surface/muted` | `bg-bg-surface-muted` | `neutral-200` | `pacific-deep-800` |
+| `bg/surface/raised` | `bg-bg-surface-raised` | `white` | `pacific-deep-800` |
+| `bg/tag` | `bg-bg-tag` | `strait-blue-100` | `pacific-deep-700` |
+| `bg/warning/default` | `bg-bg-warning` | `amber-500` | `amber-500` |
+| `bg/warning/strong` | `bg-bg-warning-strong` | `amber-800` | `amber-800` |
+| `bg/warning/subtle` | `bg-bg-warning-subtle` | `amber-100` | `amber-950` |
+| `border/accent` | `border-border-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` |
+| `border/active` | `border-border-active` | `coral-reef-400p` | `sunset-horizon-400p` |
+| `border/chrome` | `border-border-chrome` | `pacific-deep-700` | `pacific-deep-700` |
+| `border/danger` | `border-border-danger` | `red-500` | `red-500` |
+| `border/default` | `border-border` | `pacific-deep-200` | `pacific-deep-700` |
+| `border/disclosure` | `border-border-disclosure` | `pacific-deep-300` | `transparent` |
+| `border/info` | `border-border-info` | `strait-blue-500` | `strait-blue-500` |
+| `border/strong` | `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` |
+| `border/subtle` | `border-border-subtle` | `neutral-200` | `pacific-deep-800` |
+| `border/success` | `border-border-success` | `green-500` | `green-500` |
+| `border/warning` | `border-border-warning` | `amber-500` | `amber-500` |
+| `ring/focus` | `ring-ring-focus` | `sunset-horizon-400p` | `sunset-horizon-400p` |
+| `text/accent` | `text-text-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` |
+| `text/danger` | `text-text-danger` | `red-700p` | `red-400` |
+| `text/default` | `text-text` | `pacific-deep-700` | `strait-blue-50` |
+| `text/disabled` | `text-text-disabled` | `pacific-deep-400` | `pacific-deep-400` |
+| `text/info/default` | `text-text-info` | `strait-blue-700` | `strait-blue-200` |
+| `text/info/muted` | `text-text-info-muted` | `strait-blue-400` | `strait-blue-400` |
+| `text/inverse` | `text-text-inverse` | `white` | `pacific-deep-900` |
+| `text/link/default` | `text-text-link` | `sunset-horizon-700` | `sunset-horizon-200` |
+| `text/link/hover` | `text-text-link-hover` | `sunset-horizon-800` | `sunset-horizon-100` |
+| `text/muted` | `text-text-muted` | `pacific-deep-500` | `pacific-deep-300` |
+| `text/on-chrome/default` | `text-text-on-chrome` | `strait-blue-50` | `strait-blue-50` |
+| `text/on-chrome/muted` | `text-text-on-chrome-muted` | `pacific-deep-300` | `pacific-deep-300` |
+| `text/on-control-checked` | `text-text-on-control-checked` | `pacific-deep-100` | `pacific-deep-900` |
+| `text/on-emblem/default` | `text-text-on-emblem` | `pacific-deep-200` | `pacific-deep-200` |
+| `text/on-emblem/green` | `text-text-on-emblem-green` | `coral-reef-600` | `coral-reef-600` |
+| `text/on-info` | `text-text-on-info` | `pacific-deep-900` | `pacific-deep-900` |
+| `text/on-label` | `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` |
+| `text/on-primary/default` | `text-text-on-primary` | `white` | `white` |
+| `text/on-primary/inverse` | `text-text-on-primary-inverse` | `strait-blue-100` | `strait-blue-50` |
+| `text/strong` | `text-text-strong` | `pacific-deep-900` | `white` |
+| `text/subtle` | `text-text-subtle` | `strait-blue-700` | `strait-blue-100` |
+| `text/success` | `text-text-success` | `green-800` | `green-500` |
+| `text/warning` | `text-text-warning` | `amber-800` | `amber-500` |
 
-For the per-token light/dark lookup table, see the Storybook `Introduction > Colors` page (`frontend/src/storybook/Colors.mdx`).
+The table lists the values in `tokens.json`. To change a color, edit `tokens.json`, not this table.
 
 ## How modern semantic tokens are wired
 
-The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has three groups:
+The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has two groups:
 
 - `semantic`: the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`.
-- `component`: code-only tokens for one component family (`emblem.green.bg` is `--emblem-green-bg`).
-- `legacy`: older names kept as aliases of a semantic or component token until their callers move. Phase 5 of #1172 deletes them.
+- `legacy`: older names kept as aliases of a semantic role until their callers move. Phase 5 of #1172 deletes them.
 
 `$value` is the light mode. `$extensions["org.cinemata.modes"].dark` holds a different dark value. `{palette.<step>}` names a `--cinemata-<step>` primitive.
 
@@ -276,7 +335,7 @@ To change a color, edit `tokens.json` and run `uv run python scripts/generate_co
 
 The generated region has three coordinated blocks:
 
-1. **`body { ... }`** declares the light-mode intermediate vars (`--bg-page`, `--text-strong`, `--border-default`, `--ring-focus`, etc.) and points them at the appropriate `--cinemata-*` palette steps.
+1. **`body { ... }`** declares the light-mode intermediate vars (`--bg-page`, `--text-strong`, `--border`, `--ring-focus`, etc.) and points them at the appropriate `--cinemata-*` palette steps.
 2. **`body.dark_theme { ... }`** overrides only the tokens whose value differs in dark mode. Tokens that are theme-agnostic (e.g. `--bg-danger`, `--ring-focus`) appear only in the `body` block.
 3. **`@theme inline { --color-bg-page: var(--bg-page); ... }`** exposes the intermediate vars as Tailwind theme tokens so utilities are generated. `inline` is required: it makes Tailwind emit `.bg-bg-page { background-color: var(--bg-page); }` so resolution happens at the *using* element (always a body descendant), where the cascade chain actually works.
 
@@ -290,7 +349,7 @@ Slash-prefixed namespaces become double-prefix Tailwind utilities. The slash exi
 |---|---|
 | `--color-bg-page` | `bg-bg-page` |
 | `--color-text-strong` | `text-text-strong` |
-| `--color-border-default` | `border-border-default` |
+| `--color-border` | `border-border` |
 | `--color-ring-focus` | `ring-ring-focus` |
 
 The double prefix is a Tailwind v4 side-effect: any `--color-X` generates `bg-X`, `text-X`, `border-X`, `ring-X`, `outline-X`, `fill-X`. The slash-prefixed source name is for human readability; the runtime utility name is whatever Tailwind generates.
@@ -309,7 +368,7 @@ Two problems with that pattern:
 1. **Every component re-asserts the theme contract.** Changing the page background means editing every file that paints one.
 2. **Components encode shade decisions.** The fact that "primary text" is `pacific-deep-700` in light and `strait-blue-50` in dark is a design system decision, not a component concern.
 
-Semantic tokens flip this: components ask for *roles* (`bg-bg-page`, `text-text-primary`), and the role-to-shade mapping lives in one place. The same JSX renders correctly in both themes because the `--bg-page` and `--text-primary` intermediate vars resolve to different palette values under `body.dark_theme`.
+Semantic tokens flip this: components ask for *roles* (`bg-bg-page`, `text-text`), and the role-to-shade mapping lives in one place. The same JSX renders correctly in both themes because the `--bg-page` and `--text` intermediate vars resolve to different palette values under `body.dark_theme`.
 
 ### Before (raw palette + dark variants)
 
@@ -328,8 +387,8 @@ Semantic tokens flip this: components ask for *roles* (`bg-bg-page`, `text-text-
 ### After (semantic tokens)
 
 ```jsx
-<div className="bg-bg-surface border border-border-default">
-  <h2 className="text-text-primary">Title</h2>
+<div className="bg-bg-surface border border-border">
+  <h2 className="text-text">Title</h2>
   <p className="text-text-muted">Caption</p>
   <a className="text-text-link hover:text-text-link-hover">Read more</a>
 </div>
@@ -346,8 +405,8 @@ The component contains no shade decisions, no `dark:` variants, and no palette r
 </button>
 
 <input
-  className="bg-bg-surface text-text-primary placeholder:text-text-muted
-             border border-border-strong focus:border-border-input
+  className="bg-bg-surface text-text placeholder:text-text-muted
+             border border-border-strong focus:border-border-active
              focus-visible:ring-2 focus-visible:ring-ring-focus"
 />
 ```
@@ -380,7 +439,7 @@ Two literals remain in the tailwind file (the rest are `var()` references):
 
 Following the semantic token migration, modern features now consume colors through **three layers**, in this order of preference:
 
-1. **Modern semantic tokens** (`bg-bg-page`, `text-text-strong`, `border-border-default`, `ring-ring-focus`, etc.) — the default and preferred vocabulary. Most components in `features/` were migrated to this layer. Theme-awareness is handled at the token level — no `dark:` variants needed in component code.
+1. **Modern semantic tokens** (`bg-bg-page`, `text-text-strong`, `border-border`, `ring-ring-focus`, etc.) — the default and preferred vocabulary. Most components in `features/` were migrated to this layer. Theme-awareness is handled at the token level — no `dark:` variants needed in component code.
 2. **Raw `--cinemata-*` palette utilities** (`bg-cinemata-pacific-deep-700`, etc.) — used only for one-off decorations that don't fit any semantic token. Remaining references include the avatar inverted-neutral inner bg, carousel indicator dot pair, HeroSection retry button, and decoration accents.
 3. **Legacy semantic aliases** (`bg-brand-primary`, `text-content-body`, `bg-surface-popup`, etc.) — preserved for components that bridge into legacy SCSS contexts. The notable bridge is `bg-brand-primary` itself: it routes through `bg/secondary` so the modern utility renders sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while the legacy `--btn-primary-bg-color` SCSS variable can independently stay blue (light) / orange (dark) for legacy server-rendered buttons like `.primaryAction` on the login page.
 
@@ -408,9 +467,9 @@ Key characteristics after migration:
 ### creator-analytics
 
 The shared `LineChart` component owns chart styling and resolves axis label size
-from the shared body typography. Labels use `fill-text-primary` and grid lines
-use `stroke-border-default`.
-Series inherit `currentColor`: `text-text-secondary` for media views,
+from the shared body typography. Labels use `fill-text` and grid lines
+use `stroke-border`.
+Series inherit `currentColor`: `text-text-subtle` for media views,
 `text-text-link` for playback starts, watch time and segment coverage, and
 `text-text-success` for reached-end events. Use foreground tokens for chart
 strokes so both themes retain readable contrast.
@@ -431,7 +490,7 @@ the primary Button in both themes. Do not introduce a second alias for it.
 | Carousel.jsx | `dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400` | Dark nav text |
 | HeroMediaCard.jsx | `focus-visible:outline-cinemata-strait-blue-700 dark:focus-visible:outline-cinemata-strait-blue-100` | Link focus outline |
 | HeroMediaCard.jsx | `text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50` | Card heading |
-| HeroMediaCard.jsx | `text-text-description` | Description |
+| HeroMediaCard.jsx | `text-text-muted` | Description |
 | HeroMediaCard.jsx | `text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200` | Author/link text |
 | HeroMediaCard.jsx | `text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300` | View count |
 | HeroMediaCard.jsx | `bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700` | Loading skeleton |
@@ -478,9 +537,9 @@ the primary Button in both themes. Do not introduce a second alias for it.
 | File | Color class / token | Element |
 |------|---------------------|---------|
 | NotificationDialog.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-link` | Popup chrome and actions |
-| NotificationItem.jsx | `bg-bg-surface`, `bg-bg-notification-unread`, `text-text-primary`, `text-text-muted` | Row read/unread state and copy |
+| NotificationItem.jsx | `bg-bg-surface`, `bg-bg-surface-highlight`, `text-text`, `text-text-muted` | Row read/unread state and copy |
 | NotificationPage.jsx | `bg-bg-surface`, `bg-bg-surface-muted`, `text-text-link` | Tabs and mark-all action |
-| NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-secondary`, `bg-border-subtle` | Preference panel text and section dividers |
+| NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-subtle`, `bg-border-subtle` | Preference panel text and section dividers |
 | notificationBadge.js | `bg-bg-badge-*` | Fixed action-type avatar badge emblems |
 
 ### comments
@@ -488,9 +547,9 @@ the primary Button in both themes. Do not introduce a second alias for it.
 | File | Color class / token | Element |
 |------|---------------------|---------|
 | CommentsSection.jsx | `bg-bg-page` | Expanded comments overlay backdrop, matching the page background in both themes |
-| CommentsPanel.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-muted`, `border-border-default` | Comments panel, sticky header, tabs, and dividers |
+| CommentsPanel.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-muted`, `border-border` | Comments panel, sticky header, tabs, and dividers |
 | CommentForm.jsx | `bg-bg-surface`, `bg-bg-control`, `bg-bg-primary`, `bg-bg-secondary`, `text-text-strong`, `text-text-muted`, `text-text-on-primary` | Comment card, inactive/active timestamp controls, input text, and submit CTA |
-| CommentItem.jsx | `text-text-primary`, `text-text-muted`, `bg-bg-surface-raised`, `bg-bg-surface-muted` | Comment body, metadata, and moderator menu |
+| CommentItem.jsx | `text-text`, `text-text-muted`, `bg-bg-surface-raised`, `bg-bg-surface-muted` | Comment body, metadata, and moderator menu |
 
 ### shared (component library)
 
@@ -523,8 +582,8 @@ the primary Button in both themes. Do not introduce a second alias for it.
 | TextField.jsx | `text-cinemata-sunset-horizon-400p` | Helper text |
 | TextField.jsx | `transparent` prop → shell `bg-transparent` (no surface fill) | Transparent variant: field inherits the surface behind it (e.g. a gradient panel) instead of painting its own `bg-surface` |
 | Switch.jsx | `text-cinemata-neutral-700 dark:text-cinemata-neutral-500` | Switch label |
-| Switch.jsx | `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
-| Switch.jsx | `bg-switch-thumb` (`neutral-100`) | Thumb |
+| Switch.jsx | `bg-bg-control-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-bg-control-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
+| Switch.jsx | `bg-bg-control-thumb` (`neutral-100`) | Thumb |
 
 ### user-settings
 
@@ -552,8 +611,8 @@ The redesigned authentication pages (`templates/account/`, `templates/mfa/`) ren
 | Primary & secondary buttons (`.auth-button-primary` / `.auth-button-secondary`) | `bg-primary` / `bg-primary-hover` | both were already the same strait-blue |
 | Button label text | `text-on-primary` | |
 | Checkbox checked fill / accent | `bg-secondary` | matches the shared `CheckboxButton` |
-| Underline field border | `border-default` | |
-| Password-requirements panel bg / text | `bg-surface-muted` / `text-secondary` | |
+| Underline field border | `border` | |
+| Password-requirements panel bg / text | `bg-surface-muted` / `text-subtle` | |
 | Success / error status icon badge | `bg-success-subtle` / `bg-danger-subtle` (new) + `text-success` / `text-danger` | |
 
 Two **new purpose tokens** were added to the global layer for soft feedback tints (reusable, not auth-scoped):
@@ -567,7 +626,7 @@ Only one genuinely auth-specific **decorative** token remains on `.auth-figma-pa
 
 | Token | Light | Dark | Role |
 |-------|-------|------|------|
-| `--auth-ring-color` | `pacific-deep-200` | `pacific-deep-500` | Decorative concentric ring outlines. Light coincides with `border-default`, but no existing token has the dark `pacific-deep-500` (lighter than `border-default`'s `pacific-deep-700`) needed to keep the faint rings visible on the dark panel |
+| `--auth-ring-color` | `pacific-deep-200` | `pacific-deep-500` | Decorative concentric ring outlines. Light coincides with `border`, but no existing token has the dark `pacific-deep-500` (lighter than `border`'s `pacific-deep-700`) needed to keep the faint rings visible on the dark panel |
 
 The full-screen flash/message overlay defines a parallel feature set on `.auth-message-stack` (and its dark override): a scrim (`--auth-message-overlay`), banner gradient (`--auth-message-panel-from/-to`), `color-mix`-based ring/shadow, and success / error / info icon-badge pairs. These are genuine one-offs with no existing-token equivalent; see `tailwind.css` for the authoritative values.
 
@@ -577,15 +636,15 @@ The full-screen flash/message overlay defines a parallel feature set on `.auth-m
 
 ### profile — My Notes (features/profile)
 
-The profile **My Notes** tab renders each film-note card with a film thumbnail (with a **film duration pill** at the bottom-right) and the latest note timestamp beside a standalone vertical divider (per `jeremy-tasks/design/notes-in-profile/notes-in-profile.svg`). The pill is a light chip and the divider uses the exported `#1A3F61` line color, both constant across themes, so purpose-based tokens are defined in the global layer (light `body` + dark `body.dark_theme` + `@theme inline`):
+The profile **My Notes** tab renders each film-note card with a film thumbnail (with a **film duration pill** at the bottom-right) and the latest note timestamp beside a standalone vertical divider (per `jeremy-tasks/design/notes-in-profile/notes-in-profile.svg`). The pill is a light chip in both themes, so it has its own roles, `bg/label` and `text/on-label`. The divider uses the shared `border/strong` role:
 
 | Token | Light | Dark | Role |
 |-------|-------|------|------|
-| `bg-bg-note-thumbnail-duration` | `strait-blue-50` | `strait-blue-50` | Film duration pill background on the note thumbnail (theme-invariant light chip) |
-| `text-text-note-thumbnail-duration` | `pacific-deep-900` | `pacific-deep-900` | Film duration text on the pill |
-| `border-border-note-divider` | `pacific-deep-600p` | `pacific-deep-600p` | Standalone vertical divider in profile note entries |
+| `bg-bg-label` | `strait-blue-50` | `strait-blue-50` | Film duration pill background on the note thumbnail (theme-invariant light chip) |
+| `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` | Film duration text on the pill |
+| `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` | Standalone vertical divider in profile note entries |
 
-Named by purpose (the duration pill, the note divider), not by hue. `border-divider` was close but is intentionally theme-adaptive, whereas the exported note divider is constant; `text-on-chrome` is the closest to the pill's light fill but is a text color. The note thumbnail's empty/loading fill reuses the existing theme-aware `bg-bg-skeleton` (consistent with `FilmRow` / `ImpactFilmRow`).
+The note thumbnail's empty/loading fill reuses the theme-aware `bg-bg-skeleton` (consistent with `FilmRow` / `ImpactFilmRow`).
 
 ---
 

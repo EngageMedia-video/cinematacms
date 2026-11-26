@@ -1,103 +1,21 @@
-const SEMANTIC_COLOR_TOKENS = {
-	bg: new Set([
-		'page',
-		'surface',
-		'surface-raised',
-		'surface-muted',
-		'surface-hover',
-		'surface-inverse',
-		'overlay-dark',
-		'chrome',
-		'chrome-hover',
-		'skeleton',
-		'control',
-		'primary',
-		'primary-hover',
-		'secondary',
-		'secondary-hover',
-		'danger',
-		'danger-strong',
-		'danger-strong-hover',
-		'success',
-		'warning',
-		'panel-primary',
-		'panel-surface',
-		'panel-selected',
-		'section-header',
-		'disclosure-trigger',
-		'disclosure-content',
-		'action-inverse',
-		'control-unchecked',
-		'control-checked',
-		'chip-active',
-		'chip',
-		'tab-trigger-selected',
-	]),
-	text: new Set([
-		'strong',
-		'primary',
-		'secondary',
-		'muted',
-		'description',
-		'subtle',
-		'disabled',
-		'inverse',
-		'on-primary',
-		'on-chrome',
-		'on-chrome-muted',
-		'link',
-		'link-hover',
-		'accent',
-		'danger',
-		'success',
-		'warning',
-		'panel-muted',
-		'option',
-		'section-header',
-		'disclosure-trigger',
-		'action-inverse',
-		'panel-heading',
-		'control-checked',
-		'tab-trigger',
-	]),
-	border: new Set([
-		'default',
-		'subtle',
-		'divider',
-		'strong',
-		'strong-constant',
-		'chrome',
-		'input',
-		'danger',
-		'panel-divider',
-		'disclosure-content',
-		'disclosure-trigger',
-		'chip-active',
-	]),
-	ring: new Set(['focus']),
-};
+const SEMANTIC_FAMILIES = ['bg', 'text', 'border', 'ring'];
+const DEFAULT_VARIANT = /-default$/;
 
-function resolveSemanticColor(color) {
-	for (const [family, tokens] of Object.entries(SEMANTIC_COLOR_TOKENS)) {
-		const slashPrefix = `${family}/`;
-		const utilityPrefix = `${family}-${family}-`;
-		const shorthandPrefix = `${family}-`;
-		let token;
+function startsWithFamily(name) {
+	return SEMANTIC_FAMILIES.some((family) => name === family || name.startsWith(`${family}-`));
+}
 
-		if (color.startsWith(slashPrefix)) {
-			token = color.slice(slashPrefix.length);
-		} else if (color.startsWith(utilityPrefix)) {
-			token = color.slice(utilityPrefix.length);
-		} else if (color.startsWith(shorthandPrefix)) {
-			token = color.slice(shorthandPrefix.length);
-		}
-
-		if (token && tokens.has(token)) {
-			return `var(--${family}-${token})`;
-		}
+// Accepts the Figma path (`bg/surface/raised`), the Tailwind utility
+// (`bg-bg-surface-raised`) and the variable name (`bg-surface-raised`), and
+// names the variable the way scripts/generate_color_tokens.py does.
+function semanticVariableName(color) {
+	const name = color.replaceAll('/', '-').replace(DEFAULT_VARIANT, '');
+	if (!startsWithFamily(name)) {
+		return null;
 	}
 
-	return null;
+	const withoutUtilityPrefix = name.slice(name.indexOf('-') + 1);
+	return startsWithFamily(withoutUtilityPrefix) && !color.includes('/') ? withoutUtilityPrefix : name;
 }
 
 export function resolveColor(color) {
@@ -117,9 +35,9 @@ export function resolveColor(color) {
 		return `var(${color})`;
 	}
 
-	const semanticColor = resolveSemanticColor(color);
-	if (semanticColor) {
-		return semanticColor;
+	const semanticName = semanticVariableName(color);
+	if (semanticName) {
+		return `var(--${semanticName})`;
 	}
 
 	if (color.startsWith('cinemata-')) {

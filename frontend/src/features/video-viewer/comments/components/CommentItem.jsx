@@ -105,7 +105,7 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 					size="large"
 				/>
 				{showTrail ? (
-					<span aria-hidden="true" className="w-px flex-1 min-h-[16px] bg-border-default opacity-60" />
+					<span aria-hidden="true" className="w-px flex-1 min-h-[16px] bg-border opacity-60" />
 				) : null}
 			</div>
 
@@ -129,7 +129,7 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 						) : null}
 					</div>
 
-					<p className="m-0 text-base leading-6 text-text-primary">
+					<p className="m-0 text-base leading-6 text-text">
 						<CommentText text={comment.text} />
 					</p>
 
@@ -166,7 +166,7 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 						{menuOpen ? (
 							<div
 								role="menu"
-								className="absolute right-0 top-[26px] z-10 min-w-[140px] rounded-md border border-border-default bg-bg-surface-raised py-1 shadow-lg"
+								className="absolute right-0 top-[26px] z-10 min-w-[140px] rounded-md border border-border bg-bg-surface-raised py-1 shadow-lg"
 							>
 								<button
 									type="button"

@@ -84,7 +84,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 		<li className="grid grid-cols-[34px_1fr] gap-4">
 			<div className="flex flex-col items-center">
 				<span className="w-full text-left text-sm leading-5 text-bg-secondary">{note.timestamp}</span>
-				<span aria-hidden="true" className="mt-1 h-full w-px bg-border-divider" />
+				<span aria-hidden="true" className="mt-1 h-full w-px bg-border" />
 			</div>
 
 			<div className="flex min-w-0 gap-3 items-start">
@@ -103,7 +103,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 								id={`private-journal-note-edit-${note.id}`}
 								value={draft}
 								onChange={(event) => setDraft(event.target.value)}
-								className="mb-0 block min-h-[72px] w-full resize-none rounded-sm border border-border-divider bg-bg-page p-2 text-base leading-6 text-text-primary focus:outline-none focus:ring-2 focus:ring-ring-focus"
+								className="mb-0 block min-h-[72px] w-full resize-none rounded-sm border border-border bg-bg-page p-2 text-base leading-6 text-text focus:outline-none focus:ring-2 focus:ring-ring-focus"
 							/>
 
 							<div className="mt-2 flex gap-2">
@@ -152,7 +152,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 					{menuOpen ? (
 						<div
 							role="menu"
-							className="absolute right-0 top-[26px] z-10 min-w-[140px] rounded-md border border-border-default bg-bg-surface-raised py-1 shadow-lg"
+							className="absolute right-0 top-[26px] z-10 min-w-[140px] rounded-md border border-border bg-bg-surface-raised py-1 shadow-lg"
 						>
 							<button
 								type="button"

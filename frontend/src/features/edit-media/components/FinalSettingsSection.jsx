@@ -25,7 +25,7 @@ export function FinalSettingsSection({ config, editState }) {
 					Allow Download
 				</CheckboxButton>
 
-				<div className="border-b border-b-border-divider" />
+				<div className="border-b border-b-border" />
 
 				<fieldset className="m-0 border-0 p-0">
 					<legend className="body-body-16-regular mb-2 text-text-muted">Status</legend>
@@ -66,7 +66,7 @@ export function FinalSettingsSection({ config, editState }) {
 					/>
 				) : null}
 
-				<div className="border-b border-b-border-divider" />
+				<div className="border-b border-b-border" />
 
 				{editState.mediaStatus !== 'private' ? (
 					<VisibilityExpirationField
@@ -82,7 +82,7 @@ export function FinalSettingsSection({ config, editState }) {
 
 				{config.permissions?.canUseEncryption ? (
 					<>
-						<div className="border-b border-b-border-divider" />
+						<div className="border-b border-b-border" />
 						<div>
 							<span className="body-body-16-regular mb-2 block text-text-muted">Stream Protection</span>
 							<div className="flex flex-row items-start gap-2">

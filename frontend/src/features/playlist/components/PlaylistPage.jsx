@@ -33,7 +33,7 @@ function LoadingState() {
 
 function ErrorState() {
 	return (
-		<div className="rounded-ds-8 border border-border-default bg-bg-surface p-6 text-text-strong">
+		<div className="rounded-ds-8 border border-border bg-bg-surface p-6 text-text-strong">
 			<h1 className="m-0 heading-h6-20-medium">Playlist unavailable</h1>
 			<p className="mt-2 mb-0 text-text-muted body-body-14-regular">
 				This playlist could not be loaded. Refresh the page or try again later.
@@ -72,7 +72,7 @@ function CoverCard({ mobileActions = null, onShare, playlist, playlistToken }) {
 
 					<a
 						href={playAllUrl}
-						className="absolute inset-x-0 bottom-0 inline-flex h-[31%] max-h-20 min-h-12 items-center justify-center gap-2 bg-bg-overlay-dark/80 text-text-on-chrome no-underline hover:bg-bg-overlay-dark/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-medium"
+						className="absolute inset-x-0 bottom-0 inline-flex h-[31%] max-h-20 min-h-12 items-center justify-center gap-2 bg-bg-overlay/80 text-text-on-chrome no-underline hover:bg-bg-overlay/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-medium"
 					>
 						<Icon name="playSolid" size="sm" decorative />
 						PLAY ALL
@@ -107,7 +107,7 @@ function AboutCuratorCard({ playlist }) {
 		<Card className="flex flex-col rounded-ds-8 p-5 sm:p-[22px]">
 			<h2 className="order-2 m-0 mt-4 text-text-strong heading-h6-20-medium lg:order-1 lg:mt-0">Bionote</h2>
 			<div className="order-1 flex items-start gap-4 lg:order-2 lg:mt-5">
-				<div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-bg-avatar-fallback">
+				<div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-bg-skeleton-strong">
 					{playlist.user_thumbnail_url ? (
 						<img
 							src={playlist.user_thumbnail_url}
@@ -119,7 +119,7 @@ function AboutCuratorCard({ playlist }) {
 							className="h-full w-full object-cover"
 						/>
 					) : (
-						<span className="flex h-full w-full items-center justify-center text-text-avatar-fallback body-body-14-bold">
+						<span className="flex h-full w-full items-center justify-center text-text body-body-14-bold">
 							{(playlist.user || '?').slice(0, 1).toUpperCase()}
 						</span>
 					)}
@@ -142,7 +142,7 @@ function AboutCuratorCard({ playlist }) {
 					id="playlist-curator-bionote"
 					text={bionote}
 					charBudget={260}
-					colorClassName="text-text-description"
+					colorClassName="text-text-muted"
 					className="order-3 mt-4"
 				/>
 			) : (
@@ -175,7 +175,7 @@ function CuratorNoteCard({ isOwner, playlist }) {
 					id="playlist-curator-note"
 					text={playlist.description}
 					charBudget={500}
-					colorClassName="text-text-description"
+					colorClassName="text-text-muted"
 					className="mt-3"
 					linkify
 				/>
@@ -255,7 +255,7 @@ function ShareStatusToast({ message }) {
 	return createPortal(
 		<div
 			role="status"
-			className="fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-ds-8 border border-border-strong-constant bg-bg-surface px-4 py-3 text-text-strong shadow-2xl body-body-14-medium"
+			className="fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-ds-8 border border-border-strong bg-bg-surface px-4 py-3 text-text-strong shadow-2xl body-body-14-medium"
 		>
 			{message}
 		</div>,
@@ -307,7 +307,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 	}
 
 	return (
-		<div className="min-h-screen bg-bg-page px-3 py-3 text-text-primary sm:px-6 lg:px-[26px] lg:py-[36px]">
+		<div className="min-h-screen bg-bg-page px-3 py-3 text-text sm:px-6 lg:px-[26px] lg:py-[36px]">
 			<div className="mx-auto flex w-full max-w-[1628px] flex-col gap-6">
 				<header className="hidden flex-col gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between">
 					<div className="min-w-0">

@@ -9,7 +9,7 @@ const DOWNLOAD_OPTIONS = ['1080p - H264 (84 MB)', '720p - H264 (42 MB)', 'Origin
 function PopupMenu() {
 	return (
 		<PopupMain>
-			<nav aria-label="Download options" className="border border-border-strong-constant bg-bg-surface">
+			<nav aria-label="Download options" className="border border-border-strong bg-bg-surface">
 				<ul role="menu" className="m-0 list-none p-size-4">
 					{DOWNLOAD_OPTIONS.map((option) => (
 						<li key={option} role="none">

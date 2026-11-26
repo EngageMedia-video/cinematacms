@@ -25,7 +25,7 @@ export function SubStepNav({ value, onChange, incompleteSubSteps }) {
 	return (
 		<nav
 			aria-label="Detail sections"
-			className="flex gap-1 overflow-x-auto border-b border-border-divider [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			className="flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>
 			{items.map((item) => {
 				const active = item.value === value;
@@ -39,7 +39,7 @@ export function SubStepNav({ value, onChange, incompleteSubSteps }) {
 						className={cn(
 							'body-body-14-medium -mb-px shrink-0 cursor-pointer whitespace-nowrap border-0 border-b-2 bg-transparent px-3 py-3 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
 							active
-								? 'border-border-input text-text-strong'
+								? 'border-border-active text-text-strong'
 								: 'border-transparent text-text-muted hover:text-text-strong'
 						)}
 					>
