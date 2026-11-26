@@ -674,7 +674,6 @@ The note thumbnail's empty/loading fill reuses the theme-aware `bg-bg-skeleton` 
 
 ## Intentionally raw (will not migrate)
 
-- **Search dropdown shadow** — `GlobalSearchDropdown.jsx` keeps `shadow-cinemata-black/40`; there is no shadow role yet.
 - **Sidebar navigation legacy bridge** — `NavigationMenuList.jsx` references `var(--sidebar-navigation-item-*-color)` deliberately. This is the documented dual-track bridge.
 
 ## Strengths after migration
