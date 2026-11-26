@@ -611,7 +611,7 @@ export function CreatorAnalyticsPage({ data }) {
 								tabMode="wrap"
 								className="max-w-full"
 								listClassName="rounded-ds-8"
-								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-brand-primary sm:px-4"
+								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-bg-secondary sm:px-4"
 							>
 								{data.ranges.map((range) => (
 									<TabContent
@@ -622,7 +622,9 @@ export function CreatorAnalyticsPage({ data }) {
 												as="span"
 												variant="body-12-bold"
 												className={
-													range === data.days ? 'text-btn-text' : 'text-text-on-chrome'
+													range === data.days
+														? 'text-text-on-secondary'
+														: 'text-text-on-chrome'
 												}
 											>
 												{range} days

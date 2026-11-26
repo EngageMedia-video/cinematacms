@@ -1010,6 +1010,7 @@ body {
 	--bg-info-strong: var(--cinemata-strait-blue-800);
 	--bg-info-muted: var(--cinemata-strait-blue-400);
 	--bg-overlay: var(--cinemata-pacific-deep-900);
+	--bg-overlay-strong: var(--cinemata-pacific-deep-950);
 	--bg-page: var(--cinemata-pacific-deep-50);
 	--bg-primary: var(--cinemata-strait-blue-600p);
 	--bg-primary-hover: var(--cinemata-strait-blue-800);
@@ -1042,6 +1043,12 @@ body {
 	--bg-selected: var(--cinemata-strait-blue-200);
 	--bg-marker: var(--cinemata-strait-blue-200);
 	--bg-scrollbar: var(--cinemata-strait-blue-200);
+	--bg-tertiary: var(--cinemata-strait-blue-900);
+	--bg-tertiary-hover: var(--cinemata-strait-blue-800);
+	--bg-accent-hover: var(--cinemata-sunset-horizon-500);
+	--bg-media: var(--cinemata-black);
+	--bg-nav-selected: var(--cinemata-strait-blue-800);
+	--bg-nav-hover: var(--cinemata-pacific-deep-50);
 	--border-active: var(--cinemata-coral-reef-400p);
 	--border-chrome: var(--cinemata-pacific-deep-700);
 	--border-danger: var(--cinemata-red-500);
@@ -1053,8 +1060,11 @@ body {
 	--border-warning: var(--cinemata-amber-500);
 	--border-accent: var(--cinemata-sunset-horizon-400p);
 	--border-disclosure: var(--cinemata-pacific-deep-300);
+	--border-secondary: var(--cinemata-sunset-horizon-400p);
+	--border-nav: var(--cinemata-neutral-200);
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
+	--text-accent-hover: var(--cinemata-sunset-horizon-500);
 	--text-danger: var(--cinemata-red-700p);
 	--text: var(--cinemata-pacific-deep-700);
 	--text-disabled: var(--cinemata-pacific-deep-400);
@@ -1066,6 +1076,7 @@ body {
 	--text-muted: var(--cinemata-pacific-deep-500);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
+	--text-on-chrome-strong: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-primary-inverse: var(--cinemata-strait-blue-100);
 	--text-strong: var(--cinemata-pacific-deep-900);
@@ -1077,6 +1088,12 @@ body {
 	--text-on-emblem-green: var(--cinemata-coral-reef-600);
 	--text-on-label: var(--cinemata-pacific-deep-900);
 	--text-on-control-checked: var(--cinemata-pacific-deep-100);
+	--text-secondary: var(--cinemata-sunset-horizon-400p);
+	--text-on-secondary: var(--cinemata-neutral-50);
+	--text-on-tertiary: var(--cinemata-strait-blue-100);
+	--text-on-media: var(--cinemata-strait-blue-500);
+	--text-on-nav-selected: var(--cinemata-strait-blue-50);
+	--text-required: var(--cinemata-red-400);
 }
 
 body.dark_theme {
@@ -1106,11 +1123,14 @@ body.dark_theme {
 	--bg-emblem-gray: var(--cinemata-neutral-900);
 	--bg-emblem-green: var(--cinemata-coral-reef-900);
 	--bg-emblem-orange: var(--cinemata-sunset-horizon-800);
+	--bg-nav-hover: var(--cinemata-strait-blue-900);
 	--border-active: var(--cinemata-sunset-horizon-400p);
 	--border: var(--cinemata-pacific-deep-700);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-subtle: var(--cinemata-pacific-deep-800);
 	--border-disclosure: transparent;
+	--border-secondary: var(--cinemata-sunset-horizon-500);
+	--border-nav: var(--cinemata-neutral-800);
 	--text-danger: var(--cinemata-red-400);
 	--text: var(--cinemata-strait-blue-50);
 	--text-info: var(--cinemata-strait-blue-200);
@@ -1124,6 +1144,8 @@ body.dark_theme {
 	--text-success: var(--cinemata-green-500);
 	--text-warning: var(--cinemata-amber-500);
 	--text-on-control-checked: var(--cinemata-pacific-deep-900);
+	--text-secondary: var(--cinemata-sunset-horizon-500);
+	--text-on-media: var(--cinemata-strait-blue-300);
 }
 
 /* stylelint-disable-next-line at-rule-no-unknown */
@@ -1143,6 +1165,7 @@ body.dark_theme {
 	--color-bg-info-strong: var(--bg-info-strong);
 	--color-bg-info-muted: var(--bg-info-muted);
 	--color-bg-overlay: var(--bg-overlay);
+	--color-bg-overlay-strong: var(--bg-overlay-strong);
 	--color-bg-page: var(--bg-page);
 	--color-bg-primary: var(--bg-primary);
 	--color-bg-primary-hover: var(--bg-primary-hover);
@@ -1175,6 +1198,12 @@ body.dark_theme {
 	--color-bg-selected: var(--bg-selected);
 	--color-bg-marker: var(--bg-marker);
 	--color-bg-scrollbar: var(--bg-scrollbar);
+	--color-bg-tertiary: var(--bg-tertiary);
+	--color-bg-tertiary-hover: var(--bg-tertiary-hover);
+	--color-bg-accent-hover: var(--bg-accent-hover);
+	--color-bg-media: var(--bg-media);
+	--color-bg-nav-selected: var(--bg-nav-selected);
+	--color-bg-nav-hover: var(--bg-nav-hover);
 	--color-border-active: var(--border-active);
 	--color-border-chrome: var(--border-chrome);
 	--color-border-danger: var(--border-danger);
@@ -1186,8 +1215,11 @@ body.dark_theme {
 	--color-border-warning: var(--border-warning);
 	--color-border-accent: var(--border-accent);
 	--color-border-disclosure: var(--border-disclosure);
+	--color-border-secondary: var(--border-secondary);
+	--color-border-nav: var(--border-nav);
 	--color-ring-focus: var(--ring-focus);
 	--color-text-accent: var(--text-accent);
+	--color-text-accent-hover: var(--text-accent-hover);
 	--color-text-danger: var(--text-danger);
 	--color-text: var(--text);
 	--color-text-disabled: var(--text-disabled);
@@ -1199,6 +1231,7 @@ body.dark_theme {
 	--color-text-muted: var(--text-muted);
 	--color-text-on-chrome: var(--text-on-chrome);
 	--color-text-on-chrome-muted: var(--text-on-chrome-muted);
+	--color-text-on-chrome-strong: var(--text-on-chrome-strong);
 	--color-text-on-primary: var(--text-on-primary);
 	--color-text-on-primary-inverse: var(--text-on-primary-inverse);
 	--color-text-strong: var(--text-strong);
@@ -1210,13 +1243,14 @@ body.dark_theme {
 	--color-text-on-emblem-green: var(--text-on-emblem-green);
 	--color-text-on-label: var(--text-on-label);
 	--color-text-on-control-checked: var(--text-on-control-checked);
+	--color-text-secondary: var(--text-secondary);
+	--color-text-on-secondary: var(--text-on-secondary);
+	--color-text-on-tertiary: var(--text-on-tertiary);
+	--color-text-on-media: var(--text-on-media);
+	--color-text-on-nav-selected: var(--text-on-nav-selected);
+	--color-text-required: var(--text-required);
 }
 /* END GENERATED color tokens */
-
-/* stylelint-disable-next-line at-rule-no-unknown */
-@theme inline {
-	--color-text-title-required: var(--cinemata-red-400);
-}
 
 /*
  * Topbar cascade-defence block.

@@ -17,8 +17,8 @@ describe('Button', () => {
 		const button = screen.getByRole('button', { name: 'Browse films' });
 
 		expect(button).toHaveAttribute('type', 'button');
-		expect(button.className).toContain('bg-brand-primary');
-		expect(button.className).toContain('text-btn-text');
+		expect(button.className).toContain('bg-bg-secondary');
+		expect(button.className).toContain('text-text-on-secondary');
 	});
 
 	it('renders optional left icon at design-system size', () => {
@@ -42,9 +42,9 @@ describe('Button', () => {
 
 		rerender(<Button variant="tertiary">Donate</Button>);
 		expect(screen.getByRole('button', { name: 'Donate' })).toHaveClass(
-			'border-brand-secondary-border',
-			'bg-brand-secondary',
-			'text-btn-secondary-text'
+			'border-transparent',
+			'bg-bg-tertiary',
+			'text-text-on-tertiary'
 		);
 
 		rerender(<Button variant="primary-outline">Outline</Button>);

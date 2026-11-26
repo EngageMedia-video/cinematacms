@@ -227,7 +227,7 @@ Utilities are imported with `!important` so they win over the legacy SCSS cascad
 | `--color-surface-popup` | Popup/menu surface | `bg-surface-popup` |
 | `--color-bg-cards` | Card background | `bg-bg-cards` |
 | `--color-brand-theme` | Brand theme color | `bg-brand-theme` |
-| `--color-brand-primary` | Modern primary button bg — redirected to `var(--bg-secondary)` (orange) so the new utility and the legacy `--btn-primary-bg-color` SCSS variable are decoupled. The brand utility resolves to sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while legacy SCSS rules (e.g. login form `.primaryAction`) still resolve to the legacy blue. | `bg-brand-primary` |
+| `--color-brand-primary` | Orange CTA bg (modern components use `bg-bg-secondary` instead) — redirected to `var(--bg-secondary)` (orange) so the new utility and the legacy `--btn-primary-bg-color` SCSS variable are decoupled. The brand utility resolves to sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while legacy SCSS rules (e.g. login form `.primaryAction`) still resolve to the legacy blue. | `bg-brand-primary` |
 
 Component-scoped legacy semantic groups also exist (search, comments, playlists, media, profile, upload, sidebar, etc.), each mapping to the corresponding legacy semantic token.
 
@@ -237,6 +237,7 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 
 | Role (Figma) | Utility | Light | Dark |
 |---|---|---|---|
+| `bg/accent/hover` | `bg-bg-accent-hover` | `sunset-horizon-500` | `sunset-horizon-500` |
 | `bg/chrome/default` | `bg-bg-chrome` | `pacific-deep-800` | `pacific-deep-800` |
 | `bg/chrome/hover` | `bg-bg-chrome-hover` | `pacific-deep-700` | `pacific-deep-700` |
 | `bg/control/checked` | `bg-bg-control-checked` | `pacific-deep-700` | `sunset-horizon-400p` |
@@ -248,8 +249,8 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/danger/hover` | `bg-bg-danger-hover` | `red-900` | `red-900` |
 | `bg/danger/strong` | `bg-bg-danger-strong` | `red-800` | `red-800` |
 | `bg/danger/subtle` | `bg-bg-danger-subtle` | `red-100` | `red-950` |
-| `bg/emblem/blue` | `bg-bg-emblem-blue` | `pacific-deep-800` | `pacific-deep-800` |
 | `bg/emblem/blue-deep` | `bg-bg-emblem-blue-deep` | `pacific-deep-900` | `pacific-deep-950` |
+| `bg/emblem/blue` | `bg-bg-emblem-blue` | `pacific-deep-800` | `pacific-deep-800` |
 | `bg/emblem/gray` | `bg-bg-emblem-gray` | `neutral-800` | `neutral-900` |
 | `bg/emblem/green` | `bg-bg-emblem-green` | `coral-reef-800` | `coral-reef-900` |
 | `bg/emblem/orange` | `bg-bg-emblem-orange` | `sunset-horizon-700` | `sunset-horizon-800` |
@@ -258,7 +259,11 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/info/strong` | `bg-bg-info-strong` | `strait-blue-800` | `strait-blue-800` |
 | `bg/label` | `bg-bg-label` | `strait-blue-50` | `strait-blue-50` |
 | `bg/marker` | `bg-bg-marker` | `strait-blue-200` | `strait-blue-200` |
-| `bg/overlay` | `bg-bg-overlay` | `pacific-deep-900` | `pacific-deep-900` |
+| `bg/media` | `bg-bg-media` | `black` | `black` |
+| `bg/nav/hover` | `bg-bg-nav-hover` | `pacific-deep-50` | `strait-blue-900` |
+| `bg/nav/selected` | `bg-bg-nav-selected` | `strait-blue-800` | `strait-blue-800` |
+| `bg/overlay/default` | `bg-bg-overlay` | `pacific-deep-900` | `pacific-deep-900` |
+| `bg/overlay/strong` | `bg-bg-overlay-strong` | `pacific-deep-950` | `pacific-deep-950` |
 | `bg/page` | `bg-bg-page` | `pacific-deep-50` | `pacific-deep-950` |
 | `bg/primary/default` | `bg-bg-primary` | `strait-blue-600p` | `strait-blue-500` |
 | `bg/primary/hover` | `bg-bg-primary-hover` | `strait-blue-800` | `strait-blue-700` |
@@ -281,6 +286,8 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/surface/muted` | `bg-bg-surface-muted` | `neutral-200` | `pacific-deep-800` |
 | `bg/surface/raised` | `bg-bg-surface-raised` | `white` | `pacific-deep-800` |
 | `bg/tag` | `bg-bg-tag` | `strait-blue-100` | `pacific-deep-700` |
+| `bg/tertiary/default` | `bg-bg-tertiary` | `strait-blue-900` | `strait-blue-900` |
+| `bg/tertiary/hover` | `bg-bg-tertiary-hover` | `strait-blue-800` | `strait-blue-800` |
 | `bg/warning/default` | `bg-bg-warning` | `amber-500` | `amber-500` |
 | `bg/warning/strong` | `bg-bg-warning-strong` | `amber-800` | `amber-800` |
 | `bg/warning/subtle` | `bg-bg-warning-subtle` | `amber-100` | `amber-950` |
@@ -291,12 +298,15 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `border/default` | `border-border` | `pacific-deep-200` | `pacific-deep-700` |
 | `border/disclosure` | `border-border-disclosure` | `pacific-deep-300` | `transparent` |
 | `border/info` | `border-border-info` | `strait-blue-500` | `strait-blue-500` |
+| `border/nav` | `border-border-nav` | `neutral-200` | `neutral-800` |
+| `border/secondary` | `border-border-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
 | `border/strong` | `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` |
 | `border/subtle` | `border-border-subtle` | `neutral-200` | `pacific-deep-800` |
 | `border/success` | `border-border-success` | `green-500` | `green-500` |
 | `border/warning` | `border-border-warning` | `amber-500` | `amber-500` |
 | `ring/focus` | `ring-ring-focus` | `sunset-horizon-400p` | `sunset-horizon-400p` |
-| `text/accent` | `text-text-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` |
+| `text/accent/default` | `text-text-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` |
+| `text/accent/hover` | `text-text-accent-hover` | `sunset-horizon-500` | `sunset-horizon-500` |
 | `text/danger` | `text-text-danger` | `red-700p` | `red-400` |
 | `text/default` | `text-text` | `pacific-deep-700` | `strait-blue-50` |
 | `text/disabled` | `text-text-disabled` | `pacific-deep-400` | `pacific-deep-400` |
@@ -308,13 +318,20 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `text/muted` | `text-text-muted` | `pacific-deep-500` | `pacific-deep-300` |
 | `text/on-chrome/default` | `text-text-on-chrome` | `strait-blue-50` | `strait-blue-50` |
 | `text/on-chrome/muted` | `text-text-on-chrome-muted` | `pacific-deep-300` | `pacific-deep-300` |
+| `text/on-chrome/strong` | `text-text-on-chrome-strong` | `white` | `white` |
 | `text/on-control-checked` | `text-text-on-control-checked` | `pacific-deep-100` | `pacific-deep-900` |
 | `text/on-emblem/default` | `text-text-on-emblem` | `pacific-deep-200` | `pacific-deep-200` |
 | `text/on-emblem/green` | `text-text-on-emblem-green` | `coral-reef-600` | `coral-reef-600` |
 | `text/on-info` | `text-text-on-info` | `pacific-deep-900` | `pacific-deep-900` |
 | `text/on-label` | `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` |
+| `text/on-media` | `text-text-on-media` | `strait-blue-500` | `strait-blue-300` |
+| `text/on-nav-selected` | `text-text-on-nav-selected` | `strait-blue-50` | `strait-blue-50` |
 | `text/on-primary/default` | `text-text-on-primary` | `white` | `white` |
 | `text/on-primary/inverse` | `text-text-on-primary-inverse` | `strait-blue-100` | `strait-blue-50` |
+| `text/on-secondary` | `text-text-on-secondary` | `neutral-50` | `neutral-50` |
+| `text/on-tertiary` | `text-text-on-tertiary` | `strait-blue-100` | `strait-blue-100` |
+| `text/required` | `text-text-required` | `red-400` | `red-400` |
+| `text/secondary` | `text-text-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
 | `text/strong` | `text-text-strong` | `pacific-deep-900` | `white` |
 | `text/subtle` | `text-text-subtle` | `strait-blue-700` | `strait-blue-100` |
 | `text/success` | `text-text-success` | `green-800` | `green-500` |
@@ -463,6 +480,8 @@ Key characteristics after migration:
 
 ## Usage by feature
 
+> This inventory predates the semantic-role migration. Most classes it lists no longer appear in `frontend/src/features`; the role table above is the current reference.
+
 ### creator-analytics
 
 The shared `LineChart` component owns chart styling and resolves axis label size
@@ -473,7 +492,7 @@ Series inherit `currentColor`: `text-text-subtle` for media views,
 `text-text-success` for reached-end events. Use foreground tokens for chart
 strokes so both themes retain readable contrast.
 
-Selected orange controls use the existing `text-btn-text` foreground, matching
+Selected orange controls use the `text-text-on-secondary` foreground, matching
 the primary Button in both themes. Do not introduce a second alias for it.
 
 ### home
@@ -658,12 +677,8 @@ The note thumbnail's empty/loading fill reuses the theme-aware `bg-bg-skeleton` 
 
 ## Intentionally raw (will not migrate)
 
-- **Avatar inverted-neutral inner bg** (`bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50`) — INVERTS neutrals between themes for the initials-fallback ring. No clean semantic.
-- **Carousel indicator dot pair** (`bg-cinemata-strait-blue-800 dark:bg-white` for active, `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` for inactive) — one-off "active indicator on media surface" pattern.
-- **HeroSection retry button** (`strait-blue-700 / strait-blue-800` solid) — bespoke decorative button.
-- **Carousel overlay arrow text** (theme-aware blue pair `strait-blue-700 → strait-blue-600p`) — large chrome controls overlaid on media; no other component shares the color treatment.
+- **Search dropdown shadow** — `GlobalSearchDropdown.jsx` keeps `shadow-cinemata-black/40`; there is no shadow role yet.
 - **Sidebar navigation legacy bridge** — `NavigationMenuList.jsx` references `var(--sidebar-navigation-item-*-color)` deliberately. This is the documented dual-track bridge.
-- **Inline `var()` references** in `NotificationPage.jsx` and `NotificationPreferencesForm.jsx` — `var(--btn-primary-bg-color)` / `var(--body-text-color)` legacy bridges, deliberately preserved so legacy/modern button colors can diverge.
 
 ## Strengths after migration
 

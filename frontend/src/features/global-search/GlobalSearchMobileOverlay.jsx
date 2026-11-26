@@ -61,9 +61,9 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 			role="dialog"
 			aria-modal="true"
 			aria-label="Search"
-			className="fixed inset-0 z-[1100] flex flex-col bg-cinemata-pacific-deep-950"
+			className="fixed inset-0 z-[1100] flex flex-col bg-bg-overlay-strong"
 		>
-			<div className="flex items-center gap-2 border-b border-border-chrome/60 bg-cinemata-pacific-deep-900 px-3 py-3">
+			<div className="flex items-center gap-2 border-b border-border-chrome/60 bg-bg-overlay px-3 py-3">
 				<button
 					type="button"
 					onClick={onClose}

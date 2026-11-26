@@ -587,9 +587,7 @@ export class AddMediaPage extends Page {
 										{headerTitle}
 									</Text>
 
-									<span className="body-body-12-regular shrink-0 text-text-title-required">
-										* Required
-									</span>
+									<span className="body-body-12-regular shrink-0 text-text-required">* Required</span>
 								</div>
 
 								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-180">

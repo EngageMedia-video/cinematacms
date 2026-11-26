@@ -1,15 +1,14 @@
 import { Children, isValidElement } from 'react';
 import { cn } from '../../utils/classNames';
 const VARIANT_CLASSES = {
-	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
+	primary: 'border border-transparent bg-bg-secondary text-text-on-secondary hover:bg-bg-secondary-hover',
 	secondary: 'border border-transparent bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	'action-inverse':
 		'border-0 bg-bg-primary-inverse text-text-on-primary-inverse shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
-	tertiary:
-		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
+	tertiary: 'border border-transparent bg-bg-tertiary text-text-on-tertiary hover:bg-bg-tertiary-hover',
 	special: 'border border-transparent bg-bg-overlay text-text-on-chrome hover:bg-bg-chrome-hover',
 	'primary-outline':
-		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
+		'border border-border-secondary bg-transparent text-text-secondary hover:bg-bg-secondary hover:text-text-on-secondary',
 	'secondary-outline':
 		'border border-border-strong bg-transparent text-text-strong hover:bg-bg-surface-inverse hover:text-text-inverse',
 	text: 'border-none bg-transparent text-text-subtle hover:text-text-link-hover',

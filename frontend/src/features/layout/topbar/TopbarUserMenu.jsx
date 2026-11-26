@@ -59,7 +59,7 @@ function MenuItem({ item }) {
 	const base =
 		'flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-strong transition-colors duration-150 no-underline';
 	const hover = signOut
-		? 'hover:bg-cinemata-sunset-horizon-500/10 hover:text-cinemata-sunset-horizon-500'
+		? 'hover:bg-bg-accent-hover/10 hover:text-text-accent-hover'
 		: 'hover:bg-black/[0.04] dark:hover:bg-white/[0.04]';
 
 	return (
@@ -126,7 +126,7 @@ export function TopbarUserMenu() {
 				{canLogin ? (
 					<a
 						href={links?.signin || '/accounts/login/'}
-						className="inline-flex items-center justify-center rounded h-10 px-4 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-brand-primary text-btn-text hover:bg-brand-primary-hover"
+						className="inline-flex items-center justify-center rounded h-10 px-4 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-bg-secondary text-text-on-secondary hover:bg-bg-secondary-hover"
 					>
 						Sign in
 					</a>

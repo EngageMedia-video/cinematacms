@@ -103,7 +103,7 @@ function GlobalSearchDropdownInner() {
 					id={listboxId}
 					className={cn(
 						'gs-scrollbar absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-[12px]',
-						'border border-border-chrome/60 bg-cinemata-pacific-deep-900 shadow-2xl shadow-cinemata-black/40'
+						'border border-border-chrome/60 bg-bg-overlay shadow-2xl shadow-cinemata-black/40'
 					)}
 					style={{ animation: 'global-search-fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}
 				>

@@ -35,9 +35,9 @@ const HERO_LAYOUT = 'flex w-full flex-col gap-6';
 const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
 const PLAYER_AREA = 'w-full min-w-0';
 const PLAYER_AREA_DESKTOP = 'flex-1';
-const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
+const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-bg-media';
 const PLAYER_FRAME_DESKTOP = 'aspect-auto';
-const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
+const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-bg-media';
 // The card width is set via the computed inline style on desktop. Tailwind
 // utilities are generated with !important in this project, so `w-full` would
 // override that inline width and collapse the player. The card therefore takes
@@ -158,7 +158,7 @@ function PlayAffordance() {
 			className="pointer-events-none absolute bottom-12 left-12 z-10 flex size-[72px] items-center justify-center max-[425px]:bottom-6 max-[425px]:left-6 max-[425px]:size-12"
 			aria-hidden="true"
 		>
-			<HeroPlayButtonIcon className="size-[81.25%] text-site-player-accent" focusable="false" />
+			<HeroPlayButtonIcon className="size-[81.25%] text-text-on-media" focusable="false" />
 		</div>
 	);
 }

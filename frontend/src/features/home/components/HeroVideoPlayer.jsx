@@ -1,7 +1,7 @@
 import { VideoPlayer } from '../../../static/js/components/-NEW-/VideoPlayer.js';
 import './HeroVideoPlayer.css';
 
-const DEFAULT_PLAYER_CLASS = 'relative w-full aspect-video rounded-[6px] overflow-hidden bg-site-player-canvas';
+const DEFAULT_PLAYER_CLASS = 'relative w-full aspect-video rounded-[6px] overflow-hidden bg-bg-media';
 const EMPTY_SUBTITLES = [];
 
 function getSiteSettings() {

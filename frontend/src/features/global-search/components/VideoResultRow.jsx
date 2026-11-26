@@ -27,7 +27,7 @@ export function VideoResultRow({ item, onSelect }) {
 			<span className="relative block h-[44px] w-[78px] shrink-0 overflow-hidden rounded-[6px] bg-bg-chrome-hover">
 				{thumb ? <img src={thumb} alt="" loading="lazy" className="h-full w-full object-cover" /> : null}
 				{duration ? (
-					<span className="body-body-12-regular absolute right-1 bottom-1 rounded-[4px] bg-cinemata-black/70 px-1.5 py-0.5 text-[10px] leading-none text-text-on-chrome">
+					<span className="body-body-12-regular absolute right-1 bottom-1 rounded-[4px] bg-bg-media/70 px-1.5 py-0.5 text-[10px] leading-none text-text-on-chrome">
 						{duration}
 					</span>
 				) : null}
