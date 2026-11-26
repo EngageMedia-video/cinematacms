@@ -13,7 +13,7 @@ export function PrivateJournalInput({ value, onChange, onSubmit, disabled = fals
 
 	return (
 		<div className="flex flex-col rounded-lg bg-bg-page px-4 py-3">
-			<label htmlFor="private-journal-note-input" className="sr-only text-bg-control">
+			<label htmlFor="private-journal-note-input" className="sr-only">
 				Write a Note
 			</label>
 

@@ -83,7 +83,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 	return (
 		<li className="grid grid-cols-[34px_1fr] gap-4">
 			<div className="flex flex-col items-center">
-				<span className="w-full text-left text-sm leading-5 text-bg-secondary">{note.timestamp}</span>
+				<span className="w-full text-left text-sm leading-5 text-text-accent">{note.timestamp}</span>
 				<span aria-hidden="true" className="mt-1 h-full w-px bg-border" />
 			</div>
 
