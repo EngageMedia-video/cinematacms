@@ -9,7 +9,7 @@
 	min-width: 14rem;
 	max-width: 20rem;
 	overflow: hidden;
-	border: 1px solid var(--border-default);
+	border: 1px solid var(--border);
 	border-radius: 0.5rem;
 	background-color: var(--bg-surface);
 	box-shadow: 0 8px 24px rgb(0 0 0 / 18%);

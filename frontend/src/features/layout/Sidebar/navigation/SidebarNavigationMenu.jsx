@@ -193,7 +193,7 @@ export function SidebarNavigationMenu() {
 	].filter(Boolean);
 
 	return sections.length ? (
-		<div className="divide-y divide-sidebar-nav-border">
+		<div className="divide-y divide-border-subtle">
 			{sections.map((section, index) => (
 				<div key={index}>{section}</div>
 			))}

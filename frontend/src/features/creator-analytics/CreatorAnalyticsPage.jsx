@@ -85,7 +85,7 @@ function ActivityChart({ daily, height = 220, metricSet = metrics, incompleteWat
 	return (
 		<section aria-labelledby="activity-heading" className="min-w-0">
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<Text as="h2" id="activity-heading" variant="h6-bold" className="m-0 text-text-primary">
+				<Text as="h2" id="activity-heading" variant="h6-bold" className="m-0 text-text">
 					Daily activity
 				</Text>
 				{metricOptions.length > 1 && (
@@ -165,7 +165,7 @@ function Engagement({ items }) {
 	const sorted = items.filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
 	return (
 		<Card as="section" aria-labelledby="engagement-heading" className="min-w-0 p-5 sm:p-8">
-			<Text as="h2" id="engagement-heading" variant="h6-bold" className="m-0 text-text-primary">
+			<Text as="h2" id="engagement-heading" variant="h6-bold" className="m-0 text-text">
 				Engagement
 			</Text>
 			<Text as="p" variant="body-14" className="mt-2 mb-4 max-w-prose">
@@ -175,7 +175,7 @@ function Engagement({ items }) {
 				<dl className="m-0 mt-2 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
 					{sorted.map(([label, count]) => (
 						<div key={label} className="flex justify-between gap-4 py-2">
-							<Text as="dt" variant="body-14" className="text-text-secondary">
+							<Text as="dt" variant="body-14" className="text-text-subtle">
 								{label}
 							</Text>
 							<Text as="dd" variant="body-14-medium" className="m-0 tabular-nums">
@@ -196,7 +196,7 @@ function Engagement({ items }) {
 function PlaybackMilestones({ totals }) {
 	return (
 		<Card as="section" aria-labelledby="milestones-heading" className="mt-6 p-5 sm:p-8">
-			<Text as="h2" id="milestones-heading" variant="h6-bold" className="m-0 text-text-primary">
+			<Text as="h2" id="milestones-heading" variant="h6-bold" className="m-0 text-text">
 				Playback milestones
 			</Text>
 			<dl className="m-0 mt-3 grid grid-cols-2 gap-x-6 sm:grid-cols-5">
@@ -223,7 +223,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 	return (
 		<Card as="section" aria-labelledby="viewing-heading" className="p-5 sm:p-8">
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
-				<Text as="h2" id="viewing-heading" variant="h6-bold" className="m-0 text-text-primary">
+				<Text as="h2" id="viewing-heading" variant="h6-bold" className="m-0 text-text">
 					{selectedMedia ? 'How this film is watched' : 'Viewing time'}
 				</Text>
 				<Text as="span" variant="body-12" color="meta">
@@ -293,7 +293,7 @@ function FilmCoverage({ measurement }) {
 
 	return (
 		<Card as="section" aria-labelledby="coverage-heading" className="p-5 sm:p-8">
-			<Text as="h2" id="coverage-heading" variant="h6-bold" className="m-0 mb-2 text-text-primary">
+			<Text as="h2" id="coverage-heading" variant="h6-bold" className="m-0 mb-2 text-text">
 				Coverage by film segment
 			</Text>
 			<Text as="p" variant="body-14" color="body" className="m-0 max-w-prose">
@@ -339,14 +339,14 @@ function FilmCoverage({ measurement }) {
 function Breakdown({ title, items, labels = {}, empty = 'No data in this period.' }) {
 	return (
 		<Card as="section" className="min-w-0 p-5 sm:p-8">
-			<Text as="h2" variant="h6-bold" className="m-0 text-text-primary">
+			<Text as="h2" variant="h6-bold" className="m-0 text-text">
 				{title}
 			</Text>
 			{items?.length ? (
 				<dl className="m-0 mt-3 space-y-2">
 					{items.map(([label, value]) => (
 						<div key={label} className="flex justify-between gap-4">
-							<Text as="dt" variant="body-14" className="min-w-0 break-words text-text-secondary">
+							<Text as="dt" variant="body-14" className="min-w-0 break-words text-text-subtle">
 								{labels[label] || label}
 							</Text>
 							<Text as="dd" variant="body-14" className="m-0 shrink-0 tabular-nums">
@@ -381,7 +381,7 @@ function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailab
 	return (
 		<Card as="section" aria-labelledby="media-heading" className="min-w-0 p-5 sm:p-8">
 			<div className="flex flex-wrap items-center justify-between gap-2 pb-4">
-				<Text as="h2" id="media-heading" variant="h6-bold" className="m-0 text-text-primary">
+				<Text as="h2" id="media-heading" variant="h6-bold" className="m-0 text-text">
 					Your media
 				</Text>
 				<Text as="span" variant="body-12" color="meta" className="m-0">
@@ -413,7 +413,7 @@ function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailab
 									>
 										{row.title}
 									</Text>
-									<Badge color="bg/chip" className="mt-2 text-text-primary">
+									<Badge color="bg/tag" className="mt-2 text-text">
 										{row.state}
 									</Badge>
 								</div>
@@ -500,7 +500,7 @@ export function CreatorAnalyticsPage({ data }) {
 		);
 	};
 	return (
-		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8" data-analytics-ignore>
+		<div className="min-h-screen bg-bg-page px-4 py-6 text-text sm:px-8 sm:py-8" data-analytics-ignore>
 			<div className="mx-auto max-w-7xl">
 				{selectedMedia && (
 					<Breadcrumbs
@@ -525,7 +525,7 @@ export function CreatorAnalyticsPage({ data }) {
 							</div>
 						)}
 						<div className="min-w-0">
-							<Text as="h1" variant="h4-bold" className="m-0 break-words text-text-primary">
+							<Text as="h1" variant="h4-bold" className="m-0 break-words text-text">
 								{selectedMedia ? selectedMedia.title : 'Analytics'}
 							</Text>
 							{!selectedMedia && (
@@ -535,7 +535,7 @@ export function CreatorAnalyticsPage({ data }) {
 							)}
 							{selectedMedia && (
 								<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-									<Badge color="bg/chip" className="text-text-primary">
+									<Badge color="bg/tag" className="text-text">
 										{selectedMedia.state}
 									</Badge>
 									<Text as="span" variant="body-12" color="meta">
@@ -611,7 +611,7 @@ export function CreatorAnalyticsPage({ data }) {
 								tabMode="wrap"
 								className="max-w-full"
 								listClassName="rounded-ds-8"
-								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-brand-primary sm:px-4"
+								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-bg-secondary sm:px-4"
 							>
 								{data.ranges.map((range) => (
 									<TabContent
@@ -622,7 +622,9 @@ export function CreatorAnalyticsPage({ data }) {
 												as="span"
 												variant="body-12-bold"
 												className={
-													range === data.days ? 'text-btn-text' : 'text-text-on-chrome'
+													range === data.days
+														? 'text-text-on-secondary'
+														: 'text-text-on-chrome'
 												}
 											>
 												{range} days
@@ -666,8 +668,8 @@ export function CreatorAnalyticsPage({ data }) {
 					selectedTab={section}
 					onSelectedTabChange={selectSection}
 					hideTabList={sections.length === 1}
-					listClassName="rounded-none bg-transparent border-b border-border-divider"
-					triggerClassName="min-w-0 min-h-11 whitespace-normal px-2 py-3 normal-case tracking-normal bg-transparent text-text-secondary border-b-2 border-transparent aria-selected:border-text-link aria-selected:text-text-link focus-visible:ring-offset-bg-page"
+					listClassName="rounded-none bg-transparent border-b border-border"
+					triggerClassName="min-w-0 min-h-11 whitespace-normal px-2 py-3 normal-case tracking-normal bg-transparent text-text-subtle border-b-2 border-transparent aria-selected:border-text-link aria-selected:text-text-link focus-visible:ring-offset-bg-page"
 					panelClassName="mt-6 focus:outline-none"
 				>
 					<TabContent value="overview" title="Overview">

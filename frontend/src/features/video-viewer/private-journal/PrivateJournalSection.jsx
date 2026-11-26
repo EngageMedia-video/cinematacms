@@ -123,7 +123,7 @@ function PrivateJournalSectionInner({ friendlyToken, initialNotes = [] }) {
 				Your notes are private, and can't be seen by anyone else.
 			</Text>
 
-			<div className="mt-6 border-t border-border-divider" />
+			<div className="mt-6 border-t border-border" />
 
 			<div className={sortedNotes.length ? 'py-6' : 'pt-6 pb-6'}>
 				{notesQuery.isLoading ? (
@@ -131,7 +131,7 @@ function PrivateJournalSectionInner({ friendlyToken, initialNotes = [] }) {
 				) : notesQuery.isError ? (
 					<p className="py-4 text-center text-sm text-text-muted">Could not load notes.</p>
 				) : sortedNotes.length ? (
-					<div className="max-h-[420px] overflow-y-scroll overscroll-contain pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent">
+					<div className="max-h-[420px] overflow-y-scroll overscroll-contain pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-bg-info-muted">
 						<ul className="m-0 flex list-none flex-col gap-6 p-0">
 							{sortedNotes.map((note) => (
 								<JournalEntry

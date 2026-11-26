@@ -46,7 +46,7 @@ function SectionRowHeader({ badgeLabel, badgeColor = 'bg/primary', viewAllHref }
 }
 
 function SectionRowTitle({ children, viewAllHref }) {
-	const heading = <h2 className="heading-h6-20-medium m-0 text-text-primary">{children}</h2>;
+	const heading = <h2 className="heading-h6-20-medium m-0 text-text">{children}</h2>;
 
 	if (!viewAllHref) {
 		return heading;
@@ -61,7 +61,7 @@ function SectionRowTitle({ children, viewAllHref }) {
 }
 
 function SectionRowDescription({ text }) {
-	return <ExpandableText text={text} clampLines={2} className="body-body-14-regular text-text-secondary" />;
+	return <ExpandableText text={text} clampLines={2} className="body-body-14-regular text-text-subtle" />;
 }
 
 function SectionRowHtmlDescription({ html }) {
@@ -70,7 +70,7 @@ function SectionRowHtmlDescription({ html }) {
 
 	return (
 		<div
-			className="body-body-14-regular space-y-2 text-text-secondary [&_a]:font-semibold [&_a]:text-text-link [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-text-link-hover [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-ring-focus [&_br+br]:hidden [&_p]:m-0"
+			className="body-body-14-regular space-y-2 text-text-subtle [&_a]:font-semibold [&_a]:text-text-link [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-text-link-hover [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-ring-focus [&_br+br]:hidden [&_p]:m-0"
 			dangerouslySetInnerHTML={{ __html: sanitized }}
 		/>
 	);

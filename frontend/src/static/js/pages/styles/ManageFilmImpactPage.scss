@@ -240,7 +240,7 @@
 	}
 
 	&__status--waiting_approval {
-		color: var(--text-secondary, var(--body-text-color));
+		color: var(--text-subtle, var(--body-text-color));
 	}
 
 	&__url-control {
@@ -285,11 +285,11 @@
 
 	&__button--secondary {
 		background: transparent;
-		color: var(--text-primary, var(--body-text-color));
+		color: var(--text, var(--body-text-color));
 
 		&:hover {
 			background: var(--input-disabled-bg-color);
-			color: var(--text-primary, var(--body-text-color));
+			color: var(--text, var(--body-text-color));
 		}
 	}
 

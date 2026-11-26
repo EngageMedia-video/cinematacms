@@ -13,7 +13,7 @@ export function PrivateJournalInput({ value, onChange, onSubmit, disabled = fals
 
 	return (
 		<div className="flex flex-col rounded-lg bg-bg-page px-4 py-3">
-			<label htmlFor="private-journal-note-input" className="sr-only text-bg-control-unchecked">
+			<label htmlFor="private-journal-note-input" className="sr-only">
 				Write a Note
 			</label>
 
@@ -32,7 +32,7 @@ export function PrivateJournalInput({ value, onChange, onSubmit, disabled = fals
 					}
 				}}
 				placeholder="Write a Note"
-				className="mb-0 block max-h-28 placeholder:text-text-muted min-w-0 resize-none border-0 bg-transparent p-0 text-sm leading-5 text-text-primary focus:outline-none focus:ring-0"
+				className="mb-0 block max-h-28 placeholder:text-text-muted min-w-0 resize-none border-0 bg-transparent p-0 text-sm leading-5 text-text focus:outline-none focus:ring-0"
 			/>
 
 			<div className="mt-auto flex items-end justify-between gap-4">

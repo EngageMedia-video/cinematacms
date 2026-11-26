@@ -27,10 +27,7 @@ export function SimilarProfiles({ author }) {
 	if (isError || (!isLoading && profiles.length === 0)) return null;
 
 	return (
-		<section
-			aria-labelledby="similar-profiles-heading"
-			className="@container rounded-lg border border-border-default p-4"
-		>
+		<section aria-labelledby="similar-profiles-heading" className="@container rounded-lg border border-border p-4">
 			<ProfileSectionHeader
 				icon="profileSimilarProfiles"
 				title="Similar Profiles"
@@ -65,7 +62,7 @@ export function SimilarProfiles({ author }) {
 										style={{ width: 80, height: 80 }}
 									/>
 									<div className="w-full min-w-0">
-										<Text as="h3" variant="h5-bold" className="m-0 break-words text-text-primary">
+										<Text as="h3" variant="h5-bold" className="m-0 break-words text-text">
 											{name}
 										</Text>
 										<div className="mt-1 flex items-center justify-center gap-1">
@@ -92,7 +89,7 @@ export function SimilarProfiles({ author }) {
 											<Text
 												as="p"
 												variant="body-14"
-												className="m-0 inline-flex items-center gap-2 text-text-secondary"
+												className="m-0 inline-flex items-center gap-2 text-text-subtle"
 											>
 												<Icon name="profileLocation" size="xs" decorative />
 												{profile.location}
@@ -102,7 +99,7 @@ export function SimilarProfiles({ author }) {
 											<Text
 												as="p"
 												variant="body-14"
-												className="m-0 inline-flex items-center gap-2 text-text-secondary"
+												className="m-0 inline-flex items-center gap-2 text-text-subtle"
 											>
 												<Icon name="profileVideoCount" size="xs" decorative />
 												{mediaCount.toLocaleString()} {mediaCount === 1 ? 'video' : 'videos'}
@@ -111,7 +108,7 @@ export function SimilarProfiles({ author }) {
 												<Text
 													as="p"
 													variant="body-14"
-													className="m-0 inline-flex items-center gap-2 text-text-secondary"
+													className="m-0 inline-flex items-center gap-2 text-text-subtle"
 												>
 													<Icon name="profileMemberSince" size="xs" decorative />
 													{joinedLabel}

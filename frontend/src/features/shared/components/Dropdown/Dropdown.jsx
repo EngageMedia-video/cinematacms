@@ -33,24 +33,24 @@ const HELPER_VARIANT_CLASSES = {
 };
 
 const LABEL_ACTIVE_CLASSES = 'text-text-muted';
-const ACTIVE_BORDER_CLASSES = 'border-border-input';
+const ACTIVE_BORDER_CLASSES = 'border-border-active';
 const BORDER_VARIANT_CLASSES = {
-	default: 'border-border-strong-constant',
+	default: 'border-border-strong',
 	error: 'border-border-danger',
-	disabled: 'border-border-input',
+	disabled: 'border-border-active',
 };
 
 const MENU_VARIANT_CLASSES = {
-	default: 'border-border-strong-constant bg-bg-surface',
+	default: 'border-border-strong bg-bg-surface',
 	error: 'border-border-danger bg-bg-surface',
-	disabled: 'border-border-input bg-bg-surface-muted',
+	disabled: 'border-border-active bg-bg-surface-muted',
 };
 
 // Toolbar-sized trigger, e.g. a results sort control. It keeps the menu,
 // keyboard and typeahead behaviour of the field appearance.
 // Use an outline so the legacy shadow reset cannot hide keyboard focus.
 const COMPACT_TRIGGER_CLASSES =
-	'inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-ds-4 border-0 bg-bg-action-inverse px-3 py-2 body-body-12-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4';
+	'inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-ds-4 border-0 bg-bg-primary-inverse px-3 py-2 body-body-12-medium text-text-on-primary-inverse uppercase shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4';
 // Legacy global button styles still apply on some pages; neutralise them inline.
 const COMPACT_TRIGGER_STYLE = { appearance: 'none', border: 0, boxShadow: 'none' };
 

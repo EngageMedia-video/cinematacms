@@ -35,7 +35,7 @@ describe('Card', () => {
 
 		const card = screen.getByRole('article');
 		expect(card).toHaveClass('border');
-		expect(card).toHaveClass('border-border-default');
+		expect(card).toHaveClass('border-border');
 	});
 
 	it('falls back to the default variant for unsupported variants', () => {

@@ -44,7 +44,7 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 			title={label}
 			className={cn(
 				'inline-flex size-9 items-center justify-center rounded-full border no-underline transition-colors duration-200',
-				'border-border-default text-text-muted hover:border-border-strong hover:text-text-strong',
+				'border-border text-text-muted hover:border-border-strong hover:text-text-strong',
 				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus'
 			)}
 		>
@@ -161,7 +161,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 					<div className="relative z-10 space-y-4">
 						{shouldRenderSidebarContent ? <SidebarNavigationMenu /> : null}
 						{shouldRenderSidebarContent && socialLinks.length ? (
-							<ul className="relative m-0 flex w-full list-none items-center justify-center gap-8 border-y border-sidebar-nav-border px-8 py-4">
+							<ul className="relative m-0 flex w-full list-none items-center justify-center gap-8 border-y border-border-subtle px-8 py-4">
 								{socialLinks.map((item) => (
 									<li key={item.link}>
 										<SidebarSocialLink {...item} />

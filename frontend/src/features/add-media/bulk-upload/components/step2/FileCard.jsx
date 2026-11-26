@@ -30,7 +30,7 @@ import { formatFileSize } from '../../utils/formatSize';
 import { required } from '../../../../shared/utils/validators';
 
 function Divider() {
-	return <div className="my-4 border-b border-b-border-divider" />;
+	return <div className="my-4 border-b border-b-border" />;
 }
 
 // Section title/description per sub-step, mirroring the single-upload FieldGroup
@@ -72,7 +72,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 	return (
 		<div className="grid grid-cols-1 items-start gap-8 @3xl/main:grid-cols-[minmax(0,1fr)_340px]">
 			<Card as="article" className="min-w-0 py-8 px-6">
-				<header className="flex items-start justify-between gap-4 border-b border-border-divider pb-4">
+				<header className="flex items-start justify-between gap-4 border-b border-border pb-4">
 					<div className="flex min-w-0 items-center gap-3">
 						<span
 							className="flex h-10 w-10 shrink-0 items-center justify-center rounded-ds-4 bg-bg-surface-muted text-text-muted"
@@ -110,7 +110,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							{SECTION_META[subStep].description}
 						</Text>
 					) : null}
-					<div className="my-6 border-b border-b-border-divider" />
+					<div className="my-6 border-b border-b-border" />
 				</div>
 
 				<div className="grid gap-5">

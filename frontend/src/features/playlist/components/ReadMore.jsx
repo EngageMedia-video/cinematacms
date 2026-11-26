@@ -15,7 +15,7 @@ export function ReadMore({
 	id,
 	text,
 	charBudget = 300,
-	colorClassName = 'text-text-primary',
+	colorClassName = 'text-text',
 	className = '',
 	linkify = false,
 }) {

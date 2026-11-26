@@ -271,7 +271,7 @@ light and dark value, so a component that uses one needs no `dark:` variant.
 Choose the first layer that covers the case:
 
 1. A modern semantic token utility, such as `bg-bg-page`, `text-text-strong`,
-   `border-border-default`, or `ring-ring-focus`. This is the default.
+   `border-border`, or `ring-ring-focus`. This is the default.
 2. A raw `--cinemata-*` palette utility, such as `bg-cinemata-neutral-200`, when
    the color must stay the same in both themes and no semantic role covers it.
 3. A legacy alias, such as `bg-brand-primary` or `text-content-body`, when the
@@ -292,7 +292,9 @@ and the sidebar bridge are the configured exceptions.
 `frontend/src/static/css/tokens.json` holds the canonical token list. Edit it,
 then run `uv run python scripts/generate_color_tokens.py` to regenerate the
 token blocks in `frontend/src/static/css/tailwind.css`. Do not edit the
-generated region by hand. `docs/modern-track-color-system.md` explains the
+generated region by hand. `scripts/check_color_token_references.py` fails a
+color utility or `var(--bg-*)`-style reference whose token no stylesheet
+defines, such as a removed or misspelled name. `docs/modern-track-color-system.md` explains the
 token format, the palette, the token layers, and the deliberate exceptions. When `DEBUG=True`,
 `/modern-demo/` shows the tokens and their theme behavior.
 

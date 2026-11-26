@@ -30,7 +30,7 @@ export function PlaylistResultRow({ item, onSelect }) {
 				)}
 				<span
 					aria-hidden="true"
-					className="pointer-events-none absolute inset-y-1 right-1 w-[5px] rounded-[2px] bg-cinemata-pacific-deep-900/70"
+					className="pointer-events-none absolute inset-y-1 right-1 w-[5px] rounded-[2px] bg-bg-overlay/70"
 				/>
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">

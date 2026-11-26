@@ -42,6 +42,6 @@ describe('PrivateJournalSection', () => {
 		const listContainer = screen.getByText('First saved thought').closest('ul')?.parentElement;
 
 		expect(listContainer).toHaveClass('max-h-[420px]', 'overflow-y-scroll', 'overscroll-contain');
-		expect(listContainer?.className).toContain('[&::-webkit-scrollbar-thumb]:bg-text-dialog-accent');
+		expect(listContainer?.className).toContain('[&::-webkit-scrollbar-thumb]:bg-bg-info-muted');
 	});
 });

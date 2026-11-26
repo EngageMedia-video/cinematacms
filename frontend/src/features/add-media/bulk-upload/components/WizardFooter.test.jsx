@@ -4,7 +4,7 @@ import { WizardFooter } from './WizardFooter';
 describe('WizardFooter', () => {
 	it('shows the Share Media action on the final step', () => {
 		render(<WizardFooter primaryAction="share" />);
-		expect(screen.getByRole('button', { name: /share media/i })).toHaveClass('bg-brand-primary');
+		expect(screen.getByRole('button', { name: /share media/i })).toHaveClass('bg-bg-secondary');
 		expect(screen.getByRole('button', { name: /save as draft/i })).toBeInTheDocument();
 	});
 

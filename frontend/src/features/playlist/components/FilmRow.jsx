@@ -54,7 +54,7 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 				aria-label={`More actions for ${title}`}
 				aria-expanded={open}
 				onClick={() => setOpen((value) => !value)}
-				className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-ds-4 border border-transparent bg-transparent text-text-secondary hover:bg-bg-surface-hover hover:text-text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+				className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-ds-4 border border-transparent bg-transparent text-text-subtle hover:bg-bg-surface-hover hover:text-text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
 				<span aria-hidden="true" className="text-[22px] leading-none">
 					⋮
@@ -65,7 +65,7 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 				<div
 					role="group"
 					aria-label={`Actions for ${title}`}
-					className="absolute right-0 z-20 mt-2 flex w-[220px] flex-col overflow-hidden rounded-ds-8 border border-border-strong-constant bg-bg-surface py-2 shadow-2xl"
+					className="absolute right-0 z-20 mt-2 flex w-[220px] flex-col overflow-hidden rounded-ds-8 border border-border-strong bg-bg-surface py-2 shadow-2xl"
 				>
 					{isOwner ? (
 						<>
@@ -150,7 +150,7 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 	return (
 		<li
 			data-media-token={media?.friendly_token}
-			className="group grid grid-cols-[minmax(0,1fr)_44px] gap-x-2 gap-y-3 rounded-ds-4 border-b border-border-divider py-4 last:border-b-0 @2xl:grid-cols-[24px_180px_minmax(140px,0.8fr)_minmax(0,1.2fr)_28px] @2xl:items-center @2xl:gap-x-4 @2xl:py-5 @4xl:grid-cols-[24px_220px_200px_minmax(0,1fr)_28px] @4xl:gap-x-5"
+			className="group grid grid-cols-[minmax(0,1fr)_44px] gap-x-2 gap-y-3 rounded-ds-4 border-b border-border py-4 last:border-b-0 @2xl:grid-cols-[24px_180px_minmax(140px,0.8fr)_minmax(0,1.2fr)_28px] @2xl:items-center @2xl:gap-x-4 @2xl:py-5 @4xl:grid-cols-[24px_220px_200px_minmax(0,1fr)_28px] @4xl:gap-x-5"
 		>
 			<div className="hidden @2xl:flex @2xl:justify-center @2xl:self-center">
 				<RowOrderCell index={index} isOwner={isOwner} title={title} />
@@ -195,7 +195,7 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 						/>
 					) : null}
 					{duration ? (
-						<span className="absolute right-1 bottom-1 rounded-ds-2 bg-bg-overlay-dark/80 px-1 py-0.5 text-text-on-chrome body-body-12-medium">
+						<span className="absolute right-1 bottom-1 rounded-ds-2 bg-bg-overlay/80 px-1 py-0.5 text-text-on-chrome body-body-12-medium">
 							{duration}
 						</span>
 					) : null}
@@ -223,7 +223,7 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 			<div className="col-span-2 min-w-0 @2xl:col-span-1">
 				<p className="m-0 mb-3 text-text-muted body-body-14-regular">Synopsis</p>
 				{description ? (
-					<p className="m-0 line-clamp-6 break-words text-text-primary body-body-14-regular @2xl:line-clamp-3">
+					<p className="m-0 line-clamp-6 break-words text-text body-body-14-regular @2xl:line-clamp-3">
 						{description}
 					</p>
 				) : (

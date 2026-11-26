@@ -28,12 +28,7 @@ export function DataTable({
 					<Text as="caption" variant="body-14" className="sr-only">
 						{caption}
 					</Text>
-					<thead
-						className={cn(
-							'border-b border-border-divider',
-							stickyHeader && 'sticky top-0 bg-bg-surface-muted'
-						)}
-					>
+					<thead className={cn('border-b border-border', stickyHeader && 'sticky top-0 bg-bg-surface-muted')}>
 						<tr>
 							{columns.map((column) => (
 								<Text
@@ -42,7 +37,7 @@ export function DataTable({
 									scope="col"
 									variant="body-12-medium"
 									className={cn(
-										'whitespace-nowrap px-4 py-3 text-text-secondary',
+										'whitespace-nowrap px-4 py-3 text-text-subtle',
 										column.align === 'right' ? 'text-right' : 'text-left'
 									)}
 								>

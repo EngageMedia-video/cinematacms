@@ -10,7 +10,7 @@ const STATUS_CONFIG = {
 	uploading: {
 		statusText: 'Uploading',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-bg-progress-bar-upload',
+		progressClassName: 'bg-bg-progress',
 		showProgress: true,
 		actions: [
 			{ key: 'pause', label: 'Pause', iconName: 'pause', type: 'warning' },
@@ -20,14 +20,14 @@ const STATUS_CONFIG = {
 	processing: {
 		statusText: 'Processing...',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-bg-progress-bar-upload',
+		progressClassName: 'bg-bg-progress',
 		showProgress: false,
 		actions: [{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' }],
 	},
 	paused: {
 		statusText: 'Paused',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-bg-progress-bar-upload',
+		progressClassName: 'bg-bg-progress',
 		showProgress: true,
 		actions: [
 			{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
@@ -163,7 +163,7 @@ export function UploadMediaItem({
 	return (
 		<article
 			className={cn(
-				'upload-media-item group flex w-full gap-3 rounded-ds-8 bg-bg-surface text-text-primary shadow-sm sm:gap-4',
+				'upload-media-item group flex w-full gap-3 rounded-ds-8 bg-bg-surface text-text shadow-sm sm:gap-4',
 				className
 			)}
 			data-upload-status={status}
@@ -183,25 +183,25 @@ export function UploadMediaItem({
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted/80 group-data-[upload-status=uploading]:flex"
 				>
-					<Icon name="loading" decorative size={21} className="animate-spin text-text-panel-heading" />
+					<Icon name="loading" decorative size={21} className="animate-spin text-text" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted/80 group-data-[upload-status=paused]:flex"
 				>
-					<Icon name="pauseOutlined" decorative size={21} className="text-text-panel-heading" />
+					<Icon name="pauseOutlined" decorative size={21} className="text-text" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted group-data-[upload-status=complete]:flex"
 				>
-					<Icon name="checklist" decorative size={21} className="text-text-panel-heading" />
+					<Icon name="checklist" decorative size={21} className="text-text" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted group-data-[upload-status=failed]:flex"
 				>
-					<Icon name="close" decorative size={21} className="text-text-panel-heading" />
+					<Icon name="close" decorative size={21} className="text-text" />
 				</span>
 			</div>
 

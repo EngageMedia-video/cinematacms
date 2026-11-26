@@ -18,7 +18,7 @@ const CLASS = {
 	chevron: 'pointer-events-none flex shrink-0 text-text-muted transition-transform duration-200 ease-out',
 	chevronOpen: 'rotate-180',
 	listbox:
-		'absolute left-0 top-full z-20 m-0 mt-2 max-h-64 w-full list-none overflow-auto rounded-lg border border-border-default bg-bg-surface-raised py-1 ps-0 shadow-lg transition duration-150 ease-out [scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:bg-clip-content',
+		'absolute left-0 top-full z-20 m-0 mt-2 max-h-64 w-full list-none overflow-auto rounded-lg border border-border bg-bg-surface-raised py-1 ps-0 shadow-lg transition duration-150 ease-out [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:bg-clip-content',
 	listClosed: 'pointer-events-none invisible -translate-y-1 opacity-0',
 	listOpen: 'pointer-events-auto visible translate-y-0 opacity-100',
 	option: 'flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-sm leading-5 text-text-strong hover:bg-bg-surface-hover',

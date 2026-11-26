@@ -14,17 +14,17 @@ describe('SelectedFilters', () => {
 
 		render(<SelectedFilters filters={FILTERS} onDismiss={onDismiss} />);
 
-		expect(screen.getByLabelText('Selected filters')).toHaveClass('rounded-[8px]', 'bg-bg-panel-selected', 'p-6');
+		expect(screen.getByLabelText('Selected filters')).toHaveClass('rounded-[8px]', 'bg-bg-surface', 'p-6');
 		expect(screen.getByText('Selected')).toHaveClass(
 			"font-['Barlow_Semi_Condensed',Arial,sans-serif]",
 			'text-[20px]',
 			'leading-6',
-			'text-text-panel-heading'
+			'text-text'
 		);
 		expect(screen.getByText('Philippines').closest('span')).toHaveClass(
-			'[--selected-filter-chip-bg:var(--bg-chip-active)]',
+			'[--selected-filter-chip-bg:var(--bg-secondary)]',
 			'sm:border',
-			'sm:border-border-chip-active',
+			'sm:border-border-accent',
 			'sm:text-text-accent',
 			'sm:[--selected-filter-chip-bg:transparent]'
 		);
@@ -43,7 +43,7 @@ describe('SelectedFilters', () => {
 			'border-0',
 			'px-[6px]',
 			'text-text-on-primary',
-			'[--selected-filter-chip-bg:var(--bg-chip-active)]'
+			'[--selected-filter-chip-bg:var(--bg-secondary)]'
 		);
 	});
 

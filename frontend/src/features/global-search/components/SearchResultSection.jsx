@@ -46,7 +46,7 @@ export function SearchResultSection({
 					onClick={(event) => {
 						if (isPlainLeftClick(event)) onSelect?.(event);
 					}}
-					className="mt-2 inline-flex items-center gap-1 rounded-[8px] px-2 py-1 body-body-12-medium text-text-accent no-underline transition-colors duration-150 hover:text-cinemata-sunset-horizon-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="mt-2 inline-flex items-center gap-1 rounded-[8px] px-2 py-1 body-body-12-medium text-text-accent no-underline transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					Show more
 					<svg

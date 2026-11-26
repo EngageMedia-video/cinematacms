@@ -7,7 +7,7 @@ import { tooltip } from '@tanstack/charts/tooltip';
 import { Text } from '../Text';
 import { cn } from '../../utils/classNames';
 
-const COLORS = { primary: 'text-text-link', secondary: 'text-text-secondary', success: 'text-text-success' };
+const COLORS = { primary: 'text-text-link', secondary: 'text-text-subtle', success: 'text-text-success' };
 
 /** A single numeric series with categorical x values; formatting belongs to the caller. */
 export function LineChart({
@@ -66,11 +66,7 @@ export function LineChart({
 			variant="body-14"
 			role="group"
 			aria-label={label}
-			className={cn(
-				'min-w-0 [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default',
-				COLORS[color],
-				className
-			)}
+			className={cn('min-w-0 [&_svg_text]:fill-text [&_svg_line]:stroke-border', COLORS[color], className)}
 			style={{
 				'--ts-chart-tooltip-background': 'var(--bg-surface-raised)',
 				'--ts-chart-tooltip-color': 'var(--text-strong)',

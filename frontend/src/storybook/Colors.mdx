@@ -7,12 +7,12 @@ import { Meta, Title, Subtitle, Heading } from '@storybook/addon-docs/blocks';
 
 > **This is a living document.** Every new feature, component, or design change that introduces a new color usage, adds a token, or shifts an existing token's meaning must update this page in the same change. The same applies to `docs/modern-track-color-system.md` in the repo root. Treat updates to both surfaces as part of the definition-of-done for any color or theming change. Stale color docs cause real engineering cost: contributors reach for the wrong token, reviewers don't know what's canonical, and the system drifts.
 
-The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (carousel indicator dots, etc.).
+The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (see "When to reach past the tokens").
 
 The modern profile page is a representative composed surface: its banner,
 header, multi-page tab navigation, cards, loading states, and focus rings use
 the existing `bg/*`, `text/*`, `border/*`, and `ring/focus` roles. It introduces
-one profile-specific token, `text-text-profile-section-icon`, for the section
+one profile-specific token, `text-text-on-emblem`, for the section
 emblem glyphs (see Text tokens below); everything else routes through shared
 roles rather than new aliases.
 
@@ -21,100 +21,92 @@ This page is the working reference for the token catalogue. For the underlying d
 <Heading>Text tokens</Heading>
 
 - **`text-text-strong`** — headings, emphasized labels, form input text. Light: `pacific-deep-900` / Dark: `white`
-- **`text-text-primary`** — body text, main content. Light: `pacific-deep-700` / Dark: `strait-blue-50`
-- **`text-text-secondary`** — subheadings, secondary text. Light: `strait-blue-700` / Dark: `strait-blue-100`
-- **`text-text-muted`** — captions, view counts, metadata. Light: `pacific-deep-500` / Dark: `pacific-deep-300`
-- **`text-text-description`** — long-form card descriptions. Light: `pacific-deep-500` / Dark: `pacific-deep-300`
-- **`text-text-subtle`** — one step quieter than `text-text-primary`; the new name for `text-text-secondary`. Light: `strait-blue-700` / Dark: `strait-blue-100`. Hints and placeholders use `text-text-muted`.
+- **`text-text`** — body text, main content; avatar initials fallback text; option/choice labels inside a panel; disclosure/accordion trigger label; heading label inside a selected/summary panel card. Light: `pacific-deep-700` / Dark: `strait-blue-50`
+- **`text-text-subtle`** — subheadings, secondary text; one step quieter than `text-text`. Light: `strait-blue-700` / Dark: `strait-blue-100`. Hints and placeholders use `text-text-muted`.
+- **`text-text-muted`** — captions, view counts, metadata; long-form card descriptions; quiet metadata inside a panel surface (e.g. counts, empty-state labels). Light: `pacific-deep-500` / Dark: `pacific-deep-300`
 - **`text-text-disabled`** — disabled state labels. Constant `pacific-deep-400`.
-- **`text-text-avatar-fallback`** — avatar initials fallback text. Light: `pacific-deep-700` / Dark: `strait-blue-50`
 - **`text-text-inverse`** — text on `bg-bg-surface-inverse`. Inverts: Light: `white` / Dark: `pacific-deep-900`
-- **`text-text-on-primary`** — text on `bg-bg-primary` and `bg-bg-secondary` buttons. Constant `white`.
+- **`text-text-on-primary`** — text on `bg-bg-primary` buttons; text on a colored section-header bar. Constant `white`.
+- **`text-text-on-secondary`** — text on `bg-bg-secondary` orange buttons and selected segments. Constant `neutral-50`.
+- **`text-text-on-tertiary`** — text on `bg-bg-tertiary` buttons. Constant `strait-blue-100`.
+- **`text-text-secondary`** — orange text on an outline button. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
 - **`text-text-on-chrome`** — primary text on always-dark chrome surfaces (topbar, search). Constant `strait-blue-50`.
+- **`text-text-on-chrome-strong`** — topbar icons and logo text. Constant `white`.
+- **`text-text-on-media`** — play icon on a `bg-bg-media` player frame. Light: `strait-blue-500` / Dark: `strait-blue-300`
+- **`text-text-required`** — required-field asterisk. Constant `red-400`.
 - **`text-text-on-chrome-muted`** — muted text on chrome (placeholders inside dropdowns). Constant `pacific-deep-300`.
-- **`text-text-profile-section-icon`** — foreground for the distinct profile section emblem glyphs. Constant `pacific-deep-200`.
+- **`text-text-on-emblem`** — foreground for the distinct profile section emblem glyphs. Constant `pacific-deep-200`.
 - **`text-text-on-emblem-green`** — icon foreground on `bg-bg-emblem-green` (Community Impact: saves). Constant `coral-reef-600`.
-- **`text-text-on-dialog-close`** — icon on the filled `bg-bg-dialog-close` control. Constant `pacific-deep-900`.
+- **`text-text-on-info`** — icon on the filled `bg-bg-info-muted` control. Constant `pacific-deep-900`.
 - **`text-text-link`** — inline links, "View all" affordances. Light: `sunset-horizon-700` / Dark: `sunset-horizon-200`
 - **`text-text-link-hover`** — hover state for `text-text-link`. Light: `sunset-horizon-800` / Dark: `sunset-horizon-100`
 - **`text-text-accent`** — theme-agnostic orange accent (helper text, brand emphasis). Constant `sunset-horizon-400p`.
-- **`text-text-note-thumbnail-duration`** — profile note thumbnail duration pill text. Constant `pacific-deep-900`.
-- **`text-text-dialog-accent`** — decorative hero glyph in a dialog header (e.g. Add Impact heart). Constant `strait-blue-400`.
+- **`text-text-accent-hover`** — hover state for an orange accent label (sign-out menu item). Constant `sunset-horizon-500`.
+- **`text-text-on-label`** — profile note thumbnail duration pill text. Constant `pacific-deep-900`.
+- **`text-text-info-muted`** — decorative hero glyph in a dialog header (e.g. Add Impact heart). Constant `strait-blue-400`.
 - **`text-text-danger`** — error labels. Light: `red-700p` / Dark: `red-400`
 - **`text-text-success`** — success messages. Light: `green-800` / Dark: `green-500`
 - **`text-text-warning`** — warning messages. Light: `amber-800` / Dark: `amber-500`
-- **`text-text-panel-muted`** — quiet metadata inside a panel surface (e.g. counts, empty-state labels). Light: `pacific-deep-500` / Dark: `pacific-deep-300`
-- **`text-text-option`** — option/choice labels inside a panel. Light: `pacific-deep-700` / Dark: `strait-blue-50`
-- **`text-text-section-header`** — text on a colored section-header bar. Constant `white`.
-- **`text-text-disclosure-trigger`** — disclosure/accordion trigger label. Light: `pacific-deep-700` / Dark: `strait-blue-50`
-- **`text-text-action-inverse`** — text on a dark action button surface (`bg-bg-action-inverse`). Light: `strait-blue-100` / Dark: `strait-blue-50`
-- **`text-text-panel-heading`** — heading label inside a selected/summary panel card. Light: `pacific-deep-700` / Dark: `strait-blue-50`
-- **`text-text-control-checked`** — checked control icon. Light: `pacific-deep-100` / Dark: `pacific-deep-900`
+- **`text-text-on-primary-inverse`** — text on a dark action button surface (`bg-bg-primary-inverse`). Light: `strait-blue-100` / Dark: `strait-blue-50`
+- **`text-text-on-control-checked`** — checked control icon. Light: `pacific-deep-100` / Dark: `pacific-deep-900`
 
 <Heading>Background tokens</Heading>
 
 - **`bg-bg-page`** — page body background and theme-matched full-screen surfaces, including the expanded comments overlay backdrop. Light: `pacific-deep-50` / Dark: `pacific-deep-950`
-- **`bg-bg-surface`** — default card/panel background. Light: `neutral-50` / Dark: `pacific-deep-900`
-- **`bg-bg-surface-raised`** — popups, modals, dropdowns, tooltips. Light: `white` / Dark: `pacific-deep-800`
-- **`bg-bg-surface-muted`** — muted/recessed regions, image placeholders. Light: `neutral-200` / Dark: `pacific-deep-800`
-- **`bg-bg-surface-hover`** — list/menu row hover backgrounds. Light: `pacific-deep-50` / Dark: `pacific-deep-700`
+- **`bg-bg-surface`** — default card/panel background; primary panel/rail surface; selected-state panel card (e.g. active selection summary). Light: `neutral-50` / Dark: `pacific-deep-900`
+- **`bg-bg-surface-raised`** — popups, modals, dropdowns, tooltips; disclosure/accordion trigger surface. Light: `white` / Dark: `pacific-deep-800`
+- **`bg-bg-surface-muted`** — muted/recessed regions, image placeholders; expanded disclosure/accordion content surface. Light: `neutral-200` / Dark: `pacific-deep-800`
+- **`bg-bg-surface-hover`** — list/menu row hover backgrounds; inner surface within a panel. Light: `pacific-deep-50` / Dark: `pacific-deep-700`
 - **`bg-bg-surface-inverse`** — high-contrast inverted callouts. Light: `pacific-deep-900` / Dark: `white`
-- **`bg-bg-notification-unread`** — unread notification row background. Light: `pacific-deep-100` / Dark: `pacific-deep-700`
-- **`bg-bg-avatar-fallback`** — avatar initials fallback fill. Light: `pacific-deep-200` / Dark: `pacific-deep-500`
-- **`bg-bg-badge-info`**, **`bg-bg-badge-danger`**, **`bg-bg-badge-accent`**, **`bg-bg-badge-muted`** — fixed decorative badge fills. Constant `strait-blue-800`, `red-800`, `sunset-horizon-800`, `pacific-deep-700`.
-- **`bg-bg-overlay-dark`** — outer always-dark UI chrome (topbar root, mobile overlays, modal scrims). Constant `pacific-deep-900`.
+- **`bg-bg-surface-highlight`** — unread notification row background. Light: `pacific-deep-100` / Dark: `pacific-deep-700`
+- **`bg-bg-skeleton-strong`** — avatar initials fallback fill. Light: `pacific-deep-200` / Dark: `pacific-deep-500`
+- **`bg-bg-info-strong`**, **`bg-bg-danger-strong`**, **`bg-bg-secondary-strong`**, **`bg-bg-chrome-hover`** — fixed decorative badge fills. Constant `strait-blue-800`, `red-800`, `sunset-horizon-800`, `pacific-deep-700`.
+- **`bg-bg-overlay`** — outer always-dark UI chrome (topbar root, search dropdown, mobile overlay panel, modal scrims). Constant `pacific-deep-900`.
+- **`bg-bg-overlay-strong`** — full-screen scrim behind the mobile search overlay. Constant `pacific-deep-950`.
+- **`bg-bg-media`** — video player frame and duration pill on media thumbnails. Constant `black`.
+- **`bg-bg-tertiary`** — tertiary button surface. Constant `strait-blue-900`.
+- **`bg-bg-tertiary-hover`** — hover for `bg-bg-tertiary`. Constant `strait-blue-800`.
+- **`bg-bg-accent-hover`** — orange hover tint, used with `/10` alpha on the sign-out menu item. Constant `sunset-horizon-500`.
+- **`bg-bg-selected-strong`** — strong fill for a selected item on the page surface (current sidebar item), paired with `text-text-on-chrome`. Constant `strait-blue-800`.
 - **`bg-bg-chrome`** — inner always-dark chrome surfaces (topbar buttons, search input bg, dropdown row bgs). Constant `pacific-deep-800`.
 - **`bg-bg-chrome-hover`** — hover state for `bg-bg-chrome` controls, often used with `/60` alpha. Constant `pacific-deep-700`.
 - **`bg-bg-skeleton`** — loading skeleton placeholders. Light: `pacific-deep-100` / Dark: `pacific-deep-700`
-- **`bg-bg-control`** — standard small control surfaces, including inactive timestamp controls. Light: `neutral-300` / Dark: `pacific-deep-700`
-- **`bg-bg-primary`** — primary action surfaces. Light: `strait-blue-600p` / Dark: `strait-blue-500`
-- **`bg-bg-primary-hover`** — hover for `bg-bg-primary`. Light: `strait-blue-800` / Dark: `strait-blue-700`
-- **`bg-bg-button-playlist-active`** — active playlist/save button background. Light: `strait-blue-800` / Dark: `strait-blue-700`
-- **`bg-bg-secondary`** — brand action / CTA buttons (orange). What `bg-brand-primary` legacy utility now routes through. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
+- **`bg-bg-control`** — standard small control surfaces, including inactive timestamp controls; unchecked state of a checkbox/radio control. Light: `neutral-300` / Dark: `pacific-deep-700`
+- **`bg-bg-primary`** — primary action surfaces; colored section-header bar inside a panel. Light: `strait-blue-600p` / Dark: `strait-blue-500`
+- **`bg-bg-primary-hover`** — hover for `bg-bg-primary`; active playlist/save button background. Light: `strait-blue-800` / Dark: `strait-blue-700`
+- **`bg-bg-secondary`** — brand action / CTA buttons (orange), which the legacy `bg-brand-primary` utility routes through; selected/active chip fill. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
 - **`bg-bg-secondary-hover`** — hover for `bg-bg-secondary`. Light: `sunset-horizon-500` / Dark: `sunset-horizon-400p`
 - **`bg-bg-emblem-blue`** — blue categorical emblem fill (Community Impact: featured). Constant `pacific-deep-800`.
 - **`bg-bg-emblem-blue-deep`** — deep-blue categorical emblem fill (Community Impact: screening). Light: `pacific-deep-900` / Dark: `pacific-deep-950`
 - **`bg-bg-emblem-green`** — green categorical emblem fill (Community Impact: saves/playlists). Light: `coral-reef-800` / Dark: `coral-reef-900`
 - **`bg-bg-emblem-orange`** — orange categorical emblem fill (Community Impact: academic). Light: `sunset-horizon-700` / Dark: `sunset-horizon-800`
 - **`bg-bg-emblem-gray`** — gray categorical emblem fill (Community Impact: curated). Light: `neutral-800` / Dark: `neutral-900`
-- **`bg-bg-dialog-close`** — filled circular dialog close-button surface. Constant `strait-blue-400`.
-- **`bg-bg-timeline-dot`** — node marker on a vertical timeline rail. Constant `strait-blue-200`.
+- **`bg-bg-info-muted`** — filled circular dialog close-button surface. Constant `strait-blue-400`.
+- **`bg-bg-marker`** — node marker on a vertical timeline rail. Constant `strait-blue-200`.
 - **`bg-bg-danger`** — destructive surfaces. Constant `red-500`.
 - **`bg-bg-danger-subtle`** — soft danger badge / surface tint. Light: `red-100` / Dark: `red-950`
 - **`bg-bg-danger-strong`** — active destructive/toggled-danger surfaces. Constant `red-800`.
-- **`bg-bg-danger-strong-hover`** — hover for `bg-bg-danger-strong`. Constant `red-900`.
+- **`bg-bg-danger-hover`** — hover for `bg-bg-danger-strong`. Constant `red-900`.
 - **`bg-bg-success`** — success surfaces. Constant `green-500`.
 - **`bg-bg-success-subtle`** — soft success badge / surface tint. Light: `green-100` / Dark: `green-950`
 - **`bg-bg-warning`** — warning surfaces. Constant `amber-500`.
-- **`bg-bg-panel-primary`** — primary panel/rail surface. Light: `neutral-50` / Dark: `pacific-deep-900`
-- **`bg-bg-panel-surface`** — inner surface within a panel. Light: `pacific-deep-50` / Dark: `pacific-deep-700`
-- **`bg-bg-panel-selected`** — selected-state panel card (e.g. active selection summary). Light: `neutral-50` / Dark: `pacific-deep-900`
-- **`bg-bg-section-header`** — colored section-header bar inside a panel. Light: `strait-blue-600p` / Dark: `strait-blue-500`
-- **`bg-bg-disclosure-trigger`** — disclosure/accordion trigger surface. Light: `white` / Dark: `pacific-deep-800`
-- **`bg-bg-disclosure-content`** — expanded disclosure/accordion content surface. Light: `neutral-200` / Dark: `pacific-deep-800`
-- **`bg-bg-action-inverse`** — dark action button surface (inverted relative to panel bg). Light: `strait-blue-900` / Dark: `strait-blue-600p`
-- **`bg-bg-control-unchecked`** — unchecked state of a checkbox/radio control. Light: `neutral-300` / Dark: `pacific-deep-700`
+- **`bg-bg-primary-inverse`** — dark action button surface (inverted relative to panel bg). Light: `strait-blue-900` / Dark: `strait-blue-600p`
 - **`bg-bg-control-checked`** — checked state of a checkbox/radio control. Light: `pacific-deep-700` / Dark: `sunset-horizon-400p`
-- **`bg-bg-chip-active`** — selected/active chip fill. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
-- **`bg-bg-chip`** — inactive/subtle chip fill. Light: `strait-blue-100` / Dark: `pacific-deep-700`
-- **`bg-bg-note-thumbnail-duration`** — profile note thumbnail duration pill. Constant `strait-blue-50`.
+- **`bg-bg-tag`** — inactive/subtle chip fill. Light: `strait-blue-100` / Dark: `pacific-deep-700`
+- **`bg-bg-label`** — profile note thumbnail duration pill. Constant `strait-blue-50`.
 
 <Heading>Border tokens</Heading>
 
-- **`border-border-default`** — default card/panel border. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
-- **`border-border-subtle` / `bg-border-subtle`** — hairlines, list dividers, and subtle checkbox fills. Light: `neutral-200` / Dark: `pacific-deep-800`
-- **`border-border-divider`** — section dividers between media viewer content blocks. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
-- **`border-border-scrollbar`** — thin branded scrollbar thumbs. Constant `strait-blue-200`.
-- **`border-border-strong`** — emphasized boundaries. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
-- **`border-border-strong-constant`** — TextField default border. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
+- **`border-border`** — default card/panel border; section dividers between media viewer content blocks; disclosure/accordion content divider. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
+- **`border-border-subtle` / `bg-border-subtle`** — hairlines, list dividers, and subtle checkbox fills; dividers and category borders inside a panel. Light: `neutral-200` / Dark: `pacific-deep-800`
+- **`border-bg-scrollbar`** — thin branded scrollbar thumbs. Constant `strait-blue-200`.
+- **`border-border-strong`** — emphasized boundaries; TextField default border; standalone divider in profile note entries. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
 - **`border-border-chrome`** — hairlines on always-dark chrome (search dropdown dividers, mobile overlay header border). Constant `pacific-deep-700`.
-- **`border-border-input`** — TextField focused/active border. Light: `coral-reef-400p` / Dark: `sunset-horizon-400p`
+- **`border-border-active`** — TextField focused/active border. Light: `coral-reef-400p` / Dark: `sunset-horizon-400p`
 - **`border-border-danger`** — error-state borders. Constant `red-500`.
-- **`border-border-note-divider`** — standalone divider in profile note entries. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
-- **`border-border-panel-divider`** — dividers and category borders inside a panel. Light: `neutral-200` / Dark: `pacific-deep-800`
-- **`border-border-disclosure-content`** — disclosure/accordion content divider. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
-- **`border-border-disclosure-trigger`** — closed disclosure/accordion trigger divider. Light: `pacific-deep-300` / Dark: `transparent`
-- **`border-border-chip-active`** — selected/active chip outline. Constant `sunset-horizon-400p`.
+- **`border-border-disclosure`** — closed disclosure/accordion trigger divider. Light: `pacific-deep-300` / Dark: `transparent`
+- **`border-border-accent`** — selected/active chip outline. Constant `sunset-horizon-400p`.
+- **`border-border-secondary`** — outline of an orange outline button. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
 
 <Heading>Focus ring</Heading>
 
@@ -122,8 +114,8 @@ This page is the working reference for the token catalogue. For the underlying d
 
 <Heading>Analytics charts</Heading>
 
-Chart labels use `fill-text-primary`; grid lines use `stroke-border-default`.
-Series inherit `currentColor` from `text-text-secondary` for media views,
+Chart labels use `fill-text`; grid lines use `stroke-border`.
+Series inherit `currentColor` from `text-text-subtle` for media views,
 `text-text-link` for playback starts, watch time and segment coverage, or
 `text-text-success` for reached-end events. Keep these foreground tokens separate
 from label and grid colors so charts remain readable in both themes.
@@ -132,11 +124,7 @@ from label and grid colors so charts remain readable in both themes.
 
 A small number of patterns are genuinely unique and stay on the raw `cinemata-*` palette. These are the documented exceptions:
 
-- **Switch track and thumb** — `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`), `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`), `bg-switch-thumb` (`neutral-100`). Component-unique semantic tokens for the autoplay switch recipe.
-- **Avatar inverted-neutral inner bg** — `bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50`. INVERTS neutrals between themes for the initials-fallback ring.
-- **Carousel indicator dots** — `bg-cinemata-strait-blue-800 dark:bg-white` (active), `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` (inactive). One-off "active indicator on media surface" pattern.
-- **HeroSection retry button** — `bg-cinemata-strait-blue-700` solid with `-800` hover. Bespoke decorative button.
-- **Carousel overlay arrow text** — theme-aware blue pair `strait-blue-700 → strait-blue-600p`. Large chrome controls overlaid on media; no other shared use.
+- **Switch track and thumb** — `bg-bg-control-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`), `bg-bg-control-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`), `bg-bg-control-thumb` (`neutral-100`). Component-unique semantic tokens for the autoplay switch recipe.
 
 For all other usages, prefer a semantic token. If you find yourself reaching for the same raw palette pair more than once for the same role, consider whether it deserves a new token.
 
@@ -144,11 +132,11 @@ For all other usages, prefer a semantic token. If you find yourself reaching for
 
 The redesigned auth pages (`templates/account/`, `templates/mfa/`) render in the legacy Django shell but consume the modern token layer. They use the semantic tokens above directly wherever a token already carries the needed value — `bg-bg-page`, `bg-bg-surface` (gradient start), `text-text-strong`, `text-text-muted`, `text-text-danger`, `ring-ring-focus`, `text-text-link`, and `var(--bg-primary)` for the primary button + header icon. **Fields are transparent** (no surface fill) so the gradient panel shows through, separated only by the underline border.
 
-Auth **components** use purpose-based semantic tokens (uniform with the rest of the app), not `--auth-*` feature aliases: accent/CTA button → `bg-secondary`/`bg-secondary-hover`; primary & secondary buttons → `bg-primary`/`bg-primary-hover`; button text → `text-on-primary`; checkbox checked fill → `bg-secondary` (same as the shared `CheckboxButton`); field underline → `border-default`; requirements panel → `bg-surface-muted` / `text-secondary`; status badges → `bg-success-subtle` / `bg-danger-subtle` (new, see Background tokens) + `text-success` / `text-danger`.
+Auth **components** use purpose-based semantic tokens (uniform with the rest of the app), not `--auth-*` feature aliases: accent/CTA button → `bg-secondary`/`bg-secondary-hover`; primary & secondary buttons → `bg-primary`/`bg-primary-hover`; button text → `text-on-primary`; checkbox checked fill → `bg-secondary` (same as the shared `CheckboxButton`); field underline → `border`; requirements panel → `bg-surface-muted` / `text-subtle`; status badges → `bg-success-subtle` / `bg-danger-subtle` (new, see Background tokens) + `text-success` / `text-danger`.
 
 Only one genuinely auth-specific **decorative** feature token remains on `.auth-figma-page` (the panel gradient end stop now uses `bg-page` directly):
 
-- **`--auth-ring-color`** — decorative concentric ring outlines. Light: `pacific-deep-200` (coincides with `border-default`) / Dark: `pacific-deep-500` (no existing token has this dark, kept lighter than `border-default`'s `pacific-deep-700` so the faint rings stay visible).
+- **`--auth-ring-color`** — decorative concentric ring outlines. Light: `pacific-deep-200` (coincides with `border`) / Dark: `pacific-deep-500` (no existing token has this dark, kept lighter than `border`'s `pacific-deep-700` so the faint rings stay visible).
 
 The full-screen message overlay defines a parallel set on `.auth-message-stack` (scrim, banner gradient, `color-mix` ring/shadow, success/error/info icon badges) — see `tailwind.css`.
 

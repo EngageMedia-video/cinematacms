@@ -17,7 +17,7 @@ export function Step1UploadMedia({ files }) {
 				<Text as="h2" variant="h5" id="bulk-media-upload-title" className="m-0 text-text-strong">
 					Bulk Media Upload
 				</Text>
-				<div className="my-4 border-b border-b-border-divider" />
+				<div className="my-4 border-b border-b-border" />
 				<MediaDropzone
 					multiple
 					accept="video/*"

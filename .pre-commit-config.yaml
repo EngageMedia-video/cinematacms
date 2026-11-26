@@ -65,3 +65,9 @@ repos:
         language: python
         pass_filenames: false
         files: ^(frontend/src/static/css/(tokens\.json|tailwind\.css|config/_light_theme\.scss)|scripts/generate_color_tokens\.py)$
+      - id: color-token-references
+        name: every color token in frontend code is defined
+        entry: python scripts/check_color_token_references.py
+        language: python
+        pass_filenames: false
+        files: ^((frontend/src|templates)/.*\.(js|jsx|ts|tsx|mdx|html|css|scss)|scripts/check_color_token_references\.py)$

@@ -24,7 +24,7 @@ export function TopbarLogo() {
 			href={homeHref}
 			title={title}
 			aria-label={title}
-			className="inline-flex items-center shrink-0 no-underline text-cinemata-white"
+			className="inline-flex items-center shrink-0 no-underline text-text-on-chrome-strong"
 		>
 			{mobileLogo ? (
 				<img src={mobileLogo} alt={title} className="block h-8 w-auto sm:hidden" loading="eager" />

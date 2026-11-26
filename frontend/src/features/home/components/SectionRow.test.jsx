@@ -137,7 +137,7 @@ describe('SectionRow', () => {
 				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
 			</SectionRow>
 		);
-		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toHaveClass('text-text-primary');
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toHaveClass('text-text');
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
 		expect(link).toHaveAttribute('href', '/recommended');
 		expect(link).toHaveClass('text-text-link');

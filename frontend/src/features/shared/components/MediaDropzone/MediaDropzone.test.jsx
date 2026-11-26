@@ -15,7 +15,7 @@ describe('MediaDropzone', () => {
 		expect(border).toHaveAttribute('data-dropzone-border', 'true');
 		expect(screen.getByText('Drag & Drop Files(s) or')).toBeVisible();
 		expect(button).toBeVisible();
-		expect(button).toHaveClass('bg-brand-primary');
+		expect(button).toHaveClass('bg-bg-secondary');
 		expect(icon).not.toBeNull();
 	});
 

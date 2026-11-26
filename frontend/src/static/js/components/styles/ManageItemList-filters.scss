@@ -117,7 +117,7 @@
 		letter-spacing: 0.007px;
 		margin-bottom: 4px;
 		border: 0;
-		color: var(--text-secondary, var(--body-text-color));
+		color: var(--text-subtle, var(--body-text-color));
 	}
 
 	.mi-filter-browse-options {
@@ -194,13 +194,13 @@
 		border: 0;
 		border-radius: var(--radius-4);
 		background: var(--bg-surface-muted, var(--input-bg-color));
-		color: var(--text-primary, var(--input-color));
+		color: var(--text, var(--input-color));
 		font-size: 14px;
 		width: 200px;
 		outline: none;
 
 		&:focus {
-			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-input));
+			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-active));
 		}
 	}
 }

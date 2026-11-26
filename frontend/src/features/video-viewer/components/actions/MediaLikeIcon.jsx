@@ -22,7 +22,7 @@ export function MediaLikeIcon() {
 
 	const [likedMedia, setLikedMedia] = useState(MediaPageStore.get('user-liked-media'));
 	const [likesCounter, setLikesCounter] = useState(formatNumber(MediaPageStore.get('media-likes'), false));
-	const activeButtonClassName = 'bg-bg-danger-strong hover:bg-bg-danger-strong-hover';
+	const activeButtonClassName = 'bg-bg-danger-strong hover:bg-bg-danger-hover';
 	const textClassName = 'whitespace-nowrap text-current';
 
 	function updateStateValues() {

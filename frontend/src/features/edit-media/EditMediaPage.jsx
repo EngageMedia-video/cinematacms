@@ -171,7 +171,7 @@ function EditMediaPageContent() {
 	}
 
 	return (
-		<div className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
+		<div className="add-media-feature @container/page mx-4 py-8 text-text sm:mx-6 lg:mx-10">
 			<div className="mx-auto grid w-full max-w-[1120px] grid-cols-1 gap-8 @4xl/page:grid-cols-[minmax(0,1fr)_340px] @4xl/page:items-start">
 				<div className="min-w-0 @4xl/page:col-start-1">
 					<div className="flex flex-col gap-8">

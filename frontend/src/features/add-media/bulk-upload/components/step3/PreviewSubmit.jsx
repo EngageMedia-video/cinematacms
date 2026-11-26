@@ -88,7 +88,7 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 					path for regular users.
 				</Text>
 
-				<div className="mt-6 grid gap-4 rounded-ds-8 border border-border-default bg-bg-surface-muted p-4 sm:grid-cols-3">
+				<div className="mt-6 grid gap-4 rounded-ds-8 border border-border bg-bg-surface-muted p-4 sm:grid-cols-3">
 					<div>
 						<Text as="p" variant="body-12-medium" className="m-0 text-text-muted">
 							Ready files
@@ -135,8 +135,8 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 							key={file.id}
 							className="grid grid-cols-1 items-start gap-8 @3xl/main:grid-cols-[minmax(0,1fr)_340px]"
 						>
-							<article className="min-w-0 rounded-ds-8 border border-border-default bg-bg-surface p-5">
-								<header className="flex flex-col gap-3 border-b border-border-divider pb-4 sm:flex-row sm:items-start sm:justify-between">
+							<article className="min-w-0 rounded-ds-8 border border-border bg-bg-surface p-5">
+								<header className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
 									<div className="min-w-0">
 										<Text
 											as="h2"

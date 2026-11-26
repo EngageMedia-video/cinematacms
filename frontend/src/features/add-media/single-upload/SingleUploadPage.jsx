@@ -86,7 +86,7 @@ function SingleUploadContent({
 						Single Media Upload
 					</Text>
 
-					<div className="my-4 border-b border-b-border-divider" />
+					<div className="my-4 border-b border-b-border" />
 
 					{externalMedia ? (
 						<div className="flex items-center gap-3 rounded-ds-4 bg-bg-surface-muted px-4 py-3">

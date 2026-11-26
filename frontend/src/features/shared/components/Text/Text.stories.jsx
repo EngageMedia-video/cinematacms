@@ -109,7 +109,7 @@ export const Default = {
 
 		await expect(el).toBeVisible();
 		await expect(el).toHaveClass('body-body-14-regular');
-		await expect(el).toHaveClass('text-text-primary');
+		await expect(el).toHaveClass('text-text');
 	},
 };
 
@@ -171,7 +171,7 @@ export const MetaColor = {
 		const views = canvas.getByText('12,345 views');
 
 		await expect(views).toHaveClass('text-text-muted');
-		await expect(views).not.toHaveClass('text-text-primary');
+		await expect(views).not.toHaveClass('text-text');
 	},
 };
 
@@ -189,8 +189,8 @@ export const DescriptionColor = {
 		const canvas = within(canvasElement);
 		const description = canvas.getByText(/A synopsis loaded/);
 
-		await expect(description).toHaveClass('text-text-description');
-		await expect(description).not.toHaveClass('text-text-primary');
+		await expect(description).toHaveClass('text-text-muted');
+		await expect(description).not.toHaveClass('text-text');
 	},
 };
 
@@ -201,7 +201,7 @@ export const HeadingH1 = {
 	args: {
 		variant: 'h1',
 		children: 'Asia-Pacific Social Issue Cinema',
-		className: 'text-text-primary',
+		className: 'text-text',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -217,7 +217,7 @@ export const HeadingH2 = {
 	args: {
 		variant: 'h2',
 		children: 'Featured Films',
-		className: 'text-text-primary',
+		className: 'text-text',
 	},
 };
 
@@ -226,7 +226,7 @@ export const HeadingH4 = {
 	args: {
 		variant: 'h4',
 		children: 'Most Popular',
-		className: 'text-text-primary',
+		className: 'text-text',
 	},
 };
 
@@ -235,7 +235,7 @@ export const HeadingH6 = {
 	args: {
 		variant: 'h6',
 		children: 'The Silent Hours',
-		className: 'text-text-primary',
+		className: 'text-text',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -251,7 +251,7 @@ export const HeadingSemanticOverride = {
 		variant: 'h6',
 		as: 'h2',
 		children: 'Card Title (h6 look, h2 in the DOM)',
-		className: 'text-text-primary',
+		className: 'text-text',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -267,7 +267,7 @@ export const AllHeadings = {
 	render: () => (
 		<div className="flex max-w-2xl flex-col gap-4 bg-bg-page p-6">
 			{['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map((v) => (
-				<Text key={v} variant={v} className="text-text-primary">
+				<Text key={v} variant={v} className="text-text">
 					{v} — Documentary filmmaking for social change
 				</Text>
 			))}
@@ -309,7 +309,7 @@ export const AsSpan = {
 	},
 	render: (args) => (
 		<div className="max-w-sm bg-bg-page p-6">
-			<p className="body-body-14-regular text-text-primary">
+			<p className="body-body-14-regular text-text">
 				This paragraph contains <Text {...args} /> rendered as a span.
 			</p>
 		</div>

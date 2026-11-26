@@ -71,7 +71,7 @@ export function MediaSaveButton() {
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className={cn(
 							'body-body-14-medium whitespace-nowrap p-size-8',
-							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
+							savedToPlaylist ? 'bg-bg-primary-hover' : undefined
 						)}
 						size="sm"
 					/>
@@ -85,7 +85,7 @@ export function MediaSaveButton() {
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className={cn(
 							'body-body-14-medium whitespace-nowrap',
-							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
+							savedToPlaylist ? 'bg-bg-primary-hover' : undefined
 						)}
 						size="sm"
 					>

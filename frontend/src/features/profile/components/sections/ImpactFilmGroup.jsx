@@ -20,18 +20,18 @@ function ImpactEntry({ entry }) {
 	const title = entry?.title || '';
 
 	return (
-		<li className="flex min-w-0 flex-col gap-1 border-b border-border-divider py-3 last:border-b-0">
+		<li className="flex min-w-0 flex-col gap-1 border-b border-border py-3 last:border-b-0">
 			{href ? (
 				<a
 					href={href}
 					target="_blank"
 					rel="noreferrer"
-					className="w-fit text-text-primary no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-medium"
+					className="w-fit text-text no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-medium"
 				>
 					{title}
 				</a>
 			) : (
-				<span className="text-text-primary body-body-14-medium">{title}</span>
+				<span className="text-text body-body-14-medium">{title}</span>
 			)}
 			{entry?.details ? (
 				<p className="m-0 break-words text-text-muted body-body-12-regular">{entry.details}</p>
@@ -79,7 +79,7 @@ export function ImpactFilmGroup({ film, index = 0 }) {
 	if (!rows.length) return null;
 
 	return (
-		<section className="flex flex-col gap-4 rounded-lg border border-border-default p-4">
+		<section className="flex flex-col gap-4 rounded-lg border border-border p-4">
 			<ImpactFilmRow media={film.media} index={index} />
 			<div className="flex flex-col gap-3">
 				{rows.map((row) => (

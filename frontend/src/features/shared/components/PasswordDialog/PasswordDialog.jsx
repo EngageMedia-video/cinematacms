@@ -139,7 +139,7 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 							<button
 								type="submit"
 								disabled={submitting || !password}
-								className="shrink-0 px-7 py-3.5 border-none rounded-[10px] bg-brand-primary text-btn-text text-[15px] font-bold tracking-[0.5px] cursor-pointer hover:bg-brand-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+								className="shrink-0 px-7 py-3.5 border-none rounded-[10px] bg-bg-secondary text-text-on-secondary text-[15px] font-bold tracking-[0.5px] cursor-pointer hover:bg-bg-secondary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
 							>
 								{submitting ? 'Verifying…' : 'UNLOCK'}
 							</button>
