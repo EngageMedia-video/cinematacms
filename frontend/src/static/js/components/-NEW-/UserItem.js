@@ -222,7 +222,7 @@ export function UserItem(props) {
 
 				.member-info :global(h3) {
 					font-size: 1.125rem;
-					color: var(--text-primary, var(--cinemata-pacific-deep-700));
+					color: var(--text, var(--cinemata-pacific-deep-700));
 					margin-bottom: 0.25rem;
 				}
 

@@ -18,7 +18,7 @@ export function FieldGroup({ children, description, headerAside = null, title })
 				{headerAside ? <div className="hidden shrink-0 md:block">{headerAside}</div> : null}
 			</div>
 
-			<div className="my-6 border-b border-b-border-divider" />
+			<div className="my-6 border-b border-b-border" />
 
 			<div className="grid gap-5">{children}</div>
 		</Card>

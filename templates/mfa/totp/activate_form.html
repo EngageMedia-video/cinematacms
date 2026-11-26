@@ -46,7 +46,7 @@
   <div id="step-1-container" class="flex w-full flex-col items-center gap-6">
     <div class="flex w-full flex-col items-center gap-2">
       {# QR codes need a light background with a quiet zone in both themes to stay scannable. #}
-      <div class="rounded-xl border border-border-default bg-white p-4 [&_img]:block [&_img]:h-44 [&_img]:w-44">
+      <div class="rounded-xl border border-border bg-white p-4 [&_img]:block [&_img]:h-44 [&_img]:w-44">
         {% element img src=totp_svg_data_uri alt=form.secret tags="mfa,totp,qr" %}
         {% endelement %}
       </div>
@@ -55,7 +55,7 @@
 
     <div class="w-full">
       <p class="m-0 mb-2 text-sm leading-5 text-text-muted">{% trans "Can't scan it? Enter this key manually:" %}</p>
-      <div class="flex items-center gap-3 rounded border border-border-default bg-bg-surface-muted px-4 py-3">
+      <div class="flex items-center gap-3 rounded border border-border bg-bg-surface-muted px-4 py-3">
         <code id="totp-secret" class="min-w-0 flex-1 break-all text-sm font-medium tracking-wide text-text-strong">{{ form.secret }}</code>
         <button type="button" id="copySecret" class="auth-text-link shrink-0 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Copy" %}</button>
       </div>
@@ -76,12 +76,12 @@
       </div>
 
       <div id="otp-input-container" class="flex w-full max-w-[480px] justify-center gap-2 sm:gap-3 md:gap-6">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
-        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
       </div>
 
       <div class="flex w-full flex-col items-center gap-3">

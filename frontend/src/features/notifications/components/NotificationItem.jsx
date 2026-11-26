@@ -7,21 +7,21 @@ import { Icon } from '../../shared/components/Icon';
 const ITEM_THEMES = {
 	dark: {
 		readBg: 'bg-bg-surface',
-		unreadBg: 'bg-bg-notification-unread',
+		unreadBg: 'bg-bg-surface-highlight',
 		hoverBg: 'hover:bg-bg-surface-muted',
 		avatarBg: 'bg-bg-surface-muted',
 		badgeBorder: 'border-bg-surface',
-		messageText: 'text-text-primary',
+		messageText: 'text-text',
 		metaText: 'text-text-muted',
 		menuText: 'text-text-muted',
 	},
 	light: {
 		readBg: 'bg-bg-surface',
-		unreadBg: 'bg-bg-notification-unread',
+		unreadBg: 'bg-bg-surface-highlight',
 		hoverBg: 'hover:bg-bg-surface-muted',
 		avatarBg: 'bg-bg-surface-muted',
 		badgeBorder: 'border-bg-surface',
-		messageText: 'text-text-primary',
+		messageText: 'text-text',
 		metaText: 'text-text-muted',
 		menuText: 'text-text-muted',
 	},
@@ -80,7 +80,7 @@ export function NotificationItem({ notification, theme = 'dark' }) {
 					{notification.actor?.thumbnail_url ? (
 						<img src={notification.actor.thumbnail_url} alt="" className="h-full w-full object-cover" />
 					) : (
-						<span className="flex h-full w-full items-center justify-center bg-bg-avatar-fallback text-[14px] font-semibold leading-none text-text-avatar-fallback">
+						<span className="flex h-full w-full items-center justify-center bg-bg-skeleton-strong text-[14px] font-semibold leading-none text-text">
 							{(notification.actor?.username ?? '?').slice(0, 2).toUpperCase()}
 						</span>
 					)}

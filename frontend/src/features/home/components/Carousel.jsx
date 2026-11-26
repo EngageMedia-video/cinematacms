@@ -300,7 +300,7 @@ function CarouselArrows() {
 function CarouselOverlayArrows() {
 	const { atStart, atEnd, goPrev, goNext } = use(CarouselContext);
 	const btnClass =
-		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-text-secondary transition-colors hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex';
+		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-text-subtle transition-colors hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex';
 
 	// The arrows are offset outside the carousel box into the page inset. That
 	// outset must not exceed the inset, or the arrow pokes past the viewport edge

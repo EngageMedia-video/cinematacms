@@ -43,7 +43,7 @@ export function FilmList({ config, isOwner, media = [], onShare, playlistToken }
 
 	return (
 		<Card as="section" className="overflow-visible rounded-ds-8">
-			<div className="border-b border-border-divider px-4 py-5 sm:px-5">
+			<div className="border-b border-border px-4 py-5 sm:px-5">
 				<h2 className="m-0 text-text-strong heading-h6-20-medium">All Videos ({orderedMedia.length})</h2>
 			</div>
 

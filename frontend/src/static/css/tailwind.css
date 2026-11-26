@@ -12,7 +12,7 @@
  *   bg-surface-body          → var(--body-bg-color)
  *   text-content-body        → var(--body-text-color)
  *   bg-brand-primary         → var(--bg-secondary)
- *   border-border-input      → var(--input-border-color)
+ *   border-border-hr         → var(--hr-color)
  *   text-comment-author      → var(--comment-author-text-color)
  *
  * Tailwind v4 generates utilities on-demand, so declaring all variables
@@ -272,12 +272,12 @@ body .auth-message-stack[hidden] {
 }
 
 body.dark_theme .auth-message-stack {
-	--auth-message-overlay: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 58%, transparent);
+	--auth-message-overlay: color-mix(in srgb, var(--bg-overlay, var(--bg-page)) 58%, transparent);
 	--auth-message-panel-from: var(--cinemata-pacific-deep-900);
 	--auth-message-panel-to: var(--cinemata-pacific-deep-950);
 	--auth-message-text: var(--text-on-primary);
 	--auth-message-ring: color-mix(in srgb, var(--text-on-primary) 24%, transparent);
-	--auth-message-shadow: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 28%, transparent);
+	--auth-message-shadow: color-mix(in srgb, var(--bg-overlay, var(--bg-page)) 28%, transparent);
 	--auth-message-icon-success-bg: var(--cinemata-green-950);
 	--auth-message-icon-success-color: var(--cinemata-green-500);
 	--auth-message-icon-error-bg: var(--cinemata-red-950);
@@ -509,7 +509,6 @@ body .auth-message-close svg {
 	--color-content-danger: var(--danger-color);
 
 	/* ── Borders ──────────────────────────────────────────── */
-	--color-border-input: var(--input-border-color);
 	--color-border-hr: var(--hr-color);
 	--color-border-dotted-outline: var(--dotted-outline-color);
 
@@ -871,11 +870,6 @@ body .auth-message-close svg {
 	--color-site-player-subtitle: var(--site-player-subtitle-color);
 	--color-site-player-shadow: var(--site-player-shadow-color);
 
-	/* ── Component: Switch ───────────────────────────────── */
-	--color-switch-track-on: var(--switch-track-on-color);
-	--color-switch-track-off: var(--switch-track-off-color);
-	--color-switch-thumb: var(--switch-thumb-color);
-
 	/* ── Cinemata Revamp Palette ─────────────────────────── */
 	--color-cinemata-white: var(--cinemata-white);
 	--color-cinemata-black: var(--cinemata-black);
@@ -995,7 +989,7 @@ body .auth-message-close svg {
  *
  * Slash-style namespaces: bg/*, text/*, border/*, ring/*. Utilities
  * follow Tailwind v4's name-prefix convention, e.g. bg-bg-page,
- * text-text-primary, border-border-default, ring-ring-focus.
+ * text-text, border-border, ring-ring-focus.
  *
  * See docs/modern-track-color-system.md for the full reference.
  */
@@ -1409,7 +1403,7 @@ header[data-topbar] button:not(:disabled) {
 	}
 
 	.thin-brand-scrollbar {
-		scrollbar-color: var(--border-scrollbar) transparent;
+		scrollbar-color: var(--scrollbar-thumb) transparent;
 		scrollbar-width: thin;
 	}
 
@@ -1424,17 +1418,17 @@ header[data-topbar] button:not(:disabled) {
 	.thin-brand-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		border-radius: 999px;
-		background-color: var(--border-scrollbar);
+		background-color: var(--scrollbar-thumb);
 		background-clip: content-box;
 	}
 
 	/*
-	 * Thin scrollbar utility using --border-default. Works for both
+	 * Thin scrollbar utility using --border. Works for both
 	 * vertical and horizontal overflow (sets width + height).
 	 * Used by sidebar shell and horizontal share-tile row.
 	 */
 	.thin-scrollbar {
-		scrollbar-color: var(--border-default) transparent;
+		scrollbar-color: var(--border) transparent;
 		scrollbar-width: thin;
 	}
 
@@ -1450,7 +1444,7 @@ header[data-topbar] button:not(:disabled) {
 	.thin-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		border-radius: 999px;
-		background-color: var(--border-default);
+		background-color: var(--border);
 		background-clip: content-box;
 	}
 }

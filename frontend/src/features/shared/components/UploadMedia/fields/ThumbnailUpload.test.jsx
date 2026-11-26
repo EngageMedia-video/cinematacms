@@ -59,6 +59,14 @@ describe('ThumbnailUploadField', () => {
 		);
 	});
 
+	it('fills the selected tab with the tab selection token', () => {
+		render(<ThumbnailUploadField />);
+
+		expect(screen.getByRole('tab', { name: 'UPLOAD THUMBNAIL' }).style.backgroundColor).toBe(
+			'var(--tab-selected-bg)'
+		);
+	});
+
 	it('keeps the upload tab usable without a media token', () => {
 		const poster = new File(['poster'], 'poster.png', { type: 'image/png' });
 		const onFileSelected = vi.fn();

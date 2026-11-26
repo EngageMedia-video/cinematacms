@@ -156,7 +156,7 @@ export function LazyLoadItemListSplit(props) {
 						.error-state {
 							text-align: center;
 							padding: 4rem 2rem;
-							color: var(--text-primary, var(--cinemata-pacific-deep-700));
+							color: var(--text, var(--cinemata-pacific-deep-700));
 						}
 
 						.error-icon {
@@ -235,7 +235,7 @@ export function LazyLoadItemListSplit(props) {
 						.empty-state {
 							text-align: center;
 							padding: 4rem 2rem;
-							color: var(--text-primary, var(--cinemata-pacific-deep-700));
+							color: var(--text, var(--cinemata-pacific-deep-700));
 							opacity: 0.7;
 						}
 

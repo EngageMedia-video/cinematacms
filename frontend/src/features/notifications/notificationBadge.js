@@ -1,13 +1,13 @@
 const NOTIFICATION_BADGES = {
-	comment: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
-	reply: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
-	mention: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
-	like: { icon: 'thumbsUpRed', bgClass: 'bg-bg-badge-danger' },
-	added_to_playlist: { icon: 'addedFavorite', bgClass: 'bg-bg-badge-accent' },
-	follow: { icon: 'followUser', bgClass: 'bg-bg-badge-info' },
-	new_media: { icon: 'recentlyUpload', bgClass: 'bg-bg-badge-muted' },
-	system_announcement: { icon: 'notificationBell', bgClass: 'bg-bg-badge-muted' },
-	media_report: { icon: 'infoCircle', bgClass: 'bg-bg-badge-danger' },
+	comment: { icon: 'commentBlue', bgClass: 'bg-bg-info-strong' },
+	reply: { icon: 'commentBlue', bgClass: 'bg-bg-info-strong' },
+	mention: { icon: 'commentBlue', bgClass: 'bg-bg-info-strong' },
+	like: { icon: 'thumbsUpRed', bgClass: 'bg-bg-danger-strong' },
+	added_to_playlist: { icon: 'addedFavorite', bgClass: 'bg-bg-secondary-strong' },
+	follow: { icon: 'followUser', bgClass: 'bg-bg-info-strong' },
+	new_media: { icon: 'recentlyUpload', bgClass: 'bg-bg-chrome-hover' },
+	system_announcement: { icon: 'notificationBell', bgClass: 'bg-bg-chrome-hover' },
+	media_report: { icon: 'infoCircle', bgClass: 'bg-bg-danger-strong' },
 };
 
 export function getBadgeForType(type) {

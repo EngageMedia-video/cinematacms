@@ -8,8 +8,8 @@ export function ProfileTabs({ activeTab, tabs }) {
 			aria-label="Profile sections"
 			className="w-full"
 			listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
-			triggerClassName="min-w-max no-underline text-text-tab-trigger"
-			triggerSelectedColor="bg-bg-tab-trigger-selected"
+			triggerClassName="min-w-max no-underline text-text-on-primary"
+			triggerSelectedColor="--tab-selected-bg"
 		>
 			{tabs.map((tab) => (
 				<TabContent key={tab.id} value={tab.id} title={tab.label} href={tab.href}>

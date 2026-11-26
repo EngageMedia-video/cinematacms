@@ -44,7 +44,7 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 			title={label}
 			className={cn(
 				'inline-flex size-9 items-center justify-center rounded-full border no-underline transition-colors duration-200',
-				'border-border-default text-text-muted hover:border-border-strong hover:text-text-strong',
+				'border-border text-text-muted hover:border-border-strong hover:text-text-strong',
 				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus'
 			)}
 		>

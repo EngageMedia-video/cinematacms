@@ -57,7 +57,7 @@ describe('Dropdown', () => {
 
 		const trigger = screen.getByRole('button', { name: 'Sort by: Name A–Z' });
 
-		expect(trigger).toHaveClass('bg-bg-action-inverse', 'text-text-action-inverse');
+		expect(trigger).toHaveClass('bg-button-inverse-bg', 'text-button-inverse-text');
 		expect(trigger.querySelector('svg[data-icon="sortArrows"]')).not.toBeNull();
 	});
 

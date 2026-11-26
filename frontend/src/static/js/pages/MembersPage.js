@@ -194,7 +194,7 @@ export class MembersPage extends Page {
 							gap: 0.75rem;
 							padding: 0.75rem 1rem;
 							background: var(--bg-surface, var(--cinemata-neutral-50));
-							border: 1px solid var(--border-default, var(--cinemata-pacific-deep-200));
+							border: 1px solid var(--border, var(--cinemata-pacific-deep-200));
 							border-radius: 8px;
 							margin-bottom: 1rem;
 						}
@@ -211,7 +211,7 @@ export class MembersPage extends Page {
 							background: transparent;
 							font-size: 1rem;
 							outline: none;
-							color: var(--text-primary, var(--cinemata-pacific-deep-700));
+							color: var(--text, var(--cinemata-pacific-deep-700));
 						}
 
 						.search-box input::placeholder {
@@ -227,12 +227,12 @@ export class MembersPage extends Page {
 						.filter-select {
 							flex: 1;
 							padding: 0.75rem 2.5rem 0.75rem 1rem;
-							border: 1px solid var(--border-default, var(--cinemata-pacific-deep-200));
+							border: 1px solid var(--border, var(--cinemata-pacific-deep-200));
 							border-radius: 8px;
 							background: var(--bg-surface, var(--cinemata-neutral-50));
 							font-size: 0.95rem;
 							cursor: pointer;
-							color: var(--text-primary, var(--cinemata-pacific-deep-700));
+							color: var(--text, var(--cinemata-pacific-deep-700));
 							-webkit-appearance: none;
 							-moz-appearance: none;
 							appearance: none;
@@ -249,7 +249,7 @@ export class MembersPage extends Page {
 
 						.filter-select option {
 							background: var(--bg-surface-raised, var(--cinemata-white));
-							color: var(--text-primary, var(--cinemata-pacific-deep-700));
+							color: var(--text, var(--cinemata-pacific-deep-700));
 						}
 
 						.members-grid-container {

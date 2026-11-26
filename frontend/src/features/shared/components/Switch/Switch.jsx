@@ -34,7 +34,7 @@ export function Switch({
 				className
 			)}
 		>
-			{children && <span className="body-body-16-regular text-text-primary">{children}</span>}
+			{children && <span className="body-body-16-regular text-text">{children}</span>}
 
 			<input
 				type="checkbox"

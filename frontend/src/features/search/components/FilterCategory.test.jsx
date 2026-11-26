@@ -15,8 +15,8 @@ describe('FilterCategory', () => {
 
 		expect(screen.queryByLabelText('Philippines')).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Country of Origin/i }).closest('section')).toHaveClass(
-			'border-border-disclosure-trigger',
-			'bg-bg-disclosure-trigger'
+			'border-disclosure-trigger-border',
+			'bg-bg-surface-raised'
 		);
 
 		await user.click(screen.getByRole('button', { name: /Country of Origin/i }));
@@ -25,13 +25,13 @@ describe('FilterCategory', () => {
 		expect(document.getElementById('country-options')).toHaveClass(
 			'max-h-[186px]',
 			'overflow-y-auto',
-			'border-border-disclosure-content',
-			'bg-bg-disclosure-content'
+			'border-border',
+			'bg-bg-surface-muted'
 		);
 		expect(screen.getByText('Philippines').closest('label').querySelector('[aria-hidden="true"]')).toHaveClass(
-			'bg-bg-control-unchecked',
+			'bg-bg-control',
 			'peer-checked:bg-bg-control-checked',
-			'peer-checked:text-text-control-checked'
+			'peer-checked:text-control-checked-icon'
 		);
 
 		await user.click(screen.getByRole('button', { name: /Country of Origin/i }));

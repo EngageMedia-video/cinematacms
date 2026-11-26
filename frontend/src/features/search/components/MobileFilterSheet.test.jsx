@@ -34,7 +34,7 @@ describe('MobileFilterSheet', () => {
 
 		expect(screen.getByRole('dialog', { name: 'Search filters' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Cancel' })).toHaveClass(
-			'bg-bg-action-inverse',
+			'bg-button-inverse-bg',
 			'text-text-on-primary'
 		);
 		expect(screen.getByRole('button', { name: 'Save' })).toHaveClass('bg-bg-secondary', 'text-text-on-primary');

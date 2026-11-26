@@ -142,10 +142,10 @@ export function CommunityImpactSection({
 	}
 
 	return (
-		<section aria-labelledby={headingId} className="w-full text-text-primary">
+		<section aria-labelledby={headingId} className="w-full text-text">
 			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
 				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
+					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text">
 						{title}
 					</Text>
 					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">

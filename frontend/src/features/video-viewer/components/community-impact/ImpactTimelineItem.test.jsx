@@ -46,8 +46,8 @@ describe('ImpactTimelineItem', () => {
 
 		const item = container.querySelector('li');
 		const rail = item?.querySelector('span[aria-hidden="true"]');
-		const connector = rail?.querySelector('.bg-border-default');
-		const dot = rail?.querySelector('.bg-bg-timeline-dot');
+		const connector = rail?.querySelector('.bg-border');
+		const dot = rail?.querySelector('.bg-timeline-dot');
 
 		expect(item).toHaveClass('min-h-[99px]');
 		expect(rail).toHaveClass('min-h-[99px]');

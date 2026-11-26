@@ -36,11 +36,11 @@ export function FilterCategory({
 	return (
 		<section
 			className={cn(
-				'overflow-hidden rounded-[4px] bg-bg-disclosure-trigger',
-				!isExpanded && 'border-b border-border-disclosure-trigger'
+				'overflow-hidden rounded-[4px] bg-bg-surface-raised',
+				!isExpanded && 'border-b border-disclosure-trigger-border'
 			)}
 		>
-			<div className="flex h-9 items-center rounded-[4px] bg-bg-disclosure-trigger text-text-disclosure-trigger">
+			<div className="flex h-9 items-center rounded-[4px] bg-bg-surface-raised text-text">
 				<button
 					type="button"
 					className="flex h-9 min-w-0 flex-1 cursor-pointer appearance-none items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-inherit uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
@@ -62,7 +62,7 @@ export function FilterCategory({
 			{isExpanded ? (
 				<div
 					id={`${name}-options`}
-					className="flex max-h-[186px] flex-col gap-2 overflow-y-auto border-b border-border-disclosure-content bg-bg-disclosure-content p-3"
+					className="flex max-h-[186px] flex-col gap-2 overflow-y-auto border-b border-border bg-bg-surface-muted p-3"
 				>
 					{options.length ? (
 						options.map((option) => (
@@ -74,19 +74,19 @@ export function FilterCategory({
 								onChange={() => handleChange(option.value)}
 								className="w-full items-start"
 								controlClassName={cn(
-									'bg-bg-control-unchecked ',
+									'bg-bg-control ',
 									selectMode !== 'single'
-										? 'peer-checked:bg-bg-control-checked peer-checked:text-text-control-checked'
+										? 'peer-checked:bg-bg-control-checked peer-checked:text-control-checked-icon'
 										: 'peer-checked:bg-bg-control-checked'
 								)}
 								controlStyle={{ width: 26, height: 26 }}
-								labelClassName="text-text-option"
+								labelClassName="text-text"
 							>
 								<span className="min-w-0 flex-1 text-left">{option.label}</span>
 							</Control>
 						))
 					) : (
-						<p className="m-0 text-[14px] leading-5 text-text-panel-muted">No options available</p>
+						<p className="m-0 text-[14px] leading-5 text-text-muted">No options available</p>
 					)}
 				</div>
 			) : null}

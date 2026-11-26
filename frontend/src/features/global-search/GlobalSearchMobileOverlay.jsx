@@ -102,7 +102,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 			</div>
 			<style nonce={document.querySelector('meta[property="csp-nonce"]')?.content}>{`
 				.gs-scrollbar {
-					scrollbar-color: var(--border-scrollbar) transparent;
+					scrollbar-color: var(--scrollbar-thumb) transparent;
 					scrollbar-width: thin;
 				}
 				.gs-scrollbar::-webkit-scrollbar {
@@ -114,7 +114,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 				.gs-scrollbar::-webkit-scrollbar-thumb {
 					border: 2px solid transparent;
 					border-radius: 999px;
-					background-color: var(--border-scrollbar);
+					background-color: var(--scrollbar-thumb);
 					background-clip: content-box;
 				}
 			`}</style>

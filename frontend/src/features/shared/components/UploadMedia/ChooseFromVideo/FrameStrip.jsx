@@ -82,10 +82,10 @@ export function FrameStrip({
 		<div className="flex min-w-0 max-w-full flex-col gap-space-base overflow-hidden">
 			<div
 				className={cn(
-					'w-full min-w-0 max-w-full rounded-ds-4 border-2 border-border-scrollbar bg-bg-surface-muted',
+					'w-full min-w-0 max-w-full rounded-ds-4 border-2 border-scrollbar-thumb bg-bg-surface-muted',
 					showPlaceholder
 						? 'h-[56px]'
-						: 'flex h-[56px] items-start overflow-x-auto overflow-y-hidden p-size-4 [scrollbar-width:thin] [scrollbar-color:var(--border-scrollbar)_transparent] [&::-webkit-scrollbar]:h-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-ds-full [&::-webkit-scrollbar-thumb]:bg-border-scrollbar'
+						: 'flex h-[56px] items-start overflow-x-auto overflow-y-hidden p-size-4 [scrollbar-width:thin] [scrollbar-color:var(--scrollbar-thumb)_transparent] [&::-webkit-scrollbar]:h-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-ds-full [&::-webkit-scrollbar-thumb]:bg-scrollbar-thumb'
 				)}
 			>
 				{showPlaceholder

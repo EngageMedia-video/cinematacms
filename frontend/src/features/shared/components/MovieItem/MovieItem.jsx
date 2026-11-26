@@ -61,7 +61,7 @@ function MovieMetadata({ items = [] }) {
 function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadata, orientation = 'vertical' }) {
 	const titleClassName = cn(
 		'm-0 p-0 line-clamp-3 [overflow-wrap:anywhere]',
-		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
+		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text'
 	);
 	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
 
@@ -158,7 +158,7 @@ function MoviePoster({
 
 					{duration ? (
 						<span
-							className="ml-auto inline-flex rounded-[2px] bg-bg-overlay-dark px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
+							className="ml-auto inline-flex rounded-[2px] bg-bg-overlay px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
 							data-movie-item-duration
 						>
 							{duration}

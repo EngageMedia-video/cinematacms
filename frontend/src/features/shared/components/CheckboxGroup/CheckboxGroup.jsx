@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { CheckboxButton } from '../CheckboxButton';
 
 const DEFAULT_LIST_CLASSES =
-	'flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full';
+	'flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-dialog-accent-text [&::-webkit-scrollbar-thumb]:rounded-full';
 
 function normalizeOption(option) {
 	if (typeof option === 'string') {

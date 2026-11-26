@@ -19,11 +19,11 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 		>
 			<DialogContent
 				aria-label={title}
-				className="flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[calc(var(--size-96)*5+var(--size-40))] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-bg-surface p-space-lg shadow-lg"
+				className="flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[calc(var(--size-96)*5+var(--size-40))] flex-col overflow-hidden rounded-ds-8 border border-border bg-bg-surface p-space-lg shadow-lg"
 			>
 				<div className="flex items-start justify-between gap-space-base">
 					<div className="min-w-0">
-						<Text variant="h5-bold" as="h2" className="m-0 text-text-primary">
+						<Text variant="h5-bold" as="h2" className="m-0 text-text">
 							{title}
 						</Text>
 						{subtitle ? (
@@ -34,7 +34,7 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 					</div>
 					<Button
 						variant="icon"
-						className="h-size-40 w-size-40 shrink-0 rounded-full bg-bg-dialog-close text-text-on-dialog-close outline-none hover:bg-bg-dialog-close focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="h-size-40 w-size-40 shrink-0 rounded-full bg-dialog-close-bg text-dialog-close-icon outline-none hover:bg-dialog-close-bg focus-visible:ring-2 focus-visible:ring-ring-focus"
 						aria-label={`Close ${title} details`}
 						onClick={onClose}
 						icon={<Icon name="arrowsInDiagonal" size="sm" decorative />}
@@ -45,7 +45,7 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 					<li className="relative grid min-h-[80px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
 						<span className="relative flex justify-center" aria-hidden="true">
 							{entries.length > 1 ? (
-								<span className="absolute top-[38px] h-[42px] w-px bg-border-default" />
+								<span className="absolute top-[38px] h-[42px] w-px bg-border" />
 							) : null}
 							<span
 								className={cn(
@@ -60,7 +60,7 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 							<p className="body-body-12-regular m-0 text-text-muted">{config.label}</p>
 							{entries[0] ? (
 								<>
-									<p className="body-body-14-bold m-0 mt-space-xs break-words text-text-primary">
+									<p className="body-body-14-bold m-0 mt-space-xs break-words text-text">
 										{entries[0].title}
 									</p>
 									<TimelineMeta
