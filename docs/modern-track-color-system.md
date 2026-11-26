@@ -241,19 +241,34 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/chrome/hover` | `bg-bg-chrome-hover` | `pacific-deep-700` | `pacific-deep-700` |
 | `bg/control/checked` | `bg-bg-control-checked` | `pacific-deep-700` | `sunset-horizon-400p` |
 | `bg/control/default` | `bg-bg-control` | `neutral-300` | `pacific-deep-700` |
+| `bg/control/thumb` | `bg-bg-control-thumb` | `neutral-100` | `neutral-100` |
+| `bg/control/track-off` | `bg-bg-control-track-off` | `pacific-deep-900` | `pacific-deep-800` |
+| `bg/control/track-on` | `bg-bg-control-track-on` | `coral-reef-600` | `coral-reef-700` |
 | `bg/danger/default` | `bg-bg-danger` | `red-500` | `red-500` |
 | `bg/danger/hover` | `bg-bg-danger-hover` | `red-900` | `red-900` |
 | `bg/danger/strong` | `bg-bg-danger-strong` | `red-800` | `red-800` |
 | `bg/danger/subtle` | `bg-bg-danger-subtle` | `red-100` | `red-950` |
+| `bg/emblem/blue` | `bg-bg-emblem-blue` | `pacific-deep-800` | `pacific-deep-800` |
+| `bg/emblem/blue-deep` | `bg-bg-emblem-blue-deep` | `pacific-deep-900` | `pacific-deep-950` |
+| `bg/emblem/gray` | `bg-bg-emblem-gray` | `neutral-800` | `neutral-900` |
+| `bg/emblem/green` | `bg-bg-emblem-green` | `coral-reef-800` | `coral-reef-900` |
+| `bg/emblem/orange` | `bg-bg-emblem-orange` | `sunset-horizon-700` | `sunset-horizon-800` |
 | `bg/info/default` | `bg-bg-info` | `strait-blue-500` | `strait-blue-500` |
+| `bg/info/muted` | `bg-bg-info-muted` | `strait-blue-400` | `strait-blue-400` |
 | `bg/info/strong` | `bg-bg-info-strong` | `strait-blue-800` | `strait-blue-800` |
+| `bg/label` | `bg-bg-label` | `strait-blue-50` | `strait-blue-50` |
+| `bg/marker` | `bg-bg-marker` | `strait-blue-200` | `strait-blue-200` |
 | `bg/overlay` | `bg-bg-overlay` | `pacific-deep-900` | `pacific-deep-900` |
 | `bg/page` | `bg-bg-page` | `pacific-deep-50` | `pacific-deep-950` |
 | `bg/primary/default` | `bg-bg-primary` | `strait-blue-600p` | `strait-blue-500` |
 | `bg/primary/hover` | `bg-bg-primary-hover` | `strait-blue-800` | `strait-blue-700` |
+| `bg/primary/inverse` | `bg-bg-primary-inverse` | `strait-blue-900` | `strait-blue-600p` |
+| `bg/progress` | `bg-bg-progress` | `coral-reef-400p` | `coral-reef-400p` |
+| `bg/scrollbar` | `bg-bg-scrollbar` | `strait-blue-200` | `strait-blue-200` |
 | `bg/secondary/default` | `bg-bg-secondary` | `sunset-horizon-400p` | `sunset-horizon-500` |
 | `bg/secondary/hover` | `bg-bg-secondary-hover` | `sunset-horizon-500` | `sunset-horizon-400p` |
 | `bg/secondary/strong` | `bg-bg-secondary-strong` | `sunset-horizon-800` | `sunset-horizon-800` |
+| `bg/selected` | `bg-bg-selected` | `strait-blue-200` | `strait-blue-200` |
 | `bg/skeleton/default` | `bg-bg-skeleton` | `pacific-deep-100` | `pacific-deep-700` |
 | `bg/skeleton/strong` | `bg-bg-skeleton-strong` | `pacific-deep-200` | `pacific-deep-500` |
 | `bg/success/default` | `bg-bg-success` | `green-500` | `green-500` |
@@ -265,13 +280,16 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/surface/inverse` | `bg-bg-surface-inverse` | `pacific-deep-900` | `white` |
 | `bg/surface/muted` | `bg-bg-surface-muted` | `neutral-200` | `pacific-deep-800` |
 | `bg/surface/raised` | `bg-bg-surface-raised` | `white` | `pacific-deep-800` |
+| `bg/tag` | `bg-bg-tag` | `strait-blue-100` | `pacific-deep-700` |
 | `bg/warning/default` | `bg-bg-warning` | `amber-500` | `amber-500` |
 | `bg/warning/strong` | `bg-bg-warning-strong` | `amber-800` | `amber-800` |
 | `bg/warning/subtle` | `bg-bg-warning-subtle` | `amber-100` | `amber-950` |
+| `border/accent` | `border-border-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` |
 | `border/active` | `border-border-active` | `coral-reef-400p` | `sunset-horizon-400p` |
 | `border/chrome` | `border-border-chrome` | `pacific-deep-700` | `pacific-deep-700` |
 | `border/danger` | `border-border-danger` | `red-500` | `red-500` |
 | `border/default` | `border-border` | `pacific-deep-200` | `pacific-deep-700` |
+| `border/disclosure` | `border-border-disclosure` | `pacific-deep-300` | `transparent` |
 | `border/info` | `border-border-info` | `strait-blue-500` | `strait-blue-500` |
 | `border/strong` | `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` |
 | `border/subtle` | `border-border-subtle` | `neutral-200` | `pacific-deep-800` |
@@ -282,58 +300,34 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `text/danger` | `text-text-danger` | `red-700p` | `red-400` |
 | `text/default` | `text-text` | `pacific-deep-700` | `strait-blue-50` |
 | `text/disabled` | `text-text-disabled` | `pacific-deep-400` | `pacific-deep-400` |
-| `text/info` | `text-text-info` | `strait-blue-700` | `strait-blue-200` |
+| `text/info/default` | `text-text-info` | `strait-blue-700` | `strait-blue-200` |
+| `text/info/muted` | `text-text-info-muted` | `strait-blue-400` | `strait-blue-400` |
 | `text/inverse` | `text-text-inverse` | `white` | `pacific-deep-900` |
 | `text/link/default` | `text-text-link` | `sunset-horizon-700` | `sunset-horizon-200` |
 | `text/link/hover` | `text-text-link-hover` | `sunset-horizon-800` | `sunset-horizon-100` |
 | `text/muted` | `text-text-muted` | `pacific-deep-500` | `pacific-deep-300` |
 | `text/on-chrome/default` | `text-text-on-chrome` | `strait-blue-50` | `strait-blue-50` |
 | `text/on-chrome/muted` | `text-text-on-chrome-muted` | `pacific-deep-300` | `pacific-deep-300` |
-| `text/on-primary` | `text-text-on-primary` | `white` | `white` |
+| `text/on-control-checked` | `text-text-on-control-checked` | `pacific-deep-100` | `pacific-deep-900` |
+| `text/on-emblem/default` | `text-text-on-emblem` | `pacific-deep-200` | `pacific-deep-200` |
+| `text/on-emblem/green` | `text-text-on-emblem-green` | `coral-reef-600` | `coral-reef-600` |
+| `text/on-info` | `text-text-on-info` | `pacific-deep-900` | `pacific-deep-900` |
+| `text/on-label` | `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` |
+| `text/on-primary/default` | `text-text-on-primary` | `white` | `white` |
+| `text/on-primary/inverse` | `text-text-on-primary-inverse` | `strait-blue-100` | `strait-blue-50` |
 | `text/strong` | `text-text-strong` | `pacific-deep-900` | `white` |
 | `text/subtle` | `text-text-subtle` | `strait-blue-700` | `strait-blue-100` |
 | `text/success` | `text-text-success` | `green-800` | `green-500` |
 | `text/warning` | `text-text-warning` | `amber-800` | `amber-500` |
 
-**Component tokens** are code-only and have no Figma role. Use them through any color utility, such as `bg-chip-bg` or `text-emblem-green-icon`.
-
-| Variable | Light | Dark |
-|---|---|---|
-| `--button-inverse-bg` | `strait-blue-900` | `strait-blue-600p` |
-| `--button-inverse-text` | `strait-blue-100` | `strait-blue-50` |
-| `--chip-bg` | `strait-blue-100` | `pacific-deep-700` |
-| `--chip-active-border` | `sunset-horizon-400p` | `sunset-horizon-400p` |
-| `--dialog-close-bg` | `strait-blue-400` | `strait-blue-400` |
-| `--dialog-close-icon` | `pacific-deep-900` | `pacific-deep-900` |
-| `--dialog-accent-text` | `strait-blue-400` | `strait-blue-400` |
-| `--emblem-blue-bg` | `pacific-deep-800` | `pacific-deep-800` |
-| `--emblem-blue-deep-bg` | `pacific-deep-900` | `pacific-deep-950` |
-| `--emblem-gray-bg` | `neutral-800` | `neutral-900` |
-| `--emblem-green-bg` | `coral-reef-800` | `coral-reef-900` |
-| `--emblem-green-icon` | `coral-reef-600` | `coral-reef-600` |
-| `--emblem-orange-bg` | `sunset-horizon-700` | `sunset-horizon-800` |
-| `--emblem-icon` | `pacific-deep-200` | `pacific-deep-200` |
-| `--note-duration-bg` | `strait-blue-50` | `strait-blue-50` |
-| `--note-duration-text` | `pacific-deep-900` | `pacific-deep-900` |
-| `--progress-upload-fill` | `coral-reef-400p` | `coral-reef-400p` |
-| `--tab-selected-bg` | `strait-blue-200` | `strait-blue-200` |
-| `--timeline-dot` | `strait-blue-200` | `strait-blue-200` |
-| `--disclosure-trigger-border` | `pacific-deep-300` | `transparent` |
-| `--scrollbar-thumb` | `strait-blue-200` | `strait-blue-200` |
-| `--switch-thumb` | `neutral-100` | `neutral-100` |
-| `--switch-track-off` | `pacific-deep-900` | `pacific-deep-800` |
-| `--switch-track-on` | `coral-reef-600` | `coral-reef-700` |
-| `--control-checked-icon` | `pacific-deep-100` | `pacific-deep-900` |
-
-The tables list the values in `tokens.json`. To change a color, edit `tokens.json`, not these tables.
+The table lists the values in `tokens.json`. To change a color, edit `tokens.json`, not this table.
 
 ## How modern semantic tokens are wired
 
-The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has three groups:
+The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has two groups:
 
 - `semantic`: the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`.
-- `component`: code-only tokens for one component family (`emblem.green.bg` is `--emblem-green-bg`).
-- `legacy`: older names kept as aliases of a semantic or component token until their callers move. Phase 5 of #1172 deletes them.
+- `legacy`: older names kept as aliases of a semantic role until their callers move. Phase 5 of #1172 deletes them.
 
 `$value` is the light mode. `$extensions["org.cinemata.modes"].dark` holds a different dark value. `{palette.<step>}` names a `--cinemata-<step>` primitive.
 
@@ -588,8 +582,8 @@ the primary Button in both themes. Do not introduce a second alias for it.
 | TextField.jsx | `text-cinemata-sunset-horizon-400p` | Helper text |
 | TextField.jsx | `transparent` prop → shell `bg-transparent` (no surface fill) | Transparent variant: field inherits the surface behind it (e.g. a gradient panel) instead of painting its own `bg-surface` |
 | Switch.jsx | `text-cinemata-neutral-700 dark:text-cinemata-neutral-500` | Switch label |
-| Switch.jsx | `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
-| Switch.jsx | `bg-switch-thumb` (`neutral-100`) | Thumb |
+| Switch.jsx | `bg-bg-control-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-bg-control-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
+| Switch.jsx | `bg-bg-control-thumb` (`neutral-100`) | Thumb |
 
 ### user-settings
 
@@ -642,12 +636,12 @@ The full-screen flash/message overlay defines a parallel feature set on `.auth-m
 
 ### profile — My Notes (features/profile)
 
-The profile **My Notes** tab renders each film-note card with a film thumbnail (with a **film duration pill** at the bottom-right) and the latest note timestamp beside a standalone vertical divider (per `jeremy-tasks/design/notes-in-profile/notes-in-profile.svg`). The pill is a light chip in both themes, so it has its own component tokens. The divider uses the shared `border/strong` role:
+The profile **My Notes** tab renders each film-note card with a film thumbnail (with a **film duration pill** at the bottom-right) and the latest note timestamp beside a standalone vertical divider (per `jeremy-tasks/design/notes-in-profile/notes-in-profile.svg`). The pill is a light chip in both themes, so it has its own roles, `bg/label` and `text/on-label`. The divider uses the shared `border/strong` role:
 
 | Token | Light | Dark | Role |
 |-------|-------|------|------|
-| `bg-note-duration-bg` | `strait-blue-50` | `strait-blue-50` | Film duration pill background on the note thumbnail (theme-invariant light chip) |
-| `text-note-duration-text` | `pacific-deep-900` | `pacific-deep-900` | Film duration text on the pill |
+| `bg-bg-label` | `strait-blue-50` | `strait-blue-50` | Film duration pill background on the note thumbnail (theme-invariant light chip) |
+| `text-text-on-label` | `pacific-deep-900` | `pacific-deep-900` | Film duration text on the pill |
 | `border-border-strong` | `pacific-deep-500` | `pacific-deep-400` | Standalone vertical divider in profile note entries |
 
 The note thumbnail's empty/loading fill reuses the theme-aware `bg-bg-skeleton` (consistent with `FilmRow` / `ImpactFilmRow`).

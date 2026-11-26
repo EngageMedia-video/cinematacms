@@ -26,37 +26,37 @@ const IMPACT_ICON_CONFIG = {
 		iconName: 'filmReel',
 		label: 'Screened In',
 		accentClassName: 'text-text-accent',
-		iconShellClassName: 'bg-emblem-blue-deep-bg text-text-subtle',
+		iconShellClassName: 'bg-bg-emblem-blue-deep text-text-subtle',
 	},
 	featured: {
 		iconName: 'eye',
 		label: 'Featured In',
 		accentClassName: 'text-text-subtle',
-		iconShellClassName: 'bg-emblem-blue-bg text-text-subtle',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-subtle',
 	},
 	saves: {
 		iconName: 'bookmarkPennant',
 		label: 'Saves & Playlists',
 		accentClassName: 'text-text-link',
-		iconShellClassName: 'bg-emblem-green-bg text-emblem-green-icon',
+		iconShellClassName: 'bg-bg-emblem-green text-text-on-emblem-green',
 	},
 	academic: {
 		iconName: 'bookFilled',
 		label: 'Academic Usage',
 		accentClassName: 'text-text-warning',
-		iconShellClassName: 'bg-emblem-orange-bg text-text-accent',
+		iconShellClassName: 'bg-bg-emblem-orange text-text-accent',
 	},
 	curated: {
 		iconName: 'curatedPlaylist',
 		label: 'Curated Into',
 		accentClassName: 'text-text-muted',
-		iconShellClassName: 'bg-emblem-gray-bg text-text-muted',
+		iconShellClassName: 'bg-bg-emblem-gray text-text-muted',
 	},
 	heart: {
 		iconName: 'heart',
 		label: 'Community Impact',
 		accentClassName: 'text-text-subtle',
-		iconShellClassName: 'bg-emblem-blue-bg text-text-subtle',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-subtle',
 	},
 };
 

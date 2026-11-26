@@ -30,7 +30,7 @@ export function SelectedFilters({ filters = [], onDismiss, variant = 'desktop' }
 					<Badge
 						key={`${filter.key}:${filter.value}`}
 						color="--selected-filter-chip-bg"
-						className="rounded-[4px] border-0 py-[2px] px-[6px] font-sans text-[12px] leading-4 font-bold text-text-on-primary [--selected-filter-chip-bg:var(--bg-secondary)] sm:border sm:border-chip-active-border sm:pr-[6px] sm:pl-2 sm:text-text-accent sm:[--selected-filter-chip-bg:transparent]"
+						className="rounded-[4px] border-0 py-[2px] px-[6px] font-sans text-[12px] leading-4 font-bold text-text-on-primary [--selected-filter-chip-bg:var(--bg-secondary)] sm:border sm:border-border-accent sm:pr-[6px] sm:pl-2 sm:text-text-accent sm:[--selected-filter-chip-bg:transparent]"
 						onDismiss={() => onDismiss?.(filter)}
 					>
 						{filter.label}

@@ -37,7 +37,7 @@ export function FilterCategory({
 		<section
 			className={cn(
 				'overflow-hidden rounded-[4px] bg-bg-surface-raised',
-				!isExpanded && 'border-b border-disclosure-trigger-border'
+				!isExpanded && 'border-b border-border-disclosure'
 			)}
 		>
 			<div className="flex h-9 items-center rounded-[4px] bg-bg-surface-raised text-text">
@@ -76,7 +76,7 @@ export function FilterCategory({
 								controlClassName={cn(
 									'bg-bg-control ',
 									selectMode !== 'single'
-										? 'peer-checked:bg-bg-control-checked peer-checked:text-control-checked-icon'
+										? 'peer-checked:bg-bg-control-checked peer-checked:text-text-on-control-checked'
 										: 'peer-checked:bg-bg-control-checked'
 								)}
 								controlStyle={{ width: 26, height: 26 }}

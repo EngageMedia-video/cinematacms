@@ -10,7 +10,7 @@ const STATUS_CONFIG = {
 	uploading: {
 		statusText: 'Uploading',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-progress-upload-fill',
+		progressClassName: 'bg-bg-progress',
 		showProgress: true,
 		actions: [
 			{ key: 'pause', label: 'Pause', iconName: 'pause', type: 'warning' },
@@ -20,14 +20,14 @@ const STATUS_CONFIG = {
 	processing: {
 		statusText: 'Processing...',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-progress-upload-fill',
+		progressClassName: 'bg-bg-progress',
 		showProgress: false,
 		actions: [{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' }],
 	},
 	paused: {
 		statusText: 'Paused',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-progress-upload-fill',
+		progressClassName: 'bg-bg-progress',
 		showProgress: true,
 		actions: [
 			{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
@@ -225,7 +225,7 @@ export function UploadMediaItem({
 							label={`${title} upload progress`}
 							value={progressPercent}
 							max={100}
-							trackClassName="bg-emblem-green-bg"
+							trackClassName="bg-bg-emblem-green"
 							indicatorClassName={config.progressClassName}
 						/>
 					) : null}

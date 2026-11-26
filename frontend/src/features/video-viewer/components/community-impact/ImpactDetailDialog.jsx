@@ -34,7 +34,7 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 					</div>
 					<Button
 						variant="icon"
-						className="h-size-40 w-size-40 shrink-0 rounded-full bg-dialog-close-bg text-dialog-close-icon outline-none hover:bg-dialog-close-bg focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="h-size-40 w-size-40 shrink-0 rounded-full bg-bg-info-muted text-text-on-info outline-none hover:bg-bg-info-muted focus-visible:ring-2 focus-visible:ring-ring-focus"
 						aria-label={`Close ${title} details`}
 						onClick={onClose}
 						icon={<Icon name="arrowsInDiagonal" size="sm" decorative />}

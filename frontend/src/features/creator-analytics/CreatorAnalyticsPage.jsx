@@ -413,7 +413,7 @@ function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailab
 									>
 										{row.title}
 									</Text>
-									<Badge color="--chip-bg" className="mt-2 text-text">
+									<Badge color="bg/tag" className="mt-2 text-text">
 										{row.state}
 									</Badge>
 								</div>
@@ -535,7 +535,7 @@ export function CreatorAnalyticsPage({ data }) {
 							)}
 							{selectedMedia && (
 								<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-									<Badge color="--chip-bg" className="text-text">
+									<Badge color="bg/tag" className="text-text">
 										{selectedMedia.state}
 									</Badge>
 									<Text as="span" variant="body-12" color="meta">

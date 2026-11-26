@@ -4,7 +4,7 @@ const VARIANT_CLASSES = {
 	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
 	secondary: 'border border-transparent bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	'action-inverse':
-		'border-0 bg-button-inverse-bg text-button-inverse-text shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
+		'border-0 bg-bg-primary-inverse text-text-on-primary-inverse shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
 	tertiary:
 		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
 	special: 'border border-transparent bg-bg-overlay text-text-on-chrome hover:bg-bg-chrome-hover',

@@ -15,7 +15,7 @@ describe('FilterCategory', () => {
 
 		expect(screen.queryByLabelText('Philippines')).not.toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /Country of Origin/i }).closest('section')).toHaveClass(
-			'border-disclosure-trigger-border',
+			'border-border-disclosure',
 			'bg-bg-surface-raised'
 		);
 
@@ -31,7 +31,7 @@ describe('FilterCategory', () => {
 		expect(screen.getByText('Philippines').closest('label').querySelector('[aria-hidden="true"]')).toHaveClass(
 			'bg-bg-control',
 			'peer-checked:bg-bg-control-checked',
-			'peer-checked:text-control-checked-icon'
+			'peer-checked:text-text-on-control-checked'
 		);
 
 		await user.click(screen.getByRole('button', { name: /Country of Origin/i }));

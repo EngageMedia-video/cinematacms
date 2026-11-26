@@ -148,7 +148,7 @@ export function AddImpactDialog({
 
 					<div className="flex w-full flex-col items-center text-center">
 						<span
-							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-dialog-accent-text"
+							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-text-info-muted"
 							aria-hidden="true"
 						>
 							<Icon name={heartConfig.iconName} size={67} decorative />

@@ -13,6 +13,6 @@ describe('ProfileTabs', () => {
 			/>
 		);
 
-		expect(screen.getByRole('link', { name: 'Media' }).style.backgroundColor).toBe('var(--tab-selected-bg)');
+		expect(screen.getByRole('link', { name: 'Media' }).style.backgroundColor).toBe('var(--bg-selected)');
 	});
 });

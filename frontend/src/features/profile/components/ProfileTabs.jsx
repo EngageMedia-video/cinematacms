@@ -9,7 +9,7 @@ export function ProfileTabs({ activeTab, tabs }) {
 			className="w-full"
 			listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
 			triggerClassName="min-w-max no-underline text-text-on-primary"
-			triggerSelectedColor="--tab-selected-bg"
+			triggerSelectedColor="bg/selected"
 		>
 			{tabs.map((tab) => (
 				<TabContent key={tab.id} value={tab.id} title={tab.label} href={tab.href}>

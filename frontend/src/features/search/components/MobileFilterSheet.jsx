@@ -47,7 +47,7 @@ function MobileFilterSheetContent({ filters, sort, filterOptionSections, onReset
 			<div className="flex gap-2 border-t border-border-subtle bg-bg-surface p-3">
 				<button
 					type="button"
-					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-button-inverse-bg px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-primary-inverse px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
 					onClick={handleCancel}
 				>

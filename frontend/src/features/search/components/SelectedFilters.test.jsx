@@ -24,7 +24,7 @@ describe('SelectedFilters', () => {
 		expect(screen.getByText('Philippines').closest('span')).toHaveClass(
 			'[--selected-filter-chip-bg:var(--bg-secondary)]',
 			'sm:border',
-			'sm:border-chip-active-border',
+			'sm:border-border-accent',
 			'sm:text-text-accent',
 			'sm:[--selected-filter-chip-bg:transparent]'
 		);

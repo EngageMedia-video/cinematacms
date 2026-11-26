@@ -146,7 +146,7 @@ export function TopicCheckboxGroup({ value = [], onChange, options = [], id, nam
 			value={value}
 			onChange={(next) => onChange?.(next)}
 			error={error}
-			listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-dialog-accent-text [&::-webkit-scrollbar-thumb]:rounded-full"
+			listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-bg-info-muted [&::-webkit-scrollbar-thumb]:rounded-full"
 		/>
 	);
 }

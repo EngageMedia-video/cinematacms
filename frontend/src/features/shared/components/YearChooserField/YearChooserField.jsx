@@ -224,7 +224,7 @@ export function YearChooserField({
 									className={cn(
 										'body-body-14-medium h-10 cursor-pointer rounded-ds-4 border-0 px-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
 										selected
-											? 'bg-bg-control-checked text-control-checked-icon'
+											? 'bg-bg-control-checked text-text-on-control-checked'
 											: 'bg-transparent text-text-strong hover:bg-bg-surface-hover'
 									)}
 								>

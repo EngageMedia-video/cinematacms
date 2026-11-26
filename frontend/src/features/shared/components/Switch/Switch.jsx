@@ -52,14 +52,14 @@ export function Switch({
 			<span
 				className={cn(
 					'inline-flex h-[calc(var(--switch-thumb-size)+var(--switch-padding)*2)] w-[var(--switch-width)] shrink-0 items-center rounded-full p-[var(--switch-padding)] transition-colors duration-200',
-					resolvedChecked ? 'bg-switch-track-on' : 'bg-switch-track-off',
+					resolvedChecked ? 'bg-bg-control-track-on' : 'bg-bg-control-track-off',
 					resolvedChecked ? 'justify-end' : 'justify-start'
 				)}
 				data-switch-track=""
 				aria-hidden="true"
 			>
 				<span
-					className="block size-[var(--switch-thumb-size)] rounded-full bg-switch-thumb transition-transform duration-200 ease-out"
+					className="block size-[var(--switch-thumb-size)] rounded-full bg-bg-control-thumb transition-transform duration-200 ease-out"
 					data-switch-thumb=""
 				/>
 			</span>

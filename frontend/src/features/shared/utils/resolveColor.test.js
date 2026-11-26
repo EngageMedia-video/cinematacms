@@ -29,7 +29,7 @@ describe('resolveColor', () => {
 	it('resolves palette names', () => {
 		expect(resolveColor('cinemata-pacific-deep-600p')).toBe('var(--cinemata-pacific-deep-600p)');
 		expect(resolveColor('pacific-deep-600p')).toBe('var(--cinemata-pacific-deep-600p)');
-		expect(resolveColor('--chip-bg')).toBe('var(--chip-bg)');
+		expect(resolveColor('--bg-tag')).toBe('var(--bg-tag)');
 	});
 
 	it('supports keyword colors used by shared components', () => {

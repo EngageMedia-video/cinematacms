@@ -71,7 +71,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 					</span>
 				)}
 				{duration ? (
-					<span className="absolute right-[4px] bottom-[4px] inline-flex h-[18px] min-w-[33px] items-center justify-center rounded-ds-2 bg-note-duration-bg px-[4px] text-note-duration-text body-body-12-medium">
+					<span className="absolute right-[4px] bottom-[4px] inline-flex h-[18px] min-w-[33px] items-center justify-center rounded-ds-2 bg-bg-label px-[4px] text-text-on-label body-body-12-medium">
 						{duration}
 					</span>
 				) : null}
