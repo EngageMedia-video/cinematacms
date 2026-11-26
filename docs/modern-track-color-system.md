@@ -330,6 +330,8 @@ The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-
 
 To change a color, edit `tokens.json` and run `uv run python scripts/generate_color_tokens.py`. The script rewrites the region between the `BEGIN GENERATED` and `END GENERATED` markers in `tailwind.css`. Pre-commit runs it with `--check`, so `make lint` and CI fail when the CSS differs from `tokens.json`. The script also fails on a group other than `semantic`, a value that is not a palette step or transparent, an unknown palette step, and two tokens with one CSS name.
 
+Pre-commit also runs `scripts/check_color_token_references.py`. It fails when a color utility (`text-text-muted`, `ring-offset-bg-page`) or a `var(--bg-*)`, `var(--text-*)`, `var(--border-*)` or `var(--ring-*)` reference in `frontend/src/` or `templates/` names a token that no stylesheet defines. Tailwind and the browser ignore an undefined token without an error, so a removed or misspelled name would otherwise render no color. It does not check the path strings passed to `resolveColor` (`color="bg/tag"`).
+
 The generated region has three coordinated blocks:
 
 1. **`body { ... }`** declares the light-mode intermediate vars (`--bg-page`, `--text-strong`, `--border`, `--ring-focus`, etc.) and points them at the appropriate `--cinemata-*` palette steps.
