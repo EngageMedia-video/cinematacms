@@ -289,9 +289,11 @@ Choose the first layer that covers the case:
 or a color literal in a utility class or an inline `style` color. Test files
 and the sidebar bridge are the configured exceptions.
 
-The `@theme inline` blocks in `frontend/src/static/css/tailwind.css` hold the
-canonical token list, and `docs/modern-track-color-system.md` explains the
-palette, the token layers, and the deliberate exceptions. When `DEBUG=True`,
+`frontend/src/static/css/tokens.json` holds the canonical token list. Edit it,
+then run `uv run python scripts/generate_color_tokens.py` to regenerate the
+token blocks in `frontend/src/static/css/tailwind.css`. Do not edit the
+generated region by hand. `docs/modern-track-color-system.md` explains the
+token format, the palette, the token layers, and the deliberate exceptions. When `DEBUG=True`,
 `/modern-demo/` shows the tokens and their theme behavior.
 
 ## Keep styling in Tailwind and controls accessible

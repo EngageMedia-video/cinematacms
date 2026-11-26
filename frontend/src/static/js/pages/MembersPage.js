@@ -215,7 +215,7 @@ export class MembersPage extends Page {
 						}
 
 						.search-box input::placeholder {
-							color: var(--text-subtle, var(--cinemata-neutral-500));
+							color: var(--text-muted, var(--cinemata-pacific-deep-500));
 							opacity: 0.5;
 						}
 

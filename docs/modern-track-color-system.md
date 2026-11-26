@@ -239,14 +239,14 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
 | `bg/panel-primary`, `bg/panel-surface`, `bg/panel-selected` | 3 | Primary panel/rail surface, inner expanded body, and selected-state card — reusable for any panel-style layout. The selected card is `neutral-50` in light mode per Figma `40000003-11716` and `pacific-deep-900` in dark mode. |
-| `bg/section-header` | 1 | Colored section-header bar inside a panel. Light `strait-blue-600p` / Dark `strait-blue-800`. |
+| `bg/section-header` | 1 | Colored section-header bar inside a panel. Light `strait-blue-600p` / Dark `strait-blue-500`. |
 | `bg/disclosure-trigger`, `bg/disclosure-content` | 2 | Disclosure/accordion trigger and expanded content surfaces. Light mode uses neutral trigger/content surfaces; dark mode uses the filled strait-blue/pacific-deep treatment. |
 | `bg/action-inverse` | 1 | Dark action button surface (inverted relative to panel background). Light `strait-blue-900` / Dark `strait-blue-600p`. |
-| `bg/control-unchecked`, `bg/control-checked` | 2 | Unchecked and checked states of checkbox/radio controls. Light checked controls stay `pacific-deep-100` per Figma `40000003-11716`; dark checked controls use `sunset-horizon-400p` per `40000003-11739`. |
-| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (constant `sunset-horizon-400p`) and inactive chip fill. |
+| `bg/control-unchecked`, `bg/control-checked` | 2 | Unchecked and checked states of checkbox/radio controls. Checked controls use `pacific-deep-700` in light mode and `sunset-horizon-400p` in dark mode. |
+| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (light `sunset-horizon-400p` / dark `sunset-horizon-500`) and inactive chip fill. |
 | `text/panel-muted`, `text/option`, `text/section-header`, `text/disclosure-trigger`, `text/action-inverse`, `text/panel-heading`, `text/control-checked` | 7 | Quiet panel metadata, option/choice labels, text on section-header bars, disclosure trigger labels, text on dark action buttons, panel card headings, and checked-control icons. |
-| `border/panel-divider`, `border/disclosure-content`, `border/disclosure-trigger`, `border/chip-active` | 4 | Dividers and category borders inside a panel. Disclosure content uses `pacific-deep-300` light / `pacific-deep-500` dark; closed disclosure triggers keep the light divider from Figma `40000003-11716` but are transparent in dark mode per `40000003-11739`. Active chips use the constant orange active-chip border. |
-| `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
+| `border/panel-divider`, `border/disclosure-content`, `border/disclosure-trigger`, `border/chip-active` | 4 | Dividers and category borders inside a panel. Disclosure content uses `pacific-deep-200` light / `pacific-deep-700` dark; closed disclosure triggers keep the light divider from Figma `40000003-11716` but are transparent in dark mode per `40000003-11739`. Active chips use the constant orange active-chip border. |
+| `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-700`, an alias of `bg/surface/highlight`. |
 | `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
@@ -264,7 +264,17 @@ For the per-token light/dark lookup table, see the Storybook `Introduction > Col
 
 ## How modern semantic tokens are wired
 
-The modern semantic tokens live in `frontend/src/static/css/tailwind.css` in three coordinated blocks:
+The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has three groups:
+
+- `semantic`: the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`.
+- `component`: code-only tokens for one component family (`emblem.green.bg` is `--emblem-green-bg`).
+- `legacy`: older names kept as aliases of a semantic or component token until their callers move. Phase 5 of #1172 deletes them.
+
+`$value` is the light mode. `$extensions["org.cinemata.modes"].dark` holds a different dark value. `{palette.<step>}` names a `--cinemata-<step>` primitive.
+
+To change a color, edit `tokens.json` and run `uv run python scripts/generate_color_tokens.py`. The script rewrites the region between the `BEGIN GENERATED` and `END GENERATED` markers in `tailwind.css`. Pre-commit runs it with `--check`, so `make lint` and CI fail when the CSS differs from `tokens.json`. The script also fails on an unknown palette step, a reference to a missing token, and two tokens with one CSS name.
+
+The generated region has three coordinated blocks:
 
 1. **`body { ... }`** declares the light-mode intermediate vars (`--bg-page`, `--text-strong`, `--border-default`, `--ring-focus`, etc.) and points them at the appropriate `--cinemata-*` palette steps.
 2. **`body.dark_theme { ... }`** overrides only the tokens whose value differs in dark mode. Tokens that are theme-agnostic (e.g. `--bg-danger`, `--ring-focus`) appear only in the `body` block.
@@ -336,7 +346,7 @@ The component contains no shade decisions, no `dark:` variants, and no palette r
 </button>
 
 <input
-  className="bg-bg-surface text-text-primary placeholder:text-text-subtle
+  className="bg-bg-surface text-text-primary placeholder:text-text-muted
              border border-border-strong focus:border-border-input
              focus-visible:ring-2 focus-visible:ring-ring-focus"
 />
