@@ -276,7 +276,7 @@ export function DialogContent({
 					data-dialog-overlay
 					className={cn(
 						'absolute inset-0',
-						// Fallback to a literal color: the bg-overlay-dark token chains
+						// Fallback to a literal color: the --bg-overlay token chains
 						// through legacy theme SCSS vars that aren't loaded on every page,
 						// which would otherwise leave the overlay transparent.
 						overlayClassName ||

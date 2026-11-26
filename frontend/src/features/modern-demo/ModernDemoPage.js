@@ -82,7 +82,7 @@ const TOKEN_SECTIONS = [
 		description: 'Border and divider colors.',
 		display: 'swatch',
 		tokens: [
-			['border-input', '--input-border-color', 'Input/card borders'],
+			['border-active', '--border-active', 'Input/card borders'],
 			['border-hr', '--hr-color', 'Horizontal rules'],
 			['border-dotted-outline', '--dotted-outline-color', 'Dotted outlines (focus, dropzones)'],
 		],
@@ -1006,7 +1006,7 @@ function BorderRecipe() {
 			<div className="space-y-3">
 				<div>
 					<hr className="border-t border-border-active" />
-					<span className="text-[10px] text-content-body/40">border-input</span>
+					<span className="text-[10px] text-content-body/40">border-active</span>
 				</div>
 				<div>
 					<hr className="border-t border-border-hr" />

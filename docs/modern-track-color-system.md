@@ -324,14 +324,11 @@ The table lists the values in `tokens.json`. To change a color, edit `tokens.jso
 
 ## How modern semantic tokens are wired
 
-The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. It has two groups:
-
-- `semantic`: the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`.
-- `legacy`: older names kept as aliases of a semantic role until their callers move. Phase 5 of #1172 deletes them.
+The source of truth is `frontend/src/static/css/tokens.json`, in the W3C design-token (DTCG) format. Its one group, `semantic`, holds the role tokens shared with Figma, named `property/role/variant` (`bg.surface.hover`). A trailing `default` is dropped in code, so `semantic.bg.surface.default` is `--bg-surface`. There are no aliases: every color a component uses is a role.
 
 `$value` is the light mode. `$extensions["org.cinemata.modes"].dark` holds a different dark value. `{palette.<step>}` names a `--cinemata-<step>` primitive.
 
-To change a color, edit `tokens.json` and run `uv run python scripts/generate_color_tokens.py`. The script rewrites the region between the `BEGIN GENERATED` and `END GENERATED` markers in `tailwind.css`. Pre-commit runs it with `--check`, so `make lint` and CI fail when the CSS differs from `tokens.json`. The script also fails on an unknown palette step, a reference to a missing token, and two tokens with one CSS name.
+To change a color, edit `tokens.json` and run `uv run python scripts/generate_color_tokens.py`. The script rewrites the region between the `BEGIN GENERATED` and `END GENERATED` markers in `tailwind.css`. Pre-commit runs it with `--check`, so `make lint` and CI fail when the CSS differs from `tokens.json`. The script also fails on a group other than `semantic`, a value that is not a palette step or transparent, an unknown palette step, and two tokens with one CSS name.
 
 The generated region has three coordinated blocks:
 
