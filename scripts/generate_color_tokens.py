@@ -138,7 +138,8 @@ def render(tokens, palette):
 def splice(css_text, generated):
     start = css_text.find(BEGIN)
     end = css_text.find(END)
-    if start == -1 or end == -1 or end < start:
+    has_one_region = css_text.count(BEGIN) == 1 and css_text.count(END) == 1
+    if not has_one_region or end < start:
         raise TokenError(f"{TAILWIND.name} must contain the BEGIN and END generated markers once, in order")
     return css_text[:start] + generated + css_text[end + len(END) :]
 

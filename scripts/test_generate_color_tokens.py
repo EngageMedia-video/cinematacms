@@ -66,6 +66,10 @@ class GenerateColorTokensTests(unittest.TestCase):
         with self.assertRaisesRegex(TokenError, "markers"):
             build(json.dumps({}), PALETTE, "body {}\n")
 
+    def test_rejects_css_with_two_generated_regions(self):
+        with self.assertRaisesRegex(TokenError, "markers"):
+            build(json.dumps({}), PALETTE, CSS + CSS)
+
 
 if __name__ == "__main__":
     unittest.main()
