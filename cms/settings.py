@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "actions.apps.ActionsConfig",
     "notifications.apps.NotificationsConfig",
     "email_delivery.apps.EmailDeliveryConfig",
+    "events.apps.EventsConfig",
     "mptt",
     "crispy_forms",
     "crispy_forms_bootstrap2",
@@ -400,6 +401,14 @@ CELERY_BEAT_SCHEDULE = {
     "cleanup_email_delivery_receipts": {
         "task": "cleanup_email_delivery_receipts",
         "schedule": crontab(hour="2", minute="30"),
+    },
+    "recover_domain_events": {
+        "task": "recover_domain_events",
+        "schedule": timedelta(minutes=1),
+    },
+    "cleanup_domain_events": {
+        "task": "cleanup_domain_events",
+        "schedule": crontab(hour="2", minute="45"),
     },
     # Re-encode profiles whose worker died mid-encode
     "check_running_states": {

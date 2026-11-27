@@ -85,6 +85,7 @@ rules. The wiki helps contributors find those sources.
 ### System Architecture
 - [🤖 Video Recommendation Algorithms](technical/CinemataCMS-recommendations-algorithms.md)
 - [📁 Directory Structure](technical/directory.md)
+- [📨 Domain Events](technical/domain-events.md)
 - [📈 System Monitoring & Optimization](technical/system_monitoring_and_optimization.md)
 - [📝 TinyMCE Editor Configuration](features/tinymce.md)
 
