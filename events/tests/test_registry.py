@@ -45,11 +45,15 @@ class EventSpecTests(SimpleTestCase):
             ("datetime", {"comment_id": 1, "media_id": datetime(2026, 1, 1)}),
             ("set", {"comment_id": 1, "media_id": {2}}),
             ("nan", {"comment_id": 1, "media_id": math.nan}),
+            ("nested integer key", {"comment_id": 1, "media_id": {"counts": {2: "a"}}}),
+            ("keys that collide as JSON", {"comment_id": 1, "media_id": {1: "a", "1": "b"}}),
+            ("integer key in a list", {"comment_id": 1, "media_id": [{3: "c"}]}),
         ]
         for label, payload in cases:
             with self.subTest(label), self.assertRaises(InvalidEventPayload):
                 spec.validate(payload)
         spec.validate({"comment_id": 1, "media_id": None})
+        spec.validate({"comment_id": 1, "media_id": {"counts": {"2": "a"}, "tags": [{"name": "b"}]}})
 
 
 class HandlerRegistrationTests(SimpleTestCase):

@@ -39,9 +39,8 @@ def dispatch_domain_event(event_id: str):
             ignore_conflicts=True,
         )
         DomainEvent.objects.filter(pk=event.pk, dispatched_at__isnull=True).update(dispatched_at=timezone.now())
-    for run in EventHandlerRun.objects.filter(event=event, status=HandlerRunStatus.PENDING):
-        enqueue_run(run)
-    telemetry.record_dispatched(event, len(handlers))
+    queued = [enqueue_run(run) for run in EventHandlerRun.objects.filter(event=event, status=HandlerRunStatus.PENDING)]
+    telemetry.record_dispatched(event, len(handlers), queued=all(queued))
     return "dispatched"
 
 
@@ -90,6 +89,12 @@ def run_domain_event_handler(self, run_id: int):
             )
     except Exception as error:
         capture_unexpected_exception(error)
+        if EventHandlerRun.objects.filter(pk=run.pk, status=HandlerRunStatus.SUCCEEDED).exists():
+            # The success committed, then a callback the handler queued with on_commit() raised. Another
+            # attempt would repeat the committed writes, so the run stays succeeded.
+            run.status = HandlerRunStatus.SUCCEEDED
+            telemetry.record_handler_result(run, event.type, "succeeded")
+            return run.status
         if run.attempt_count < MAX_ATTEMPTS:
             _finish(run, event, HandlerRunStatus.RETRYING, "handler_error")
             enqueue_run(run, countdown=_retry_countdown(run.attempt_count))
@@ -171,6 +176,24 @@ def cleanup_domain_events(batch_size=1000):
         .filter(~Exists(unfinished_or_recent))
         .values_list("pk", flat=True)[:batch_size]
     )
-    if ids:
-        DomainEvent.objects.filter(pk__in=ids).delete()
-    return {"outcome": "succeeded", "processed": len(ids), "changed": len(ids)}
+    deleted = _delete_ended_events(ids, cutoff) if ids else 0
+    return {"outcome": "succeeded", "processed": len(ids), "changed": deleted}
+
+
+def _delete_ended_events(event_ids, cutoff) -> int:
+    """Delete the events whose runs all still ended before the cutoff, and return how many were deleted."""
+
+    with transaction.atomic():
+        # replay_domain_event_runs locks the runs it resets, so a replay either finishes first and its run
+        # fails the check below, or waits and finds its run deleted.
+        runs = (
+            EventHandlerRun.objects.select_for_update()
+            .filter(event_id__in=event_ids)
+            .order_by("pk")
+            .values_list("event_id", "status", "updated_at")
+        )
+        kept = {event_id for event_id, status, updated_at in runs if status in ACTIVE_STATUSES or updated_at >= cutoff}
+        ended = [event_id for event_id in event_ids if event_id not in kept]
+        if ended:
+            DomainEvent.objects.filter(pk__in=ended).delete()
+    return len(ended)

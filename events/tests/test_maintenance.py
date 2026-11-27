@@ -4,9 +4,10 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 
+from cms.observability import OpenTelemetryLogFilter
 from events.models import DomainEvent, EventHandlerRun, HandlerRunStatus
 from events.registry import handles
-from events.tasks import cleanup_domain_events, recover_domain_events
+from events.tasks import RETENTION, _delete_ended_events, cleanup_domain_events, recover_domain_events
 
 from .helpers import PAYLOAD, EventTestMixin, handler_name, handler_results
 
@@ -48,6 +49,20 @@ class RecoveryTests(EventTestMixin, TestCase):
         before = handler_results("failed", "worker_lost")
         recover_domain_events()
         self.assertEqual(handler_results("failed", "worker_lost") - before, 1)
+
+    def test_a_lost_worker_record_names_the_lost_task_not_the_recovery_task(self):
+        run = self.make_run(handler=self.handler, status=S.RUNNING, attempt_count=4, age=timedelta(minutes=11))
+        EventHandlerRun.objects.filter(pk=run.pk).update(celery_task_id="lost-handler-task")
+        recovery_request = type("Request", (), {"id": "recovery-task", "delivery_info": {}})()
+        with self.assertLogs("events", "INFO") as logs:
+            recover_domain_events()
+        (record,) = [r for r in logs.records if r.getMessage() == "cinematacms.domain_event.handler_run"]
+        with patch("celery.current_task", type("Task", (), {"request": recovery_request, "name": "recover"})()):
+            OpenTelemetryLogFilter().filter(record)
+        self.assertEqual(
+            (record.task_id, record.handler_task_id, record.reason_code),
+            ("recovery-task", "lost-handler-task", "worker_lost"),
+        )
 
     def test_only_events_left_undispatched_for_two_minutes_are_dispatched_again(self):
         now = timezone.now()
@@ -113,4 +128,24 @@ class CleanupTests(EventTestMixin, TestCase):
                     EventHandlerRun.objects.filter(event_id=event.pk).exists(), bool(status and not deleted)
                 )
                 self.assertEqual(result["changed"], int(deleted))
+                DomainEvent.objects.all().delete()
+
+    def test_an_event_whose_run_was_replayed_after_selection_is_kept(self):
+        cutoff = timezone.now() - RETENTION
+        cases = [
+            # label, run status at delete time, deleted
+            ("still failed", S.FAILED, True),
+            ("replayed to pending", S.PENDING, False),
+        ]
+        for label, status, deleted in cases:
+            with self.subTest(label):
+                run = self.make_run(
+                    handler="consumer.handler", status=S.FAILED, age=timedelta(days=31), occurred_age=timedelta(days=31)
+                )
+                if status != S.FAILED:
+                    # What replay_domain_event_runs does between cleanup's query and its delete.
+                    EventHandlerRun.objects.filter(pk=run.pk).update(status=status, updated_at=timezone.now())
+
+                self.assertEqual(_delete_ended_events([run.event_id], cutoff), int(deleted))
+                self.assertEqual(DomainEvent.objects.filter(pk=run.event_id).exists(), not deleted)
                 DomainEvent.objects.all().delete()

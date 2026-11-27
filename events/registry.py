@@ -22,6 +22,18 @@ class InvalidEventPayload(ValueError):
     pass
 
 
+def _reject_non_string_keys(event_type: str, value) -> None:
+    # json.dumps turns {1: "a"} into {"1": "a"}, so a stored payload would differ from the emitted one.
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise InvalidEventPayload(f"{event_type} payload has a non-string key {key!r}")
+            _reject_non_string_keys(event_type, item)
+    elif isinstance(value, list | tuple):
+        for item in value:
+            _reject_non_string_keys(event_type, item)
+
+
 @dataclass(frozen=True)
 class EventSpec:
     name: str
@@ -37,6 +49,7 @@ class EventSpec:
             raise InvalidEventPayload(f"{self.name} payload is missing {', '.join(missing)}")
         if unexpected:
             raise InvalidEventPayload(f"{self.name} payload has undeclared fields {', '.join(unexpected)}")
+        _reject_non_string_keys(self.name, payload)
         try:
             json.dumps(payload, allow_nan=False)
         except (TypeError, ValueError) as error:

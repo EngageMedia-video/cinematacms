@@ -37,8 +37,8 @@ def enqueue_dispatch(event_id) -> None:
         telemetry.record_dispatch_not_queued(event_id)
 
 
-def enqueue_run(run, *, countdown: int | None = None) -> None:
-    """Queue one handler run. A failure leaves it to ``recover_domain_events``."""
+def enqueue_run(run, *, countdown: int | None = None) -> bool:
+    """Queue one handler run, and return False when the broker refused it. Recovery queues it again."""
 
     from .tasks import run_domain_event_handler
 
@@ -46,3 +46,5 @@ def enqueue_run(run, *, countdown: int | None = None) -> None:
         run_domain_event_handler.apply_async(args=[run.pk], queue=telemetry.QUEUE, countdown=countdown)
     except Exception:
         telemetry.record_run_not_queued(run)
+        return False
+    return True

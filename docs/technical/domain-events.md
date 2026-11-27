@@ -90,7 +90,11 @@ A handler receives the `DomainEvent`, with its `id`, `type`, `version`,
 - **Expect your writes to roll back on failure.** The handler runs inside
   `transaction.atomic()`, together with the update that marks its run as
   succeeded. Queue a Celery task or another side effect with
-  `transaction.on_commit()`.
+  `transaction.on_commit()`. A callback runs after the commit, so if it raises,
+  the run stays `succeeded`, the error goes to error tracking, and nothing
+  retries the callback. When a follow-up must not be lost, `emit()` another
+  event in the handler instead: it commits with the handler's writes, and
+  recovery dispatches it if its queueing fails.
 - **Fan out in batches.** A handler with many recipients, such as followers of a
   creator, queues its own batch tasks (for example 500 recipients per task). The
   dispatcher does not batch.
@@ -143,7 +147,8 @@ The beat task `recover_domain_events` runs every minute.
 
 The beat task `cleanup_domain_events` runs daily at 02:45. It deletes an event,
 with its runs, once every run has ended (`succeeded` or `failed`) and none
-changed in the last 30 days. Events are transport, not history: the audit store
+changed in the last 30 days. It locks the runs and checks them again before the
+delete, so a replay that starts during cleanup keeps its event. Events are transport, not history: the audit store
 is separate. Revisit the 30 days once the event rate is measured.
 
 ## Replay failed runs

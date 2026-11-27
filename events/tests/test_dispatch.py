@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.db import transaction
+from django.test import TestCase, TransactionTestCase
 
 from events.models import DomainEvent, EventHandlerRun, HandlerRunStatus
 from events.registry import handles
@@ -128,6 +129,27 @@ class DispatchTests(EventTestMixin, TestCase):
         self.assertEqual((run.status, run.reason_code, run.attempt_count), ("failed", "handler_missing", 1))
         self.assertEqual(handler_results("failed", "handler_missing") - before, 1)
 
+    def test_a_dispatch_whose_runs_cannot_be_queued_is_logged_as_not_queued(self):
+        @handles("thing.happened")
+        def ok(event):
+            pass
+
+        cases = [
+            # label, publishing fails, expected outcome, expected reason
+            ("broker took the runs", False, "queued", ""),
+            ("broker refused the runs", True, "not_queued", "queue_publish_failed"),
+        ]
+        for label, fails, outcome, reason_code in cases:
+            with self.subTest(label):
+                side_effect = ConnectionError("broker down") if fails else None
+                with (
+                    patch("events.tasks.run_domain_event_handler.apply_async", side_effect=side_effect),
+                    self.assertLogs("events", "INFO") as logs,
+                ):
+                    self.emit_and_commit()
+                dispatched = [r for r in logs.records if r.getMessage() == "cinematacms.domain_event.dispatched"]
+                self.assertEqual([(r.outcome, r.reason_code) for r in dispatched], [(outcome, reason_code)])
+
     def test_dispatch_of_a_deleted_event_does_nothing(self):
         self.assertEqual(dispatch_domain_event("00000000-0000-4000-8000-000000000000"), "missing")
 
@@ -154,3 +176,27 @@ class DispatchTests(EventTestMixin, TestCase):
         )
         for record in logs.records:
             self.assertNotIn("Private title", str(vars(record)))
+
+
+class HandlerCommitTests(EventTestMixin, TransactionTestCase):
+    def test_a_callback_that_fails_after_the_commit_leaves_the_run_succeeded(self):
+        calls = []
+
+        def publish_follow_up():
+            raise ConnectionError("broker down")
+
+        @handles("thing.happened")
+        def queues_follow_up(event):
+            calls.append(event.id)
+            User.objects.create_user(username=f"made-by-{event.id}", email="made@example.org", password="pw")
+            transaction.on_commit(publish_follow_up)
+
+        run = self.make_run(handler=handler_name(queues_follow_up), status=HandlerRunStatus.PENDING)
+        with patch("events.tasks.capture_unexpected_exception") as capture:
+            self.assertEqual(run_domain_event_handler(run.pk), HandlerRunStatus.SUCCEEDED)
+
+        run.refresh_from_db()
+        self.assertEqual((run.status, run.attempt_count, run.reason_code), (HandlerRunStatus.SUCCEEDED, 1, ""))
+        self.assertEqual(calls, [run.event_id])
+        self.assertTrue(User.objects.filter(username=f"made-by-{run.event_id}").exists())
+        capture.assert_called_once()
