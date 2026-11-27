@@ -114,6 +114,7 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
                 "discovery",
                 "user_activity",
                 "email_delivery",
+                "domain_events",
                 "platform_maintenance",
                 "diagnostic",
                 "unknown",

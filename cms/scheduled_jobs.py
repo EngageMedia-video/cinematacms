@@ -19,6 +19,8 @@ SCHEDULED_JOBS = {
         ScheduledJob("record_beat_freshness", 60, "cms", 180),
         ScheduledJob("recover_stale_email_deliveries", 60, "email_delivery", 180),
         ScheduledJob("cleanup_email_delivery_receipts", 86400, "email_delivery", 129600),
+        ScheduledJob("recover_domain_events", 60, "events", 180),
+        ScheduledJob("cleanup_domain_events", 86400, "events", 129600),
         ScheduledJob("clear_sessions", 604800, "cms", 691200),
         ScheduledJob("update_listings_thumbnails", 1800, "files", 5400),
         ScheduledJob("cleanup_orphaned_uploads", 86400, "uploader", 129600),

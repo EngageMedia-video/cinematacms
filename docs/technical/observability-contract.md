@@ -12,6 +12,16 @@ A receipt stores the delivery UUID, a versioned keyed recipient reference, the e
 
 Set `EMAIL_RECIPIENT_HMAC_KEY` to an external secret. Set `EMAIL_RECIPIENT_HMAC_VERSION` when you rotate the key. Keep the previous key outside the application for no longer than the 30-day receipt window. Run a worker that consumes only `email_tasks`. The task has a 30-second SMTP timeout and a 60-second hard limit.
 
+## Domain events
+
+`events.service.emit()` records a `DomainEvent` in the caller's transaction and queues `dispatch_domain_event` after the commit. The dispatcher creates one `EventHandlerRun` per handler and queues `run_domain_event_handler` for each, all on `short_tasks`. The [domain events guide](domain-events.md) describes the delivery, recovery, retention and replay rules.
+
+`cinematacms_domain_event_handler_runs_total` counts each handler attempt that ends, by `outcome` (`succeeded`, `retried`, `failed`) and `reason_code` (`none`, `handler_error`, `handler_missing`, `worker_lost`). `retried` is an attempt that runs again, and `failed` is a run that waits for `replay_domain_event_runs`. `cinematacms_domain_event_dispatch_lag_seconds` observes the time from the event to the first attempt of each handler. The event type and the handler name are not metric labels.
+
+The `events` logger writes `cinematacms.domain_event.emitted`, `cinematacms.domain_event.dispatched` and `cinematacms.domain_event.handler_run`. They carry `domain_event_id` (the event's random UUID), `domain_event_type`, `event_handler`, `attempt`, `task_id`, `outcome` and `reason_code`. A dispatch or run that could not be queued logs `outcome` `not_queued` with `queue_publish_failed`, and recovery queues it again. The logs never carry the payload or the actor; the request's `actor_ref` is the only user reference. The Collector keeps `domain_event_id`, `domain_event_type`, `event_handler` and `attempt`, so email delivery lines now keep their `attempt` too.
+
+`recover_domain_events` and `cleanup_domain_events` are scheduled jobs. A failed handler run raises no alert in this release; watch the "Domain events" row of the overview dashboard.
+
 ## Celery and domain outcomes
 
 Celery execution states are `started`, `succeeded`, `failed`, `retried`, and `revoked`. Queue labels are `long_tasks`, `short_tasks`, `whisper_tasks`, and `email_tasks`. A task from any other queue is counted as a contract violation and labelled `default`.
@@ -308,7 +318,7 @@ Validate the contract with:
 ```bash
 uv run python scripts/validate_observability_contract.py
 uv run python scripts/validate_observability_coverage.py
-make test TEST_ARGS="cms.tests.test_alertability_contract cms.tests.test_observability cms.tests.test_scheduled_jobs email_delivery"
+make test TEST_ARGS="cms.tests.test_alertability_contract cms.tests.test_observability cms.tests.test_scheduled_jobs email_delivery events"
 ```
 
 Before implementation, map each feature to this contract and
